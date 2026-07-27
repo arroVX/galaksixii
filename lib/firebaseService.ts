@@ -49,3 +49,83 @@ export async function syncProductToFirebase(product: Product) {
     console.warn("Peringatan Firestore Sync Product:", err);
   }
 }
+
+/**
+ * Mengambil seluruh data transaksi pesanan dari Cloud Firestore & Realtime Database
+ */
+export async function fetchOrdersFromFirebase(): Promise<Order[]> {
+  const ordersMap = new Map<string, Order>();
+
+  // 1. Ambil dari Firestore
+  try {
+    const querySnapshot = await getDocs(collection(db, "orders"));
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data() as Order;
+      if (data && data.id) {
+        ordersMap.set(data.id, data);
+      }
+    });
+  } catch (err) {
+    console.warn("Firestore fetch orders error:", err);
+  }
+
+  // 2. Ambil dari Realtime Database
+  try {
+    const dbRef = ref(rtdb);
+    const snapshot = await get(child(dbRef, "orders"));
+    if (snapshot.exists()) {
+      const rtdbOrders = snapshot.val();
+      Object.keys(rtdbOrders).forEach((id) => {
+        const item = rtdbOrders[id] as Order;
+        if (item && item.id && !ordersMap.has(item.id)) {
+          ordersMap.set(item.id, item);
+        }
+      });
+    }
+  } catch (err) {
+    console.warn("RTDB fetch orders error:", err);
+  }
+
+  const result = Array.from(ordersMap.values());
+  result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  return result;
+}
+
+/**
+ * Mengambil seluruh data produk dari Cloud Firestore & Realtime Database
+ */
+export async function fetchProductsFromFirebase(): Promise<Product[]> {
+  const productsMap = new Map<string, Product>();
+
+  // 1. Ambil dari Firestore
+  try {
+    const querySnapshot = await getDocs(collection(db, "products"));
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data() as Product;
+      if (data && data.id) {
+        productsMap.set(data.id, data);
+      }
+    });
+  } catch (err) {
+    console.warn("Firestore fetch products error:", err);
+  }
+
+  // 2. Ambil dari Realtime Database
+  try {
+    const dbRef = ref(rtdb);
+    const snapshot = await get(child(dbRef, "products"));
+    if (snapshot.exists()) {
+      const rtdbProducts = snapshot.val();
+      Object.keys(rtdbProducts).forEach((id) => {
+        const item = rtdbProducts[id] as Product;
+        if (item && item.id && !productsMap.has(item.id)) {
+          productsMap.set(item.id, item);
+        }
+      });
+    }
+  } catch (err) {
+    console.warn("RTDB fetch products error:", err);
+  }
+
+  return Array.from(productsMap.values());
+}

@@ -59,10 +59,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>("ALL");
 
   useEffect(() => {
+    // 1. Load from localStorage first for instant display
     const savedOrders = localStorage.getItem("gala_merch_orders");
+    let initialOrders: Order[] = [];
     if (savedOrders) {
       try {
-        setOrders(JSON.parse(savedOrders));
+        initialOrders = JSON.parse(savedOrders);
+        setOrders(initialOrders);
       } catch (e) {
         console.error(e);
       }
@@ -95,9 +98,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      setOrders([seedOrder]);
-      localStorage.setItem("gala_merch_orders", JSON.stringify([seedOrder]));
+      initialOrders = [seedOrder];
+      setOrders(initialOrders);
+      localStorage.setItem("gala_merch_orders", JSON.stringify(initialOrders));
     }
+
+    // 2. Asynchronously sync latest orders from Firebase (Firestore + Realtime DB)
+    const loadFirebaseOrders = async () => {
+      try {
+        const { fetchOrdersFromFirebase } = await import("@/lib/firebaseService");
+        const fbOrders = await fetchOrdersFromFirebase();
+        if (fbOrders.length > 0) {
+          const map = new Map<string, Order>();
+          initialOrders.forEach((o) => map.set(o.id, o));
+          fbOrders.forEach((o) => map.set(o.id, o));
+          const combined = Array.from(map.values());
+          combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          setOrders(combined);
+          localStorage.setItem("gala_merch_orders", JSON.stringify(combined));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch orders from Firebase:", err);
+      }
+    };
+
+    loadFirebaseOrders();
   }, []);
 
   const openCreateModal = () => {

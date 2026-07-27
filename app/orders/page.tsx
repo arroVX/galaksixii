@@ -31,20 +31,43 @@ export default function OrdersPage() {
   const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
 
   useEffect(() => {
+    let initialLocalOrders: Order[] = [];
     const savedOrdersStr = localStorage.getItem("gala_merch_orders");
     if (savedOrdersStr) {
       try {
         const parsed: Order[] = JSON.parse(savedOrdersStr);
-        const userOrders = parsed.filter(o => o.userId === user?.uid || o.userEmail === user?.email);
-        setOrders(userOrders);
-        if (userOrders.length > 0) setSelectedOrder(userOrders[0]);
+        initialLocalOrders = parsed.filter(o => o.userId === user?.uid || o.userEmail === user?.email);
+        setOrders(initialLocalOrders);
+        if (initialLocalOrders.length > 0) setSelectedOrder(initialLocalOrders[0]);
       } catch (e) {
         console.error(e);
       }
-    } else {
-      // Setup demo state
-      setOrders([]);
     }
+
+    const loadUserOrdersFromFirebase = async () => {
+      if (!user) return;
+      try {
+        const { fetchOrdersFromFirebase } = await import("@/lib/firebaseService");
+        const fbOrders = await fetchOrdersFromFirebase();
+        const userFbOrders = fbOrders.filter(o => o.userId === user.uid || o.userEmail === user.email);
+        
+        if (userFbOrders.length > 0) {
+          const map = new Map<string, Order>();
+          initialLocalOrders.forEach(o => map.set(o.id, o));
+          userFbOrders.forEach(o => map.set(o.id, o));
+          const combined = Array.from(map.values());
+          combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          setOrders(combined);
+          if (combined.length > 0 && !selectedOrder) {
+            setSelectedOrder(combined[0]);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch user orders from Firebase:", err);
+      }
+    };
+
+    loadUserOrdersFromFirebase();
   }, [user]);
 
   if (!user && !loading) {
