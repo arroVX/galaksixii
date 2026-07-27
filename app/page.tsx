@@ -233,7 +233,7 @@ function MainApp() {
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => setActiveView("admin")} />
       <OrderTrackingModal isOpen={isOrderTrackingOpen} onClose={() => setIsOrderTrackingOpen(false)} />
-      <DevModal isOpen={isDevModalOpen} onClose={() => { setIsDevModalOpen(false); router.push("/merchandise"); }} />
+      <DevModal isOpen={isDevModalOpen && activeView !== "admin"} onClose={() => { setIsDevModalOpen(false); router.push("/merchandise"); }} />
     </div>
   );
 }
