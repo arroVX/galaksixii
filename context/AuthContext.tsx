@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   loginWithGoogle: (isRegister?: boolean) => Promise<void>;
-  loginAsDemoUser: (role?: "user" | "admin") => void;
+  loginAsDemoUser: (role?: "user" | "admin", customEmail?: string, customName?: string) => void;
   logout: () => Promise<void>;
   updateProfileData: (data: Partial<UserProfile>) => void;
   showAuthAlert: (msg: string) => void;
@@ -120,13 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         showAuthAlert(err.message);
       } else {
         console.warn("Google Auth failed:", err);
-        // Fallback for demo purposes if popup is blocked
-        if (isRegister) {
-           const registeredAccounts = JSON.parse(localStorage.getItem("gala_merch_registered_accounts") || "[]");
-           registeredAccounts.push({ email: "pembeli@gmail.com", password: "", name: "Budi Santoso" });
-           localStorage.setItem("gala_merch_registered_accounts", JSON.stringify(registeredAccounts));
-        }
-        loginAsDemoUser("user");
+        showAuthAlert("Gagal terhubung ke Google Login. (Tips: Jika di Vercel, daftarkan domain vercel.app di Firebase Console -> Authentication -> Settings -> Authorized Domains. Atau silakan masuk dengan Email/Password).");
       }
       throw err; // Re-throw to be handled by the UI
     } finally {
@@ -134,16 +128,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginAsDemoUser = (role: "user" | "admin" = "user") => {
+  const loginAsDemoUser = (role: "user" | "admin" = "user", customEmail?: string, customName?: string) => {
     const demoObj: UserProfile = {
-      uid: role === "admin" ? "admin-999" : "demo-user-123",
-      email: role === "admin" ? "admin@galamerch.com" : "pembeli@gmail.com",
-      displayName: role === "admin" ? "Admin Merchandise" : "Budi Santoso",
+      uid: role === "admin" ? "admin-999" : "user-" + Date.now(),
+      email: customEmail || (role === "admin" ? "admin@galamerch.com" : "pembeli@gmail.com"),
+      displayName: customName || (role === "admin" ? "Admin Merchandise" : "Pelanggan GALA"),
       photoURL: role === "admin" ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
       role: role,
       phone: "081234567890",
-      address: "Jl. Merdeka No. 45, Jakarta Selatan",
-      classGroup: "XII MIPA 2 / 2026"
+      address: "Jepara, Jawa Tengah",
+      classGroup: "Pelajar / Umum"
     };
     setUser(demoObj);
     localStorage.setItem("gala_merch_user", JSON.stringify(demoObj));

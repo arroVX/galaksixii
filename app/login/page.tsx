@@ -76,7 +76,10 @@ export default function LoginPage() {
 
     setLoading(true);
     setTimeout(() => {
-      loginAsDemoUser(email.includes("admin") ? "admin" : "user");
+      const account = registeredAccounts.find((acc: any) => acc.email === email);
+      const userRole = email.includes("admin") ? "admin" : "user";
+      const userName = isRegister ? name : (account?.name || name || email.split("@")[0]);
+      loginAsDemoUser(userRole, email, userName);
       setLoading(false);
       setShowSuccessModal(true);
     }, 800);

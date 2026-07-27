@@ -71,7 +71,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
     setLoading(true);
     setTimeout(() => {
-      loginAsDemoUser(email.includes("admin") ? "admin" : "user");
+      const account = registeredAccounts.find((acc: any) => acc.email === email);
+      const userRole = email.includes("admin") ? "admin" : "user";
+      const userName = isRegister ? name : (account?.name || name || email.split("@")[0]);
+      loginAsDemoUser(userRole, email, userName);
       setLoading(false);
       onClose();
     }, 800);
