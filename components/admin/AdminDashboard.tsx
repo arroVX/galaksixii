@@ -884,8 +884,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
             <h4 className="font-bold text-slate-900 text-base font-serif-title mb-4 flex items-center gap-2">
               <ImageIcon size={18} className="text-slate-900" /> Bukti Transfer Pelanggan
             </h4>
-            <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-              <img src={viewProofUrl} alt="Bukti Transfer" className="w-full h-full object-contain" />
+            <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
+              {viewProofUrl && (viewProofUrl.startsWith("data:") || viewProofUrl.startsWith("http")) ? (
+                <img src={viewProofUrl} alt="Bukti Transfer" className="w-full h-full object-contain" />
+              ) : (
+                <div className="text-center p-6 text-slate-500 space-y-2">
+                  <ImageIcon size={48} className="mx-auto text-slate-400" />
+                  <p className="text-xs font-bold text-slate-700">Bukti transfer tidak dapat ditampilkan.</p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Bukti ini diunggah dengan link sementara (blob URL) sebelum perbaikan. <br/>
+                    <strong>Semua transaksi baru mulai sekarang akan langsung menyimpan foto bukti transfer secara permanen (Base64).</strong>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
