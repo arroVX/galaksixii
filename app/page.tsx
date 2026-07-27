@@ -25,7 +25,18 @@ function MainApp() {
   const [activeView, setActiveView] = useState<"shop" | "admin">("shop");
 
   useEffect(() => {
-    setActiveView(isAdmin ? "admin" : "shop");
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("view") === "admin") {
+        setActiveView("admin");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) {
+      setActiveView("admin");
+    }
   }, [isAdmin]);
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");

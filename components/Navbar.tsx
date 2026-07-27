@@ -119,9 +119,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </Link>
                   );
                 })}
-                {isAdmin && (
-                  <button onClick={() => { setActiveView("admin"); router.push("/"); }} className="font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 text-red-500 hover:text-red-600 font-bold">Dashboard Admin</button>
-                )}
+                <button 
+                  onClick={() => {
+                    if (isAdmin) {
+                      setActiveView("admin");
+                      if (pathname !== "/") router.push("/");
+                    } else {
+                      setInternalAdminAuthOpen(true);
+                    }
+                  }} 
+                  className="font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 text-red-600 hover:text-red-700 font-bold flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+                  <span>Dashboard Admin</span>
+                </button>
               </>
             )}
           </nav>
@@ -244,6 +255,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="material-symbols-outlined text-[22px]">shopping_bag</span> Keranjang Belanja
                 </div>
                 {totalItemCount > 0 && <span className="bg-error text-on-error text-xs font-bold px-2 py-0.5 rounded-full">{totalItemCount}</span>}
+              </button>
+              <button 
+                onClick={() => { 
+                  setIsMobileMenuOpen(false); 
+                  if (isAdmin) {
+                    setActiveView("admin");
+                    if (pathname !== "/") router.push("/");
+                  } else {
+                    setInternalAdminAuthOpen(true);
+                  }
+                }} 
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-base text-red-600 hover:bg-red-50 transition-all border border-red-100 mt-2"
+              >
+                <span className="material-symbols-outlined text-[22px]">admin_panel_settings</span> Dashboard Admin
               </button>
             </div>
             <div className="border-t border-outline-variant/30 pt-4 mt-auto">
