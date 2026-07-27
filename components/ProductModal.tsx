@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Product } from "@/types/merch";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft, Star, Info, Plus, Minus, Heart, ShoppingBag, Zap } from "lucide-react";
 
 interface ProductModalProps {
@@ -12,6 +13,7 @@ interface ProductModalProps {
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
   const { addToCart, setIsCartOpen } = useCart();
+  const { user, showAuthAlert } = useAuth();
   const [quantity, setQuantity] = useState<number>(1);
   const [isLiked, setIsLiked] = useState(false);
 
@@ -27,6 +29,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   
   // Format price
   const formattedPrice = `Rp ${product.price.toLocaleString("id-ID")}`;
+
+  const handleAction = (isBuyNow: boolean) => {
+    if (!user) {
+      showAuthAlert("Silakan masuk atau daftar akun terlebih dahulu untuk berbelanja.");
+      return;
+    }
+    addToCart(product, "Standard", "Standard", quantity);
+    onClose();
+    if (isBuyNow) {
+      setIsCartOpen(true);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center bg-[#F8F8F6] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
@@ -134,10 +148,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
               {/* Middle: Keranjang */}
               <button 
-                onClick={() => {
-                  addToCart(product, "Standard", "Standard", quantity);
-                  onClose();
-                }}
+                onClick={() => handleAction(false)}
                 className="flex-1 py-3 px-2 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center gap-2 text-xs font-bold transition-colors"
               >
                 <ShoppingBag size={14} />
@@ -146,11 +157,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
               {/* Right: Beli Sekarang */}
               <button 
-                onClick={() => {
-                  addToCart(product, "Standard", "Standard", quantity);
-                  onClose();
-                  setIsCartOpen(true);
-                }}
+                onClick={() => handleAction(true)}
                 className="flex-[1.2] py-3 px-2 bg-white text-slate-900 hover:bg-slate-100 rounded-full flex items-center justify-center gap-1.5 text-xs font-black transition-colors shadow-inner"
               >
                 <Zap size={14} />

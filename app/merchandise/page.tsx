@@ -12,7 +12,10 @@ import { Product } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
 import { useCart } from "@/context/CartContext";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function MerchandisePage() {
+  const { user } = useAuth();
   const { toastMessage, addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,6 +42,10 @@ export default function MerchandisePage() {
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
+    if (!user) {
+      setIsAuthOpen(true);
+      return;
+    }
     addToCart(product, "Standard", "Standard", 1); // Quick add defaults
   };
 

@@ -3,11 +3,13 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Clock } from "lucide-react";
 
 export const CartDrawer: React.FC = () => {
   const router = useRouter();
   const { cart, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, subtotal, totalItemCount } = useCart();
+  const { user, showAuthAlert } = useAuth();
 
   if (!isCartOpen) return null;
 
@@ -157,6 +159,11 @@ export const CartDrawer: React.FC = () => {
 
               <button
                 onClick={() => {
+                  if (!user) {
+                    setIsCartOpen(false);
+                    showAuthAlert("Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan checkout.");
+                    return;
+                  }
                   setIsCartOpen(false);
                   router.push("/checkout");
                 }}
