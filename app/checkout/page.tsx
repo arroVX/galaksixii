@@ -239,16 +239,16 @@ export default function CheckoutPage() {
 
               {/* Option 2 */}
               <div
-                onClick={() => setDeliveryMethod("COD_JEPARA")}
+                onClick={() => setDeliveryMethod("COD_AREA_JEPARA")}
                 className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
-                  deliveryMethod === "COD_JEPARA"
+                  deliveryMethod === "COD_AREA_JEPARA"
                     ? "bg-primary text-on-primary border-primary shadow-md"
                     : "bg-surface-container-lowest border-outline-variant/50 text-on-surface hover:border-outline hover:bg-surface"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    deliveryMethod === "COD_JEPARA" ? "bg-on-primary text-primary" : "bg-surface-container-high text-on-surface-variant"
+                    deliveryMethod === "COD_AREA_JEPARA" ? "bg-on-primary text-primary" : "bg-surface-container-high text-on-surface-variant"
                   }`}>
                     <span className="material-symbols-outlined text-[20px]">local_shipping</span>
                   </div>
@@ -257,13 +257,13 @@ export default function CheckoutPage() {
                     <span className="text-xs opacity-80 block font-medium">Pembeli Umum / Luar Sekolah</span>
                   </div>
                 </div>
-                <p className={`text-xs leading-relaxed ${deliveryMethod === "COD_JEPARA" ? "text-white/80" : "text-on-surface-variant"}`}>
+                <p className={`text-xs leading-relaxed ${deliveryMethod === "COD_AREA_JEPARA" ? "text-white/80" : "text-on-surface-variant"}`}>
                   Kami akan mengantarkan pesanan ke titik pertemuan di sekitar area Jepara Kota.
                 </p>
               </div>
             </div>
 
-            {deliveryMethod === "COD_JEPARA" && (
+            {deliveryMethod === "COD_AREA_JEPARA" && (
               <div className="mt-3 animate-in slide-in-from-top-2 fade-in">
                 <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Titik Lokasi COD (Pertemuan)</label>
                 <div className="relative">

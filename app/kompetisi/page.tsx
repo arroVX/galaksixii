@@ -281,11 +281,11 @@ export default function KompetisiPage() {
                     <span>Setiap tim wajib mendaftarkan susunan pemain resmi (pemain utama &amp; cadangan) dan 1 official pelatih.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span class="material-symbols-outlined text-emerald-500 text-lg shrink-0">check_circle</span>
+                    <span className="material-symbols-outlined text-emerald-500 text-lg shrink-0">check_circle</span>
                     <span>Seluruh pemain merupakan siswa aktif berstatus pelajar dan wajib membawa Kartu Tanda Pelajar saat registrasi ulang.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span class="material-symbols-outlined text-emerald-500 text-lg shrink-0">check_circle</span>
+                    <span className="material-symbols-outlined text-emerald-500 text-lg shrink-0">check_circle</span>
                     <span>Toleransi keterlambatan kehadiran di lapangan maksimal 10 menit dari jadwal tanding. Lebih dari itu dinyatakan WO.</span>
                   </li>
                 </ul>
