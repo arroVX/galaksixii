@@ -8,6 +8,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { AuthModal } from "@/components/AuthModal";
 import { AdminAuthModal } from "@/components/AdminAuthModal";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
+import { DotMatrixBackground } from "@/components/DotMatrixBackground";
 import { Product } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
 import { useCart } from "@/context/CartContext";
@@ -76,20 +77,22 @@ export default function MerchandisePage() {
   });
 
   return (
-    <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
-      {/* Global Toast used instead */}
+    <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary relative overflow-hidden">
+      {/* Animated Dot Matrix Background */}
+      <DotMatrixBackground />
 
-      <Navbar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        openAuthModal={() => setIsAuthOpen(true)}
-        openAdminAuthModal={() => setIsAdminAuthOpen(true)}
-        openOrderTracking={() => setIsOrderTrackingOpen(true)}
-        activeView="shop"
-        setActiveView={() => {}}
-      />
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <Navbar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          openAuthModal={() => setIsAuthOpen(true)}
+          openAdminAuthModal={() => setIsAdminAuthOpen(true)}
+          openOrderTracking={() => setIsOrderTrackingOpen(true)}
+          activeView="shop"
+          setActiveView={() => {}}
+        />
 
-      <main className="flex-grow pt-2 pb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 fade-in">
+        <main className="flex-grow pt-2 pb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 fade-in">
         
         {/* Title & Description */}
         <div className="mb-8 mt-4 md:mt-8">
@@ -220,6 +223,7 @@ export default function MerchandisePage() {
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => {}} />
       <OrderTrackingModal isOpen={isOrderTrackingOpen} onClose={() => setIsOrderTrackingOpen(false)} />
+      </div>
     </div>
   );
 }
