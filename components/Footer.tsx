@@ -2,9 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import { DevModal } from "./DevModal";
 
 export const Footer: React.FC = () => {
+  const { isAdmin } = useAuth();
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
 
   return (
@@ -41,10 +43,12 @@ export const Footer: React.FC = () => {
                   <span className="w-1.5 h-1.5 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Merchandise
                 </Link>
-                <Link className="text-body-md font-body-md text-red-600 font-bold hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/?view=admin">
-                  <span className="w-1.5 h-1.5 bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Dashboard Admin
-                </Link>
+                {isAdmin && (
+                  <Link className="text-body-md font-body-md text-red-600 font-bold hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/?view=admin">
+                    <span className="w-1.5 h-1.5 bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Dashboard Admin
+                  </Link>
+                )}
               </div>
             </div>
           
