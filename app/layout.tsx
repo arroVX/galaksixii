@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Libre_Caslon_Text, Space_Grotesk, Space_Mono } from "next/font/google";
+import { DM_Sans, Libre_Caslon_Text } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
@@ -11,18 +11,6 @@ const dmSans = DM_Sans({
 
 const libreCaslon = Libre_Caslon_Text({
   variable: "--font-libre-caslon",
-  subsets: ["latin"],
-  weight: ["400", "700"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
   subsets: ["latin"],
   weight: ["400", "700"],
 });
@@ -40,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${dmSans.variable} ${libreCaslon.variable} ${spaceGrotesk.variable} ${spaceMono.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${libreCaslon.variable} h-full antialiased`}
     >
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />

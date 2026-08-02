@@ -119,19 +119,6 @@ body {
 }
 
 /* Utilities */
-.font-grotesk {
-  font-family: var(--font-space-grotesk), sans-serif;
-}
-
-.font-mono-tech {
-  font-family: var(--font-space-mono), monospace;
-}
-
-.bg-dotted-grid {
-  background-image: radial-gradient(#e5e7eb 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
-}
-
 @utility fade-in {
   animation: fadeIn 0.8s ease-in-out;
 }
