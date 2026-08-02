@@ -16,21 +16,37 @@ export const DotMatrixBackground: React.FC = () => {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
+    const mouse = { x: -1000, y: -1000 };
+
     const handleResize = () => {
       if (!canvas) return;
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
     };
 
-    window.addEventListener("resize", handleResize);
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    };
+    
+    const handleMouseLeave = () => {
+      mouse.x = -1000;
+      mouse.y = -1000;
+    };
 
-    const spacing = 28; // Distance between dots
-    const radius = 1.25; // Size of each dot
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+
+    const spacing = 32; // Distance between dots
+    const baseRadius = 1.2; // Size of each dot
+    const hoverRadius = 2.5; // Size of dot when hovered
+    const hoverDistance = 180; // Distance of mouse effect
 
     let step = 0;
 
     const render = () => {
-      step += 0.02;
+      step += 0.015;
       ctx.clearRect(0, 0, width, height);
 
       const cols = Math.ceil(width / spacing);
@@ -38,12 +54,26 @@ export const DotMatrixBackground: React.FC = () => {
 
       for (let i = 0; i < cols; i++) {
         for (let j = 0; j < rows; j++) {
-          const x = i * spacing + 14;
-          const y = j * spacing + 14;
+          const x = i * spacing + 16;
+          const y = j * spacing + 16;
 
           // Wave equation for organic dot matrix pulse
-          const distanceFactor = Math.sin(step + i * 0.2 + j * 0.2);
-          const alpha = 0.08 + (distanceFactor + 1) * 0.07; // Range between 0.08 and 0.22
+          const distanceFactor = Math.sin(step + i * 0.15 + j * 0.15);
+          
+          // Calculate distance to mouse
+          const dx = x - mouse.x;
+          const dy = y - mouse.y;
+          const distToMouse = Math.sqrt(dx * dx + dy * dy);
+          
+          let alpha = 0.06 + (distanceFactor + 1) * 0.05; // Range between 0.06 and 0.16
+          let radius = baseRadius;
+
+          // Mouse hover effect
+          if (distToMouse < hoverDistance) {
+            const intensity = 1 - Math.pow(distToMouse / hoverDistance, 1.5);
+            alpha += intensity * 0.4; // Max add 0.4 alpha
+            radius += intensity * (hoverRadius - baseRadius);
+          }
 
           ctx.beginPath();
           ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -59,14 +89,19 @@ export const DotMatrixBackground: React.FC = () => {
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 opacity-80"
-    />
+    <>
+      <div className="fixed inset-0 pointer-events-none z-[-1] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background/40 to-background opacity-90" />
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 pointer-events-none z-[-2] opacity-100"
+      />
+    </>
   );
 };
