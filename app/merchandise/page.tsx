@@ -8,7 +8,6 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { AuthModal } from "@/components/AuthModal";
 import { AdminAuthModal } from "@/components/AdminAuthModal";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
-import { DotMatrixBackground } from "@/components/DotMatrixBackground";
 import { Product } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
 import { useCart } from "@/context/CartContext";
@@ -77,11 +76,7 @@ export default function MerchandisePage() {
   });
 
   return (
-    <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary relative overflow-hidden">
-      {/* Animated Dot Matrix Background */}
-      <DotMatrixBackground />
-
-      <div className="relative z-10 flex flex-col min-h-screen">
+    <>
         <Navbar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -223,7 +218,6 @@ export default function MerchandisePage() {
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => {}} />
       <OrderTrackingModal isOpen={isOrderTrackingOpen} onClose={() => setIsOrderTrackingOpen(false)} />
-      </div>
-    </div>
+    </>
   );
 }

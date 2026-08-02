@@ -96,12 +96,12 @@ export const DotMatrixBackground: React.FC = () => {
   }, []);
 
   return (
-    <>
-      <div className="fixed inset-0 pointer-events-none z-[-1] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background/40 to-background opacity-90" />
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background/40 to-background opacity-90 z-10" />
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 pointer-events-none z-[-2] opacity-100"
+        className="absolute inset-0 opacity-100 z-0"
       />
-    </>
+    </div>
   );
 };

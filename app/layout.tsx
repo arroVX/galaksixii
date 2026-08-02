@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Libre_Caslon_Text } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { DotMatrixBackground } from "@/components/DotMatrixBackground";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -33,8 +34,11 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-on-background font-body-md selection:bg-primary selection:text-on-primary transition-colors duration-300">
-        <Providers>{children}</Providers>
+      <body className="min-h-full flex flex-col bg-background text-on-background font-body-md selection:bg-primary selection:text-on-primary transition-colors duration-300 relative">
+        <DotMatrixBackground />
+        <div className="relative z-10 flex flex-col min-h-screen">
+          <Providers>{children}</Providers>
+        </div>
       </body>
     </html>
   );

@@ -84,7 +84,7 @@ function MainApp() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
+    <div className="min-h-screen text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
       {/* Global Toast used instead */}
 
       <Navbar
