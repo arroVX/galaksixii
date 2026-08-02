@@ -92,7 +92,7 @@ export default function MerchandisePage() {
         {/* Title & Description */}
         <div className="mb-10 md:mb-16 mt-4 md:mt-8 border-b border-neutral-200 pb-8">
           <h1 className="font-dot-matrix text-5xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-4 opacity-90">
-            OFFICIAL. MERCH.
+            OFFICIAL MERCHANDISE
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-2xl leading-relaxed font-medium">
             Koleksi suvenir & produk official merchandise eksklusif Gala Aksi Siswa (GALAKSI XII) SMKN 3 Jepara edisi HUT & Dies Natalis.

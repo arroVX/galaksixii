@@ -79,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               href="/" 
               className="flex items-center shrink-0 hover:scale-105 transition-transform duration-200"
             >
-              <img src="/logo.png" alt="Galaksi XII Logo" className="h-8 sm:h-9 md:h-10 w-auto max-w-[150px] object-contain grayscale opacity-90" />
+              <img src="/logo.png" alt="Galaksi XII Logo" className="h-8 sm:h-9 md:h-10 w-auto max-w-[150px] object-contain" />
             </Link>
             {/* Badge */}
             <div className="hidden md:flex items-center gap-2 bg-neutral-100 border border-neutral-200 px-3 py-1.5 transition-colors" style={{ borderRadius: '2px' }}>
