@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Libre_Caslon_Text } from "next/font/google";
+import { DM_Sans, Libre_Caslon_Text, DotGothic16 } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { DotMatrixBackground } from "@/components/DotMatrixBackground";
@@ -16,6 +16,12 @@ const libreCaslon = Libre_Caslon_Text({
   weight: ["400", "700"],
 });
 
+const dotGothic = DotGothic16({
+  variable: "--font-dot-matrix",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: "GALAKSI XII - Beranda",
   description: "Official merchandise store edisi HUT & Dies Natalis GALAKSI XII SMKN 3 Jepara. Katalog produk, sistem Pre-Order, & pelacakan pesanan real-time.",
@@ -29,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${dmSans.variable} ${libreCaslon.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${libreCaslon.variable} ${dotGothic.variable} h-full antialiased`}
     >
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />

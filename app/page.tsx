@@ -103,56 +103,142 @@ function MainApp() {
         </main>
       ) : (
         <main className="w-full flex flex-col items-center flex-grow">
-          {/* Hero Banner Section */}
-          <section className="w-full max-w-7xl mx-auto px-6 md:px-16 py-4 md:py-10 fade-in">
-            <div className="relative w-full rounded-3xl bg-gradient-to-br from-[#1c1c1e] via-[#111113] to-[#0a0a0c] text-white p-6 sm:p-10 md:p-14 overflow-hidden shadow-2xl flex flex-col justify-between min-h-[420px] md:min-h-[500px]">
+          {/* New Tech-Minimalist Hero Section */}
+          <section className="w-full max-w-7xl mx-auto px-6 md:px-16 py-12 md:py-20 flex flex-col items-center justify-center fade-in relative">
+            
+            {/* Top Dot Matrix Headline */}
+            <h1 className="font-dot-matrix text-[13vw] md:text-7xl lg:text-[100px] font-bold text-neutral-900 tracking-widest uppercase mb-4 md:mb-12 text-center opacity-90 drop-shadow-sm">
+              GALA. AKSI. SISWA.
+            </h1>
+
+            {/* Central Node Map Graphic */}
+            <div className="relative w-full max-w-3xl h-[250px] md:h-[400px] flex items-center justify-center my-4 md:my-8">
+              {/* SVG Connector Lines */}
+              <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }}>
+                {/* Horizontal lines from nodes to center box */}
+                <line x1="20%" y1="20%" x2="45%" y2="45%" stroke="#e5e5e5" strokeWidth="1.5" />
+                <line x1="80%" y1="20%" x2="55%" y2="45%" stroke="#e5e5e5" strokeWidth="1.5" />
+                <line x1="20%" y1="80%" x2="45%" y2="55%" stroke="#e5e5e5" strokeWidth="1.5" />
+                <line x1="80%" y1="80%" x2="55%" y2="55%" stroke="#e5e5e5" strokeWidth="1.5" />
+                
+                {/* Dots on lines */}
+                <circle cx="20%" cy="20%" r="3" fill="#111" />
+                <circle cx="80%" cy="20%" r="3" fill="#111" />
+                <circle cx="20%" cy="80%" r="3" fill="#111" />
+                <circle cx="80%" cy="80%" r="3" fill="#111" />
+              </svg>
+
+              {/* Labels */}
+              <div className="absolute top-[15%] left-[5%] md:left-[10%] text-[9px] md:text-[10px] font-medium border border-neutral-200 bg-white px-3 py-1 rounded-full text-neutral-600 shadow-sm z-10 whitespace-nowrap">Kompetisi</div>
+              <div className="absolute top-[15%] right-[5%] md:right-[10%] text-[9px] md:text-[10px] font-medium border border-neutral-200 bg-white px-3 py-1 rounded-full text-neutral-600 shadow-sm z-10 whitespace-nowrap">Merchandise</div>
+              <div className="absolute bottom-[15%] left-[5%] md:left-[10%] text-[9px] md:text-[10px] font-medium border border-neutral-200 bg-white px-3 py-1 rounded-full text-neutral-600 shadow-sm z-10 whitespace-nowrap">Bazar</div>
+              <div className="absolute bottom-[15%] right-[5%] md:right-[10%] text-[9px] md:text-[10px] font-medium border border-neutral-200 bg-white px-3 py-1 rounded-full text-neutral-600 shadow-sm z-10 whitespace-nowrap">Tiket</div>
+
+              {/* Center Box */}
+              <div className="w-24 h-24 md:w-40 md:h-40 bg-[#f5f5f5] border-[6px] md:border-[12px] border-white/80 rounded-[28px] md:rounded-[40px] shadow-xl flex items-center justify-center z-10 p-4 md:p-8 relative">
+                <div className="absolute inset-0 bg-white/20 rounded-inherit backdrop-blur-md"></div>
+                <div className="w-full h-full bg-neutral-900 rounded-xl md:rounded-2xl relative overflow-hidden flex items-center justify-center group cursor-pointer hover:scale-105 transition-transform duration-500 shadow-inner z-20">
+                  <div className="absolute inset-0 border-4 border-white opacity-20 rounded-xl m-1.5 md:m-2 pointer-events-none"></div>
+                  <span className="material-symbols-outlined text-white text-3xl md:text-5xl group-hover:rotate-90 transition-transform duration-700">dashboard_customize</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Dot Matrix Headline */}
+            <h1 className="font-dot-matrix text-[15vw] md:text-7xl lg:text-[100px] font-bold text-neutral-900 tracking-widest uppercase mt-4 md:mt-12 mb-6 text-center opacity-90 drop-shadow-sm">
+              GALAKSI XII.
+            </h1>
+
+            {/* Subtext and Button */}
+            <p className="text-neutral-500 text-xs md:text-sm max-w-md text-center mb-8 font-body-md leading-relaxed px-4">
+              Hadirkan pengalaman baru dalam perayaan sekolah. Menggabungkan semangat kompetisi, seni, dan kreativitas siswa tanpa batas.
+            </p>
+            
+            <Link href="/merchandise" className="bg-[#e45b45] text-white hover:bg-[#d64a34] px-6 md:px-8 py-3 rounded-full text-xs md:text-sm font-semibold transition-all shadow-md flex items-center gap-2 md:gap-3 group">
+              <span className="bg-white/20 text-white p-1 rounded-md flex items-center justify-center group-hover:scale-110 transition-transform">
+                 <span className="material-symbols-outlined text-[14px] md:text-[16px] border-white border-[1px] rounded-sm p-px border-dotted">grid_view</span>
+              </span>
+              Pesan Merchandise
+            </Link>
+          </section>
+
+          {/* New Stats Bar Section */}
+          <section className="w-full max-w-7xl mx-auto px-6 md:px-16 py-4 md:py-8 reveal">
+            <div className="bg-white border border-neutral-100 rounded-[28px] md:rounded-[40px] p-6 sm:p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-neutral-100 relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-50/50 via-transparent to-transparent opacity-80"></div>
               
-              {/* Large Watermark */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden opacity-10">
-                <span className="font-bold text-[85px] sm:text-[140px] md:text-[200px] leading-none tracking-tighter text-white uppercase text-center font-display-lg whitespace-nowrap">
-                  GALAKSI
-                </span>
+              {/* Stat 1 */}
+              <div className="flex flex-col pt-2 md:pt-0 px-2 relative z-10">
+                <div className="flex items-center gap-2 mb-4 md:mb-6">
+                  <span className="material-symbols-outlined text-neutral-900 text-[18px]">bar_chart</span>
+                  <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-900 uppercase">Keterlibatan</span>
+                </div>
+                <div className="font-dot-matrix text-5xl md:text-6xl font-bold text-neutral-900 mb-3 tracking-wider">3x</div>
+                <div className="text-xs text-neutral-500 leading-relaxed max-w-[200px]">Lebih banyak peserta kompetisi dari tahun sebelumnya</div>
+              </div>
+              
+              {/* Stat 2 */}
+              <div className="flex flex-col pt-8 md:pt-0 md:px-10 relative z-10">
+                <div className="flex items-center gap-2 mb-4 md:mb-6">
+                  <span className="material-symbols-outlined text-neutral-900 text-[18px]">local_fire_department</span>
+                  <span className="text-[10px] font-bold tracking-[0.2em] text-neutral-900 uppercase">Antusiasme</span>
+                </div>
+                <div className="font-dot-matrix text-5xl md:text-6xl font-bold text-neutral-900 mb-3 tracking-wider">90%</div>
+                <div className="text-xs text-neutral-500 leading-relaxed max-w-[200px]">Tiket pentas seni dan merchandise terjual sebelum hari H</div>
               </div>
 
-              {/* Top Tag */}
-              <div className="relative z-10 flex justify-between items-center mb-10">
-                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-1.5 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-white/90">
-                    GALAKSI XII • SMKN 3 JEPARA
-                  </span>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80">
-                  <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
-                </div>
-              </div>
-
-              {/* Headline */}
-              <div className="relative z-10 my-auto text-left max-w-2xl">
-                <h1 className="font-headline-md text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-3 leading-tight">
-                  Elevate Your Festivity With <span className="italic font-normal font-serif text-white/80">Galaksi XII</span>
-                </h1>
-                <p className="font-body-md text-sm sm:text-base md:text-lg text-white/70 leading-relaxed max-w-lg mb-6">
-                  Koleksi official merchandise eksklusif, turnamen liga olahraga, dan selebrasi pentas seni SMKN 3 Jepara.
+              {/* Action Box */}
+              <div className="flex flex-col pt-8 md:pt-0 md:px-10 justify-center relative z-10">
+                <p className="text-[11px] md:text-xs text-neutral-600 mb-5 md:mb-6 leading-relaxed">
+                  Gabung bersama ribuan siswa lainnya. Dukung tim favoritmu dan koleksi merchandise eksklusif GALAKSI XII sekarang juga.
                 </p>
-              </div>
-
-              {/* Signature Capsule Action Bar */}
-              <div className="relative z-10 w-full bg-[#2a2a2d]/80 backdrop-blur-xl border border-white/15 rounded-full p-2 flex items-center justify-between shadow-2xl mt-4">
-                <Link href="/merchandise" className="bg-white text-[#111113] hover:bg-white/90 font-bold px-6 py-3 rounded-full text-xs sm:text-sm transition-all shadow flex items-center gap-2 active:scale-95">
-                  Beli Merch
-                  <span className="material-symbols-outlined text-[16px]">local_mall</span>
+                <Link href="/login" className="self-start bg-white hover:bg-neutral-50 text-neutral-900 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2.5 border border-neutral-200 transition-colors shadow-sm">
+                  <span className="w-6 h-6 bg-neutral-900 rounded-[6px] flex items-center justify-center">
+                     <span className="w-1.5 h-1.5 bg-white rounded-full grid grid-cols-2 gap-0.5">
+                       <span className="w-[3px] h-[3px] bg-white rounded-full"></span>
+                       <span className="w-[3px] h-[3px] bg-white rounded-full"></span>
+                       <span className="w-[3px] h-[3px] bg-white rounded-full"></span>
+                       <span className="w-[3px] h-[3px] bg-white rounded-full"></span>
+                     </span>
+                  </span>
+                  Sign up
                 </Link>
-                <div className="flex items-center gap-2 pr-3">
-                  <Link href="/kompetisi" className="hidden sm:inline-flex items-center text-xs text-white/80 hover:text-white font-medium mr-2">
-                    Lihat Hasil Liga &rarr;
-                  </Link>
-                  <div className="flex items-center text-white/40 tracking-[0.2em] font-bold text-sm select-none">
-                    &gt;&gt;&gt;
-                  </div>
-                </div>
               </div>
+            </div>
+          </section>
 
+          {/* New Feature Highlight Section (Sim-1 style) */}
+          <section className="w-full max-w-7xl mx-auto px-6 md:px-16 py-16 md:py-24 grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-8 items-center reveal">
+            <div className="flex flex-col items-start text-left max-w-lg z-10">
+              <h2 className="text-4xl md:text-[54px] font-sans tracking-tight text-neutral-900 mb-2 md:mb-4 leading-[1.1] font-medium">
+                Memperkenalkan
+              </h2>
+              <h2 className="text-4xl md:text-[54px] font-sans tracking-tight text-neutral-400 mb-8 leading-[1.1] font-medium">
+                Era baru <span className="text-neutral-900 font-semibold block mt-1">selebrasi talenta dan sportivitas</span>
+              </h2>
+              <p className="text-xs md:text-sm text-neutral-500 leading-relaxed max-w-[320px] mb-8 font-medium">
+                Dirancang khusus untuk menghargai setiap perjuangan siswa dalam berkompetisi, berkarya di pentas seni, dan membangun semangat kewirausahaan.
+              </p>
+              <Link href="/kompetisi" className="bg-white hover:bg-neutral-50 text-neutral-900 px-5 py-2.5 rounded-full text-xs font-bold flex items-center gap-3 border border-neutral-200 transition-colors shadow-sm">
+                <span className="w-7 h-7 bg-neutral-900 rounded-lg flex items-center justify-center">
+                   <div className="grid grid-cols-2 gap-[2px]">
+                     <span className="w-1 h-1 bg-white rounded-full"></span>
+                     <span className="w-1 h-1 bg-white rounded-full"></span>
+                     <span className="w-1 h-1 bg-white rounded-full"></span>
+                     <span className="w-1 h-1 bg-white rounded-full"></span>
+                   </div>
+                </span>
+                Selengkapnya
+              </Link>
+            </div>
+            
+            <div className="relative w-full aspect-square md:aspect-auto md:h-full min-h-[300px] flex items-center justify-center pointer-events-none">
+              {/* Dot Matrix Graphic Representation (Brain/Cloud) using grid or SVG */}
+              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(circle,_#000_1.5px,_transparent_1.5px)] [background-size:12px_12px]" style={{ WebkitMaskImage: 'radial-gradient(ellipse at right center, black 10%, transparent 60%)', maskImage: 'radial-gradient(ellipse at right center, black 10%, transparent 60%)' }}></div>
+              <div className="absolute top-1/2 left-[60%] -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] opacity-25 bg-[radial-gradient(circle,_#000_2px,_transparent_2px)] [background-size:16px_16px]" style={{ WebkitMaskImage: 'polygon(50% 0%, 100% 30%, 100% 70%, 50% 100%, 0% 70%, 0% 30%)', maskImage: 'polygon(50% 0%, 100% 30%, 100% 70%, 50% 100%, 0% 70%, 0% 30%)' }}></div>
+              <div className="absolute bottom-0 right-0 w-48 text-[9px] md:text-[10px] text-neutral-500 text-right leading-relaxed font-medium">
+                Peringatan HUT ke-12 dan Dies Natalis SMKN 3 Jepara yang menyatukan seluruh elemen sekolah dalam satu harmoni.
+              </div>
             </div>
           </section>
 
@@ -191,39 +277,7 @@ function MainApp() {
             </div>
           </section>
 
-          {/* Event Highlights Section */}
-          <section className="w-full bg-surface-container-low py-16 md:py-20 reveal">
-            <div className="max-w-7xl mx-auto px-6 md:px-16">
-              <div className="text-center mb-12 md:mb-14">
-                <h2 className="font-headline-md text-3xl md:text-4xl text-primary mb-3">Rangkaian Acara Galaksi XII</h2>
-                <p className="font-body-md text-on-surface-variant max-w-xl mx-auto opacity-85">Kemeriahan HUT & Dies Natalis SMKN 3 Jepara yang menyatukan bakat seni, olahraga, dan kewirausahaan siswa.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                <div className="bg-surface-container-lowest rounded-3xl p-6 sm:p-8 border border-outline-variant/30 shadow-sm hover:shadow-lg transition-all flex flex-col items-center text-center group cursor-default">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all">
-                    <span className="material-symbols-outlined text-3xl">sports_basketball</span>
-                  </div>
-                  <h3 className="font-headline-md text-2xl text-primary mb-3 font-bold">Liga Olahraga</h3>
-                  <p className="font-body-md text-on-surface-variant opacity-85 leading-relaxed">Saksikan persaingan ketat dan gengsi antar kelas & sekolah di cabang turnamen Basket, Futsal, dan Voli.</p>
-                </div>
-                <div className="bg-surface-container-lowest rounded-3xl p-6 sm:p-8 border border-outline-variant/30 shadow-sm hover:shadow-lg transition-all flex flex-col items-center text-center group cursor-default">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all">
-                    <span className="material-symbols-outlined text-3xl">music_note</span>
-                  </div>
-                  <h3 className="font-headline-md text-2xl text-primary mb-3 font-bold">Pentas Seni & Tari</h3>
-                  <p className="font-body-md text-on-surface-variant opacity-85 leading-relaxed">Ajang ekspresi kreativitas panggung: pertunjukan band musik siswa, tari tradisional/modern, serta penampilan spesial.</p>
-                </div>
-                <div className="bg-surface-container-lowest rounded-3xl p-6 sm:p-8 border border-outline-variant/30 shadow-sm hover:shadow-lg transition-all flex flex-col items-center text-center group cursor-default">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all">
-                    <span className="material-symbols-outlined text-3xl">storefront</span>
-                  </div>
-                  <h3 className="font-headline-md text-2xl text-primary mb-3 font-bold">Bazar & Merchandise</h3>
-                  <p className="font-body-md text-on-surface-variant opacity-85 leading-relaxed">Bazar kuliner kreasi siswa & stan produk UMKM, serta merchandise official edisi terbatas Gala Aksi Siswa.</p>
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* Kept Countdown Section, removed old Event Highlights */}
         </main>
       )}
 
