@@ -90,70 +90,50 @@ export default function MerchandisePage() {
         <main className="flex-grow pt-2 pb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 fade-in">
         
         {/* Title & Description */}
-        <div className="mb-8 mt-4 md:mt-8">
-          <h1 className="text-3xl md:text-4xl font-bold font-headline-md text-black tracking-tight mb-2">
-            Official Merchandise
+        <div className="mb-10 md:mb-16 mt-4 md:mt-8 border-b border-neutral-200 pb-8">
+          <h1 className="font-dot-matrix text-5xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-4 opacity-90">
+            OFFICIAL. MERCH.
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-neutral-500 max-w-2xl leading-relaxed font-medium">
             Koleksi suvenir & produk official merchandise eksklusif Gala Aksi Siswa (GALAKSI XII) SMKN 3 Jepara edisi HUT & Dies Natalis.
           </p>
         </div>
 
         {/* Filter & Search Controls Row */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row items-stretch md:items-end justify-between gap-6 mb-10">
           {/* Category Filter Pills (Left) */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <button 
-              onClick={() => setActiveFilter("all")}
-              className={`whitespace-nowrap px-5 py-2 rounded-full text-xs transition-all ${
-                activeFilter === "all" 
-                  ? "bg-black text-white font-bold shadow-sm" 
-                  : "bg-[#f0ecec] text-gray-700 border border-gray-200/60 font-medium hover:bg-gray-200"
-              }`}
-            >
-              Semua Produk
-            </button>
-            <button 
-              onClick={() => setActiveFilter("aksesoris")}
-              className={`whitespace-nowrap px-5 py-2 rounded-full text-xs transition-all ${
-                activeFilter === "aksesoris" 
-                  ? "bg-black text-white font-bold shadow-sm" 
-                  : "bg-[#f0ecec] text-gray-700 border border-gray-200/60 font-medium hover:bg-gray-200"
-              }`}
-            >
-              Aksesoris & Stiker
-            </button>
-            <button 
-              onClick={() => setActiveFilter("apparel")}
-              className={`whitespace-nowrap px-5 py-2 rounded-full text-xs transition-all ${
-                activeFilter === "apparel" 
-                  ? "bg-black text-white font-bold shadow-sm" 
-                  : "bg-[#f0ecec] text-gray-700 border border-gray-200/60 font-medium hover:bg-gray-200"
-              }`}
-            >
-              Topi & Tas
-            </button>
-            <button 
-              onClick={() => setActiveFilter("perlengkapan")}
-              className={`whitespace-nowrap px-5 py-2 rounded-full text-xs transition-all ${
-                activeFilter === "perlengkapan" 
-                  ? "bg-black text-white font-bold shadow-sm" 
-                  : "bg-[#f0ecec] text-gray-700 border border-gray-200/60 font-medium hover:bg-gray-200"
-              }`}
-            >
-              Perlengkapan
-            </button>
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {[
+              { id: "all", label: "SEMUA PRODUK" },
+              { id: "aksesoris", label: "AKSESORIS & STIKER" },
+              { id: "apparel", label: "TOPI & TAS" },
+              { id: "perlengkapan", label: "PERLENGKAPAN" }
+            ].map((filter) => (
+              <button 
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                className={`whitespace-nowrap px-4 py-2 text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all border ${
+                  activeFilter === filter.id 
+                    ? "bg-neutral-900 text-white border-neutral-900 shadow-md" 
+                    : "bg-white text-neutral-500 border-neutral-200 hover:border-neutral-400 hover:text-neutral-900"
+                }`}
+                style={{ borderRadius: '2px' }}
+              >
+                {filter.label}
+              </button>
+            ))}
           </div>
 
           {/* Search Bar (Right) */}
-          <div className="relative w-full md:w-[300px]">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+          <div className="relative w-full md:w-[320px]">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 text-[18px]">search</span>
             <input 
               type="text" 
               placeholder="Cari produk merchandise..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-gray-200/80 rounded-full pl-10 pr-4 py-2 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-black focus:ring-2 focus:ring-black/5 transition-all shadow-sm" 
+              className="w-full bg-neutral-50 border border-neutral-200 pl-11 pr-4 py-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-all" 
+              style={{ borderRadius: '2px' }}
             />
           </div>
         </div>
@@ -170,38 +150,47 @@ export default function MerchandisePage() {
               <div 
                 key={product.id}
                 onClick={() => setSelectedProductModal(product)} 
-                className="group bg-white rounded-3xl p-3.5 border border-gray-200/60 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between cursor-pointer"
+                className="group bg-white p-4 sm:p-5 border border-neutral-200 hover:border-neutral-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative"
+                style={{ borderRadius: '2px' }}
               >
+                {/* Decoration corners */}
+                <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
                 <div>
-                  <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-[#f7f5f5] mb-3 flex items-center justify-center p-2">
-                    <img src={product.images?.[0] || product.imageUrl || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518"} alt={product.name} className="object-cover w-full h-full rounded-xl group-hover:scale-105 transition-transform duration-300 ease-out" />
+                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 mb-4 flex items-center justify-center p-2" style={{ borderRadius: '2px' }}>
+                    <img src={product.images?.[0] || product.imageUrl || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518"} alt={product.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
                     
-                    <button type="button" aria-label="Add to Wishlist" className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-gray-400 hover:text-red-500 hover:scale-110 transition-all shadow-sm" onClick={(e) => { e.stopPropagation(); alert('Disimpan ke Favorit!'); }}>
-                      <span className="material-symbols-outlined text-[17px]">favorite</span>
+                    <button type="button" aria-label="Add to Wishlist" className="absolute top-3 right-3 w-8 h-8 bg-white border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-red-500 transition-colors z-10" onClick={(e) => { e.stopPropagation(); alert('Disimpan ke Favorit!'); }} style={{ borderRadius: '2px' }}>
+                      <span className="material-symbols-outlined text-[16px]">favorite</span>
                     </button>
                   </div>
 
-                  <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase block mb-1">
-                    {getDisplayCategory(product)}
+                  <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
+                    // {getDisplayCategory(product)}
                   </span>
-                  <h3 className="font-headline-md font-bold text-sm md:text-base text-gray-900 mb-3 leading-snug line-clamp-1">
+                  <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-4 leading-snug">
                     {product.name}
                   </h3>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-end justify-between pt-4 border-t border-dashed border-neutral-200">
                   <div>
-                    <span className="text-[10px] text-gray-400 block leading-none mb-0.5">Mulai dari</span>
-                    <span className="font-headline-md font-bold text-sm md:text-base text-gray-900">
+                    <span className="text-[9px] font-bold tracking-widest uppercase text-neutral-400 block mb-1">HARGA</span>
+                    <span className="font-dot-matrix text-lg md:text-xl font-bold text-neutral-900 tracking-wider">
                       Rp {product.price.toLocaleString("id-ID")}
                     </span>
                   </div>
 
                   <button 
                     onClick={(e) => handleAddToCart(e, product)} 
-                    className="shrink-0 bg-black text-white px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 hover:bg-neutral-800 active:scale-95 transition-all shadow-sm"
+                    className="shrink-0 bg-neutral-900 text-white w-10 h-10 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors group/btn"
+                    style={{ borderRadius: '2px' }}
                   >
-                    <span className="material-symbols-outlined text-[14px]">shopping_bag</span> Beli
+                    <span className="material-symbols-outlined text-[18px] group-hover/btn:hidden">shopping_bag</span>
+                    <span className="material-symbols-outlined text-[18px] hidden group-hover/btn:block">add</span>
                   </button>
                 </div>
               </div>
