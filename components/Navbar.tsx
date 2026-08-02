@@ -77,10 +77,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Brand */}
             <Link 
               href="/" 
-              onClick={(e) => {
-                e.preventDefault();
-                setIsDevModalOpen(true);
-              }}
               className="flex items-center shrink-0 hover:scale-105 transition-transform duration-200"
             >
               <img src="/logo.png" alt="Galaksi XII Logo" className="h-9 sm:h-10 md:h-12 w-auto max-w-[150px] object-contain" />
@@ -102,17 +98,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <>
                 {navLinks.map((link) => {
-                  const isDev = link.path === "/" || link.path === "/kompetisi";
                   return (
                     <Link 
                       key={link.name} 
                       href={link.path}
-                      onClick={(e) => {
-                        if (isDev) {
-                          e.preventDefault();
-                          setIsDevModalOpen(true);
-                        }
-                      }}
                       className={`font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 ${pathname === link.path ? 'text-primary border-b-2 border-primary pb-1 font-bold' : 'text-on-surface-variant hover:text-primary'}`}
                     >
                       {link.name}
@@ -222,22 +211,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex flex-col gap-2 flex-grow">
               <Link 
                 href="/" 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  setIsMobileMenuOpen(false); 
-                  setIsDevModalOpen(true); 
-                }} 
+                onClick={() => setIsMobileMenuOpen(false)} 
                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium text-base ${pathname === '/' ? 'bg-primary text-on-primary font-bold shadow-md' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'} transition-all`}
               >
                 <span className="material-symbols-outlined text-[22px]">home</span> Beranda
               </Link>
               <Link 
                 href="/kompetisi" 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  setIsMobileMenuOpen(false); 
-                  setIsDevModalOpen(true); 
-                }} 
+                onClick={() => setIsMobileMenuOpen(false)} 
                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium text-base ${pathname === '/kompetisi' ? 'bg-primary text-on-primary font-bold shadow-md' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'} transition-all`}
               >
                 <span className="material-symbols-outlined text-[22px]">emoji_events</span> Kompetisi
