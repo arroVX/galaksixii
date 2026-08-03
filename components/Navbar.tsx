@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       <div className="w-full flex justify-center sticky top-4 md:top-8 z-50 mb-4 md:mb-8 px-4 sm:px-6 md:px-16">
-        <header className="w-full max-w-7xl bg-white/95 backdrop-blur-md border border-neutral-200 px-4 sm:px-6 py-3 md:py-4 shadow-sm flex justify-between items-center transition-all duration-300" style={{ borderRadius: '2px' }}>
+        <header className="w-full max-w-7xl bg-white/95 backdrop-blur-md border border-neutral-200 rounded-full px-4 sm:px-6 py-3 md:py-4 shadow-sm flex justify-between items-center transition-all duration-300">
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Brand */}
             <Link 
