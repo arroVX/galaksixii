@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Order, OrderItem, DeliveryMethod } from "@/types/merch";
+import { syncOrderToFirebase } from "@/lib/firebaseService";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -91,7 +92,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSubmitOrder = () => {
+  const handleSubmitOrder = async () => {
     if (!customerName || !phone) {
       alert("Mohon lengkapi Nama Lengkap dan No. WhatsApp.");
       return;
@@ -135,25 +136,21 @@ export default function CheckoutPage() {
       updatedAt: new Date().toISOString()
     };
 
-    setTimeout(() => {
-      const existingOrdersStr = localStorage.getItem("gala_merch_orders");
-      const existingOrders: Order[] = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
-      localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
+    try {
+      // Tunggu sampai data berhasil masuk Firebase
+      await syncOrderToFirebase(newOrder);
+    } catch (err) {
+      console.warn("Gagal sinkronisasi ke Firebase:", err);
+      alert("Terjadi kendala jaringan saat menyimpan pesanan. Pesanan akan disimpan ke lokal.");
+    }
 
-      try {
-        const { syncOrderToFirebase } = require("@/lib/firebaseService");
-        syncOrderToFirebase(newOrder);
-      } catch (err) {
-        console.warn("Firebase sync err:", err);
-      }
+    const existingOrdersStr = localStorage.getItem("gala_merch_orders");
+    const existingOrders: Order[] = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
+    localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
 
-      clearCart();
-
-      // For COD, we no longer need to redirect to WhatsApp since it is handled by the system
-
-      setIsSubmitting(false);
-      setShowSuccessModal(true);
-    }, 800);
+    clearCart();
+    setIsSubmitting(false);
+    setShowSuccessModal(true);
   };
 
   if (cart.length === 0 && !isSubmitting && !showSuccessModal) return null;

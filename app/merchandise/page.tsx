@@ -190,7 +190,7 @@ export default function MerchandisePage() {
                     style={{ borderRadius: '2px' }}
                     title="Tambah ke keranjang"
                   >
-                    <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+                    <span className="material-symbols-outlined text-[18px]">add</span>
                   </button>
                 </div>
               </div>
