@@ -186,11 +186,11 @@ export default function MerchandisePage() {
 
                   <button 
                     onClick={(e) => handleAddToCart(e, product)} 
-                    className="shrink-0 bg-neutral-900 text-white w-10 h-10 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors group/btn"
+                    className="shrink-0 bg-neutral-900 text-white w-10 h-10 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
                     style={{ borderRadius: '2px' }}
+                    title="Tambah ke keranjang"
                   >
-                    <span className="material-symbols-outlined text-[18px] group-hover/btn:hidden">shopping_bag</span>
-                    <span className="material-symbols-outlined text-[18px] hidden group-hover/btn:block">add</span>
+                    <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
                   </button>
                 </div>
               </div>
