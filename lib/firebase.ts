@@ -1,8 +1,8 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getDatabase } from "firebase/database";
-import { getStorage } from "firebase/storage";
+import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getDatabase, type Database } from "firebase/database";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
@@ -21,10 +21,13 @@ export const isFirebaseConfigured = Boolean(
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+// getAuth memvalidasi apiKey secara eager dan melempar error bila kosong —
+// itu membuat prerender/build gagal saat env belum diset (mis. di Vercel).
+// Pemakaian runtime tetap aman karena AuthContext selalu memanggil ensureConfigured() dulu.
+export const auth = (isFirebaseConfigured ? getAuth(app) : null) as Auth;
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
-export const rtdb = getDatabase(app);
-export const storage = getStorage(app);
+export const db = (isFirebaseConfigured ? getFirestore(app) : null) as Firestore;
+export const rtdb = (isFirebaseConfigured ? getDatabase(app) : null) as Database;
+export const storage = (isFirebaseConfigured ? getStorage(app) : null) as FirebaseStorage;
 
 export default app;
