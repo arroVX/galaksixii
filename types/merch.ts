@@ -46,6 +46,8 @@ export interface CartItem {
   quantity: number;
   stockType: StockType;
   poReleaseDate?: string;
+  /** Batas maksimal kuantitas (stok fisik untuk barang READY). */
+  maxStock?: number;
 }
 
 export interface UserProfile {

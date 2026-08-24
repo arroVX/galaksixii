@@ -2,61 +2,36 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { CartProvider, useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { Product } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
+import { EVENT_DATE } from "@/lib/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { ProductModal } from "@/components/ProductModal";
 import { CartDrawer } from "@/components/CartDrawer";
-import { AuthModal } from "@/components/AuthModal";
-import { AdminAuthModal } from "@/components/AdminAuthModal";
-import { OrderTrackingModal } from "@/components/OrderTrackingModal";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { ElasticPullToRefresh } from "@/components/ElasticPullToRefresh";
-import { DevModal } from "@/components/DevModal";
 
 function MainApp() {
-  const router = useRouter();
-  const { toastMessage } = useCart();
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [activeView, setActiveView] = useState<"shop" | "admin">("shop");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("view") === "admin" && isAdmin) {
-        setActiveView("admin");
-      }
-    }
-  }, [isAdmin]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      setActiveView("admin");
-    } else {
-      setActiveView("shop");
-    }
-  }, [isAdmin]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
-  const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
-  const [isDevModalOpen, setIsDevModalOpen] = useState(true);
+  // Admin otomatis masuk panel admin; non-admin selalu diarahkan ke toko.
+  // Pola "adjust state during render" agar tidak perlu effect.
+  const [lastIsAdmin, setLastIsAdmin] = useState(isAdmin);
+  if (isAdmin !== lastIsAdmin) {
+    setLastIsAdmin(isAdmin);
+    setActiveView(isAdmin ? "admin" : "shop");
+  }
 
-  // Countdown state
+  // Countdown menuju tanggal acara (tetap, tidak reset saat reload).
   const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
 
-  useEffect(() => {
-    const targetDate = new Date().getTime() + (14 * 24 * 60 * 60 * 1000) + (8 * 60 * 60 * 1000);
-    const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const diff = targetDate - now;
+  React.useEffect(() => {
+    const targetDate = EVENT_DATE.getTime();
+    const tick = () => {
+      const diff = targetDate - Date.now();
       if (diff > 0) {
         setTimeLeft({
           days: String(Math.floor(diff / (1000 * 60 * 60 * 24))).padStart(2, "0"),
@@ -64,21 +39,33 @@ function MainApp() {
           minutes: String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, "0"),
           seconds: String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, "0")
         });
+      } else {
+        setTimeLeft({ days: "00", hours: "00", minutes: "00", seconds: "00" });
       }
-    }, 1000);
-    return () => clearInterval(interval);
+    };
+    // Update pertama via requestAnimationFrame (bukan setState sinkron di body effect).
+    const frame = requestAnimationFrame(tick);
+    const interval = setInterval(tick, 1000);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearInterval(interval);
+    };
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
+    let savedProducts: Product[] | null = null;
     const saved = localStorage.getItem("gala_merch_products");
     if (saved) {
       try {
-        setProducts(JSON.parse(saved));
-      } catch (e) {
-        setProducts(INITIAL_PRODUCTS);
+        savedProducts = JSON.parse(saved) as Product[];
+      } catch {
+        savedProducts = null;
       }
-    } else {
-      setProducts(INITIAL_PRODUCTS);
+    }
+    // Hydrasi cache produk dari localStorage (sumber eksternal, tidak tersedia saat SSR).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProducts(savedProducts ?? INITIAL_PRODUCTS);
+    if (!savedProducts) {
       localStorage.setItem("gala_merch_products", JSON.stringify(INITIAL_PRODUCTS));
     }
   }, []);
@@ -87,15 +74,7 @@ function MainApp() {
     <div className="min-h-screen text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
       {/* Global Toast used instead */}
 
-      <Navbar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        openAuthModal={() => setIsAuthOpen(true)}
-        openAdminAuthModal={() => setIsAdminAuthOpen(true)}
-        openOrderTracking={() => setIsOrderTrackingOpen(true)}
-        activeView={activeView}
-        setActiveView={setActiveView}
-      />
+      <Navbar activeView={activeView} setActiveView={setActiveView} />
 
       {activeView === "admin" ? (
         <main className="flex-1 pt-6 md:pt-8 w-full flex flex-col">
@@ -283,13 +262,7 @@ function MainApp() {
 
       <Footer />
 
-      {/* Modals remain structurally identical to support interactions */}
-      <ProductModal product={selectedProductModal} onClose={() => setSelectedProductModal(null)} />
       <CartDrawer />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => setActiveView("admin")} />
-      <OrderTrackingModal isOpen={isOrderTrackingOpen} onClose={() => setIsOrderTrackingOpen(false)} />
-      <DevModal isOpen={isDevModalOpen && activeView !== "admin"} onClose={() => { setIsDevModalOpen(false); router.push("/merchandise"); }} />
     </div>
   );
 }
@@ -309,25 +282,23 @@ export default function Home() {
   };
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        {isPageLoading && (
-          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/30 backdrop-blur-2xl animate-out fade-out duration-700 pointer-events-none">
-            <div className="relative flex flex-col items-center justify-center gap-6">
-              <div className="relative w-20 h-20 flex items-center justify-center">
-                <div className="absolute inset-0 bg-primary animate-spin opacity-80" style={{ borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%", animationDuration: "3s" }}></div>
-                <div className="absolute inset-2 bg-white/30 backdrop-blur-md border border-white/50 rounded-full shadow-lg flex items-center justify-center z-10">
-                  <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                </div>
+    <>
+      {isPageLoading && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/30 backdrop-blur-2xl animate-out fade-out duration-700 pointer-events-none">
+          <div className="relative flex flex-col items-center justify-center gap-6">
+            <div className="relative w-20 h-20 flex items-center justify-center">
+              <div className="absolute inset-0 bg-primary animate-spin opacity-80" style={{ borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%", animationDuration: "3s" }}></div>
+              <div className="absolute inset-2 bg-white/30 backdrop-blur-md border border-white/50 rounded-full shadow-lg flex items-center justify-center z-10">
+                <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
               </div>
-              <span className="text-[11px] font-black tracking-[0.4em] text-primary uppercase font-sans animate-pulse">GALAKSI XII</span>
             </div>
+            <span className="text-[11px] font-black tracking-[0.4em] text-primary uppercase font-sans animate-pulse">GALAKSI XII</span>
           </div>
-        )}
-        <ElasticPullToRefresh onRefresh={handleRefresh}>
-          <MainApp />
-        </ElasticPullToRefresh>
-      </CartProvider>
-    </AuthProvider>
+        </div>
+      )}
+      <ElasticPullToRefresh onRefresh={handleRefresh}>
+        <MainApp />
+      </ElasticPullToRefresh>
+    </>
   );
 }

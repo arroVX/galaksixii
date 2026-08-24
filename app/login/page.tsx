@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { isAdminEmail } from "@/lib/config";
+import { useMounted } from "@/lib/useMounted";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loginWithGoogle, loginAsDemoUser, showAuthAlert, logout } = useAuth();
+  const { user, loginWithGoogle, registerWithEmail, loginWithEmail, showAuthAlert, logout } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,77 +21,47 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      await loginWithGoogle(isRegister);
+      await loginWithGoogle();
       setShowSuccessModal(true);
-    } catch (e) {
+    } catch {
       // Error handled in context
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (isRegister && !name)) {
       showAuthAlert("Mohon lengkapi semua kolom yang wajib diisi.");
       return;
     }
 
-    const registeredAccounts = JSON.parse(localStorage.getItem("gala_merch_registered_accounts") || "[]");
-
-    if (isRegister) {
-      if (registeredAccounts.find((acc: any) => acc.email === email)) {
-        showAuthAlert("Akun dengan email ini sudah terdaftar. Silakan masuk.");
-        return;
-      }
-      registeredAccounts.push({ email, password, name });
-      localStorage.setItem("gala_merch_registered_accounts", JSON.stringify(registeredAccounts));
-    } else {
-      const account = registeredAccounts.find((acc: any) => acc.email === email);
-      
-      // Khusus bypass admin untuk kemudahan demo
-      if (email.includes("admin")) {
-        if (password !== "admin123") {
-          showAuthAlert("Kata sandi yang Anda masukkan salah.");
-          return;
-        }
-      } else {
-        if (!account) {
-          showAuthAlert("Email belum terdaftar. Silakan daftar terlebih dahulu.");
-          return;
-        }
-        if (account.password !== password) {
-          showAuthAlert("Kata sandi yang Anda masukkan salah.");
-          return;
-        }
-      }
-    }
-
     setLoading(true);
-    setTimeout(() => {
-      const account = registeredAccounts.find((acc: any) => acc.email === email);
-      const userRole = email.includes("admin") ? "admin" : "user";
-      const userName = isRegister ? name : (account?.name || name || email.split("@")[0]);
-      loginAsDemoUser(userRole, email, userName);
-      setLoading(false);
+    try {
+      if (isRegister) {
+        await registerWithEmail(email, password, name);
+      } else {
+        await loginWithEmail(email, password);
+      }
       setShowSuccessModal(true);
-    }, 800);
+    } catch {
+      // Pesan error yang ramah sudah ditampilkan oleh AuthContext.
+    } finally {
+      setLoading(false);
+    }
   };
 
 
 
   const continueToApp = () => {
     setShowSuccessModal(false);
-    if (user?.role === "admin" || email.includes("admin")) {
+    if (isAdminEmail(email)) {
       router.push("/?view=admin");
     } else {
       router.push("/");
@@ -99,14 +71,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
       
-      <Navbar
-        searchQuery=""
-        setSearchQuery={() => {}}
-        openAuthModal={() => {}}
-        openOrderTracking={() => {}}
-        activeView="shop"
-        setActiveView={() => {}}
-      />
+      <Navbar />
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 py-12 relative z-10">
         

@@ -16,12 +16,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const { user, showAuthAlert } = useAuth();
   const [quantity, setQuantity] = useState<number>(1);
   const [isLiked, setIsLiked] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
 
-  React.useEffect(() => {
-    if (product) {
-      setQuantity(1);
-    }
-  }, [product]);
+  const sizes = product?.variants?.sizes ?? [];
+  const colors = product?.variants?.colors ?? [];
+  const maxQuantity = !product
+    ? 1
+    : product.stockType === "READY"
+      ? Math.max(1, product.stockCount || 1)
+      : 99;
+
+  // Reset pilihan saat produk berganti — pola "adjust state during render", bukan effect.
+  const [prevProductId, setPrevProductId] = useState<string | null>(null);
+  if (product && product.id !== prevProductId) {
+    setPrevProductId(product.id);
+    setQuantity(1);
+    setSelectedSize(product.variants?.sizes?.[0] ?? "Standard");
+    setSelectedColor(product.variants?.colors?.[0] ?? "Standard");
+  }
 
   if (!product) return null;
 
@@ -35,7 +48,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
       showAuthAlert("Silakan masuk atau daftar akun terlebih dahulu untuk berbelanja.");
       return;
     }
-    addToCart(product, "Standard", "Standard", quantity);
+    addToCart(product, selectedSize || "Standard", selectedColor || "Standard", quantity);
     onClose();
     if (isBuyNow) {
       setIsCartOpen(true);
@@ -117,7 +130,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             </div>
 
             {/* Detail & Deskripsi Box */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-12 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm">
               <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest mb-4">
                 <Info size={16} className="text-slate-700" /> DETAIL & DESKRIPSI
               </h3>
@@ -125,6 +138,66 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 {product.description || "Koleksi official merchandise Galaksi. Dibuat dengan material premium dan didesain secara khusus untuk memperingati Dies Natalis SMKN 3 Jepara."}
               </div>
             </div>
+
+            {/* Variant Selectors */}
+            {(sizes.length > 0 || colors.length > 0) && (
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-5">
+                {sizes.length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-black text-slate-900 tracking-widest mb-3">UKURAN</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {sizes.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setSelectedSize(s)}
+                          className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                            selectedSize === s
+                              ? "bg-slate-900 text-white shadow-md"
+                              : "bg-white border border-slate-300 text-slate-700 hover:border-slate-900"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {colors.length > 0 && (
+                  <div>
+                    <h3 className="text-[11px] font-black text-slate-900 tracking-widest mb-3">WARNA</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {colors.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setSelectedColor(c)}
+                          className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                            selectedColor === c
+                              ? "bg-slate-900 text-white shadow-md"
+                              : "bg-white border border-slate-300 text-slate-700 hover:border-slate-900"
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Stock Info */}
+            {!isPO ? (
+              <p className={`text-xs font-semibold mb-8 ${maxQuantity <= 1 ? "text-red-500" : "text-slate-500"}`}>
+                {maxQuantity <= 1
+                  ? "Stok hampir habis — segera amankan pesananmu!"
+                  : `Tersedia ${product.stockCount} unit`}
+              </p>
+            ) : (
+              <p className="text-xs font-semibold text-amber-600 mb-8">
+                Pre-order — estimasi rilis: {product.poReleaseDate ?? "menyusul"}
+              </p>
+            )}
 
             {/* Action Bar (Black Capsule) */}
             <div className="mt-auto bg-[#222] p-2.5 rounded-full flex items-center justify-between shadow-2xl max-w-lg w-full gap-2">
@@ -139,7 +212,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 </button>
                 <span className="text-white font-bold text-sm w-5 text-center">{quantity}</span>
                 <button 
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
                   className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
                 >
                   <Plus size={14} />

@@ -5,11 +5,8 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
-import { AuthModal } from "@/components/AuthModal";
-import { AdminAuthModal } from "@/components/AdminAuthModal";
 import { Order, OrderStatus } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
-import { useCart } from "@/context/CartContext";
 
 const STATUS_STEPS: OrderStatus[] = [
   "Menunggu Pembayaran",
@@ -21,14 +18,10 @@ const STATUS_STEPS: OrderStatus[] = [
 
 export default function OrdersPage() {
   const { user, loading } = useAuth();
-  const { toastMessage } = useCart();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
 
   useEffect(() => {
     let initialLocalOrders: Order[] = [];
@@ -37,6 +30,8 @@ export default function OrdersPage() {
       try {
         const parsed: Order[] = JSON.parse(savedOrdersStr);
         initialLocalOrders = parsed.filter(o => o.userId === user?.uid || o.userEmail === user?.email);
+        // Hydrasi cache pesanan lokal saat mount (sumber eksternal, tidak tersedia saat SSR).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOrders(initialLocalOrders);
         if (initialLocalOrders.length > 0) setSelectedOrder(initialLocalOrders[0]);
       } catch (e) {
@@ -47,10 +42,10 @@ export default function OrdersPage() {
     const loadUserOrdersFromFirebase = async () => {
       if (!user) return;
       try {
-        const { fetchOrdersFromFirebase } = await import("@/lib/firebaseService");
-        const fbOrders = await fetchOrdersFromFirebase();
-        const userFbOrders = fbOrders.filter(o => o.userId === user.uid || o.userEmail === user.email);
-        
+        // Ambil hanya pesanan milik user ini (query ter-scope di server), bukan seluruh koleksi.
+        const { fetchOrdersForUser } = await import("@/lib/firebaseService");
+        const userFbOrders = await fetchOrdersForUser(user.uid, user.email);
+
         if (userFbOrders.length > 0) {
           const map = new Map<string, Order>();
           initialLocalOrders.forEach(o => map.set(o.id, o));
@@ -68,20 +63,13 @@ export default function OrdersPage() {
     };
 
     loadUserOrdersFromFirebase();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   if (!user && !loading) {
     return (
       <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
-        <Navbar
-          searchQuery=""
-          setSearchQuery={() => {}}
-          openAuthModal={() => setIsAuthOpen(true)}
-          openAdminAuthModal={() => setIsAdminAuthOpen(true)}
-          openOrderTracking={() => {}}
-          activeView="shop"
-          setActiveView={() => {}}
-        />
+        <Navbar />
 
         <main className="flex-1 flex items-center justify-center p-4 sm:p-6 py-16">
           <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl max-w-md w-full p-8 shadow-sm text-center space-y-5 animate-in fade-in">
@@ -98,13 +86,13 @@ export default function OrdersPage() {
             </p>
 
             <div className="pt-3 space-y-3">
-              <button
-                onClick={() => setIsAuthOpen(true)}
+              <Link
+                href="/login"
                 className="w-full py-3 px-6 rounded-full bg-primary hover:bg-neutral-800 text-on-primary font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 transition transform active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
                 <span>Masuk ke Akun Sekarang</span>
-              </button>
+              </Link>
 
               <Link
                 href="/merchandise"
@@ -118,8 +106,6 @@ export default function OrdersPage() {
 
         <Footer />
         <CartDrawer />
-        <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-        <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => {}} />
       </div>
     );
   }
@@ -137,17 +123,7 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
       
-      {/* Global Toast used instead */}
-
-      <Navbar
-        searchQuery=""
-        setSearchQuery={() => {}}
-        openAuthModal={() => setIsAuthOpen(true)}
-        openAdminAuthModal={() => setIsAdminAuthOpen(true)}
-        openOrderTracking={() => {}}
-        activeView="shop"
-        setActiveView={() => {}}
-      />
+      <Navbar />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 w-full">
         
@@ -355,7 +331,7 @@ export default function OrdersPage() {
                     <p className="text-primary text-xs font-semibold">{selectedOrder.addressOrClass}</p>
                     {selectedOrder.notes && (
                       <p className="text-xs text-on-surface-variant italic mt-1">
-                        Catatan: "{selectedOrder.notes}"
+                        Catatan: &quot;{selectedOrder.notes}&quot;
                       </p>
                     )}
                   </div>
@@ -376,8 +352,6 @@ export default function OrdersPage() {
 
       <Footer />
       <CartDrawer />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => {}} />
 
     </div>
   );

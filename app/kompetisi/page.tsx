@@ -2,29 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
-import { AuthModal } from "@/components/AuthModal";
-import { AdminAuthModal } from "@/components/AdminAuthModal";
-import { OrderTrackingModal } from "@/components/OrderTrackingModal";
-import { DevModal } from "@/components/DevModal";
-import { useCart } from "@/context/CartContext";
 
 type SportType = "basket" | "futsal" | "voli";
 type TabType = "bracket" | "rules" | "schedule";
 
 export default function KompetisiPage() {
-  const router = useRouter();
-  const { toastMessage } = useCart();
   const [sport, setSport] = useState<SportType>("basket");
   const [activeTab, setActiveTab] = useState<TabType>("bracket");
-
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
-  const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
-  const [isDevModalOpen, setIsDevModalOpen] = useState(true);
 
   const getSportDetails = () => {
     switch (sport) {
@@ -44,15 +31,7 @@ export default function KompetisiPage() {
     <div className="min-h-screen text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
       {/* Global Toast used instead */}
 
-      <Navbar
-        searchQuery=""
-        setSearchQuery={() => {}}
-        openAuthModal={() => setIsAuthOpen(true)}
-        openAdminAuthModal={() => setIsAdminAuthOpen(true)}
-        openOrderTracking={() => setIsOrderTrackingOpen(true)}
-        activeView="shop"
-        setActiveView={() => {}}
-      />
+      <Navbar />
 
       <main className="w-full max-w-7xl mx-auto px-6 md:px-16 py-6 md:py-10 flex-grow relative">
         {/* Page Header */}
@@ -478,10 +457,6 @@ export default function KompetisiPage() {
       <Footer />
 
       <CartDrawer />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => {}} />
-      <OrderTrackingModal isOpen={isOrderTrackingOpen} onClose={() => setIsOrderTrackingOpen(false)} />
-      <DevModal isOpen={isDevModalOpen} onClose={() => { setIsDevModalOpen(false); router.push("/merchandise"); }} />
     </div>
   );
 }

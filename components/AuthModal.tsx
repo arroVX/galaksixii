@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { X, Sparkles, UserCheck, Shield } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { loginWithGoogle, loginAsDemoUser, showAuthAlert } = useAuth();
+  const { loginWithGoogle, registerWithEmail, loginWithEmail, showAuthAlert } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const [email, setEmail] = useState("");
@@ -23,61 +23,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      await loginWithGoogle(isRegister);
+      await loginWithGoogle();
       onClose();
-    } catch (e) {
+    } catch {
       // Error handled in context
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (isRegister && !name)) {
       showAuthAlert("Mohon lengkapi semua kolom yang wajib diisi.");
       return;
     }
 
-    const registeredAccounts = JSON.parse(localStorage.getItem("gala_merch_registered_accounts") || "[]");
-
-    if (isRegister) {
-      if (registeredAccounts.find((acc: any) => acc.email === email)) {
-        showAuthAlert("Akun dengan email ini sudah terdaftar. Silakan masuk.");
-        return;
-      }
-      registeredAccounts.push({ email, password, name });
-      localStorage.setItem("gala_merch_registered_accounts", JSON.stringify(registeredAccounts));
-    } else {
-      const account = registeredAccounts.find((acc: any) => acc.email === email);
-      
-      // Khusus bypass admin untuk kemudahan demo
-      if (email.includes("admin")) {
-        if (password !== "admin123") {
-          showAuthAlert("Kata sandi yang Anda masukkan salah.");
-          return;
-        }
-      } else {
-        if (!account) {
-          showAuthAlert("Email belum terdaftar. Silakan daftar terlebih dahulu.");
-          return;
-        }
-        if (account.password !== password) {
-          showAuthAlert("Kata sandi yang Anda masukkan salah.");
-          return;
-        }
-      }
-    }
-
     setLoading(true);
-    setTimeout(() => {
-      const account = registeredAccounts.find((acc: any) => acc.email === email);
-      const userRole = email.includes("admin") ? "admin" : "user";
-      const userName = isRegister ? name : (account?.name || name || email.split("@")[0]);
-      loginAsDemoUser(userRole, email, userName);
-      setLoading(false);
+    try {
+      if (isRegister) {
+        await registerWithEmail(email, password, name);
+      } else {
+        await loginWithEmail(email, password);
+      }
       onClose();
-    }, 800);
+    } catch {
+      // Pesan error yang ramah sudah ditampilkan oleh AuthContext.
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

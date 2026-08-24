@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { Order, OrderItem, DeliveryMethod } from "@/types/merch";
-import { syncOrderToFirebase } from "@/lib/firebaseService";
+import { Order, OrderItem, DeliveryMethod, Product } from "@/types/merch";
+import { syncOrderToFirebase, syncProductToFirebase } from "@/lib/firebaseService";
+import { useMounted } from "@/lib/useMounted";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -27,32 +28,45 @@ export default function CheckoutPage() {
   const [proofFile, setProofFile] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Initialize from user if available
-  useEffect(() => {
-    if (user) {
-      if (user.displayName) setCustomerName(user.displayName);
-      if (user.phone) setPhone(user.phone);
-      if (user.address || user.classGroup) setAddressOrClass(user.address || user.classGroup || "Kelas / Umum");
-    }
-  }, [user]);
+  // Prefill form dari profil user — pola "adjust state during render", bukan effect.
+  const [initializedForUserId, setInitializedForUserId] = useState<string | null>(null);
+  if (user && user.uid !== initializedForUserId) {
+    setInitializedForUserId(user.uid);
+    if (user.displayName) setCustomerName(user.displayName);
+    if (user.phone) setPhone(user.phone);
+    if (user.address || user.classGroup) setAddressOrClass(user.address || user.classGroup || "Kelas / Umum");
+  }
 
   // Redirect if cart is empty
-  useEffect(() => {
+  React.useEffect(() => {
     if (cart.length === 0 && !isSubmitting) {
       router.push("/");
     }
   }, [cart.length, isSubmitting, router]);
 
-  const handleCopyAccount = () => {
-    navigator.clipboard.writeText("1234567890");
-    setCopiedBank(true);
-    setTimeout(() => setCopiedBank(false), 2000);
+  const handleCopyAccount = async () => {
+    const accountNumber = "1234567890";
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(accountNumber);
+      } else {
+        // Fallback untuk konteks non-HTTPS atau browser tanpa Clipboard API.
+        const textarea = document.createElement("textarea");
+        textarea.value = accountNumber;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopiedBank(true);
+      setTimeout(() => setCopiedBank(false), 2000);
+    } catch {
+      alert(`Gagal menyalin nomor rekening. Salin manual: ${accountNumber}`);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,10 +129,20 @@ export default function CheckoutPage() {
       ? "Ambil Sendiri di Aula SMKN 3 Jepara"
       : `COD Area Jepara (${codLocationDetail})`;
 
+    // ID unik: timestamp base36 + random, sehingga tidak mudah tabrakan.
+    const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+    // ID guest yang stabil antar sesi (disimpan di localStorage).
+    let guestId = localStorage.getItem("gala_merch_guest_id");
+    if (!guestId) {
+      guestId = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      localStorage.setItem("gala_merch_guest_id", guestId);
+    }
+
     const newOrder: Order = {
-      id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
-      userId: user?.uid || "guest-" + Date.now(),
-      userEmail: user?.email || `${customerName.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
+      id: orderId,
+      userId: user?.uid || guestId,
+      userEmail: user?.email || "",
       customerName,
       phone,
       addressOrClass: `${addressOrClass} • [PENGAMBILAN: ${deliveryLabel}]`,
@@ -142,6 +166,28 @@ export default function CheckoutPage() {
     } catch (err) {
       console.warn("Gagal sinkronisasi ke Firebase:", err);
       alert("Terjadi kendala jaringan saat menyimpan pesanan. Pesanan akan disimpan ke lokal.");
+    }
+
+    // Kurangi stok & tambah soldCount untuk setiap produk yang dipesan.
+    try {
+      const saved = localStorage.getItem("gala_merch_products");
+      if (saved) {
+        const products: Product[] = JSON.parse(saved);
+        cart.forEach((item) => {
+          const idx = products.findIndex((p) => p.id === item.productId);
+          if (idx === -1) return;
+          const updated: Product = { ...products[idx] };
+          if (updated.stockType === "READY") {
+            updated.stockCount = Math.max(0, (updated.stockCount || 0) - item.quantity);
+          }
+          updated.soldCount = (updated.soldCount ?? 0) + item.quantity;
+          products[idx] = updated;
+          void syncProductToFirebase(updated);
+        });
+        localStorage.setItem("gala_merch_products", JSON.stringify(products));
+      }
+    } catch (e) {
+      console.error("Gagal memperbarui stok produk:", e);
     }
 
     const existingOrdersStr = localStorage.getItem("gala_merch_orders");

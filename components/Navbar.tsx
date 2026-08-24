@@ -3,24 +3,18 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { AdminAuthModal } from "./AdminAuthModal";
-import { DevModal } from "./DevModal";
+import { useMounted } from "@/lib/useMounted";
 
 interface NavbarProps {
-  searchQuery?: string;
-  setSearchQuery?: (q: string) => void;
-  openAuthModal?: () => void;
-  openOrderTracking?: () => void;
-  openAdminAuthModal?: () => void;
   activeView?: "shop" | "admin";
   setActiveView?: (view: "shop" | "admin") => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  openAuthModal,
   activeView = "shop",
   setActiveView = () => {}
 }) => {
@@ -28,39 +22,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
   const { user, isAdmin, logout } = useAuth();
   const { totalItemCount, setIsCartOpen } = useCart();
-  const [internalAdminAuthOpen, setInternalAdminAuthOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLogoutSuccessModalOpen, setIsLogoutSuccessModalOpen] = useState(false);
-  const [isDevModalOpen, setIsDevModalOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
 
   // Live Jepara Clock
   const [timeString, setTimeString] = useState("");
 
   useEffect(() => {
     const updateClock = () => {
-      const now = new Date();
-      setTimeString(now.toLocaleTimeString("en-US", { hour12: false }));
+      setTimeString(new Date().toLocaleTimeString("en-US", { hour12: false }));
     };
 
-    updateClock();
+    // Pembaruan pertama lewat interval (callback async), bukan setState sinkron di body effect.
     const interval = setInterval(updateClock, 1000);
-    setMounted(true);
-    
-    const handleOpenAdmin = () => setInternalAdminAuthOpen(true);
-    window.addEventListener("openAdminAuth", handleOpenAdmin);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("openAdminAuth", handleOpenAdmin);
-    };
-  }, []);
 
-  const handleAdminSuccess = () => {
-    setActiveView("admin");
-    if (pathname !== "/") router.push("/");
-  };
+    return () => clearInterval(interval);
+  }, []);
 
   const navLinks = [
     { name: "Beranda", path: "/" },
@@ -79,12 +58,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               href="/" 
               className="flex items-center shrink-0 hover:scale-105 transition-transform duration-200"
             >
-              <img src="/logo.png" alt="Galaksi XII Logo" className="h-8 sm:h-9 md:h-10 w-auto max-w-[150px] object-contain" />
+              <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} priority className="h-8 sm:h-9 md:h-10 w-auto max-w-[150px] object-contain" />
             </Link>
             {/* Badge */}
             <div className="hidden md:flex items-center gap-2 bg-neutral-100 border border-neutral-200 px-3 py-1.5 transition-colors" style={{ borderRadius: '2px' }}>
               <div className="w-1.5 h-1.5 bg-neutral-900 animate-pulse" style={{ borderRadius: '1px' }}></div>
-              <span className="font-dot-matrix text-[10px] font-bold text-neutral-900 tracking-widest uppercase mt-0.5">JEPARA {mounted ? timeString : "..."}</span>
+              <span className="font-dot-matrix text-[10px] font-bold text-neutral-900 tracking-widest uppercase mt-0.5">JEPARA {timeString || "..."}</span>
             </div>
           </div>
 
@@ -92,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <nav className="hidden lg:flex items-center gap-8">
             {activeView === "admin" ? (
               <>
-                <Link href="/admin" className={`font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 ${pathname.startsWith('/admin') ? 'text-primary border-b-2 border-primary pb-1 font-bold' : 'text-on-surface-variant hover:text-primary'}`}>Dashboard Admin</Link>
+                <Link href="/" className={`font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 ${pathname === '/' ? 'text-primary border-b-2 border-primary pb-1 font-bold' : 'text-on-surface-variant hover:text-primary'}`}>Dashboard Admin</Link>
                 <button onClick={() => { setActiveView("shop"); router.push("/"); }} className="font-label-md text-label-md text-red-500 hover:text-red-700 transition-all duration-200 font-bold">Keluar Admin</button>
               </>
             ) : (
@@ -179,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="relative w-full max-w-sm ml-auto h-full bg-[#fbf8f8] shadow-2xl flex flex-col p-6 animate-in slide-in-from-right">
             <div className="flex items-center justify-between border-b border-outline-variant/30 pb-4 mb-4">
               <div className="flex items-center gap-3">
-                <img src="/logo.png" alt="Galaksi XII Logo" className="h-9 w-auto object-contain" />
+                <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} className="h-9 w-auto object-contain" />
                 <span className="font-bold text-sm text-primary tracking-wider uppercase">Menu</span>
               </div>
               <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
@@ -294,9 +273,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>,
         document.body
       )}
-
-      <AdminAuthModal isOpen={internalAdminAuthOpen} onClose={() => setInternalAdminAuthOpen(false)} onSuccess={handleAdminSuccess} />
-      <DevModal isOpen={isDevModalOpen} onClose={() => setIsDevModalOpen(false)} />
     </>
   );
 };

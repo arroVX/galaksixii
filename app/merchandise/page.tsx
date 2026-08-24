@@ -1,41 +1,41 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ProductModal } from "@/components/ProductModal";
 import { CartDrawer } from "@/components/CartDrawer";
-import { AuthModal } from "@/components/AuthModal";
-import { AdminAuthModal } from "@/components/AdminAuthModal";
-import { OrderTrackingModal } from "@/components/OrderTrackingModal";
 import { Product } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
-import { useCart } from "@/context/CartContext";
 
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 
 export default function MerchandisePage() {
+  const router = useRouter();
   const { user } = useAuth();
-  const { toastMessage, addToCart } = useCart();
+  const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
-  const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
+    let savedProducts: Product[] | null = null;
     const saved = localStorage.getItem("gala_merch_products");
     if (saved) {
       try {
-        setProducts(JSON.parse(saved));
-      } catch (e) {
-        setProducts(INITIAL_PRODUCTS);
+        savedProducts = JSON.parse(saved) as Product[];
+      } catch {
+        savedProducts = null;
       }
-    } else {
-      setProducts(INITIAL_PRODUCTS);
+    }
+    // Hydrasi cache produk dari localStorage (sumber eksternal, tidak tersedia saat SSR).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProducts(savedProducts ?? INITIAL_PRODUCTS);
+    if (!savedProducts) {
       localStorage.setItem("gala_merch_products", JSON.stringify(INITIAL_PRODUCTS));
     }
   }, []);
@@ -43,10 +43,13 @@ export default function MerchandisePage() {
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
     if (!user) {
-      setIsAuthOpen(true);
+      router.push("/login");
       return;
     }
-    addToCart(product, "Standard", "Standard", 1); // Quick add defaults
+    // Quick add memakai varian pertama sebagai default.
+    const size = product.variants?.sizes?.[0] ?? "Standard";
+    const color = product.variants?.colors?.[0] ?? "Standard";
+    addToCart(product, size, color, 1);
   };
 
   const getMappedCategory = (product: Product) => {
@@ -77,15 +80,7 @@ export default function MerchandisePage() {
 
   return (
     <>
-        <Navbar
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          openAuthModal={() => setIsAuthOpen(true)}
-          openAdminAuthModal={() => setIsAdminAuthOpen(true)}
-          openOrderTracking={() => setIsOrderTrackingOpen(true)}
-          activeView="shop"
-          setActiveView={() => {}}
-        />
+        <Navbar />
 
         <main className="flex-grow pt-2 pb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 fade-in">
         
@@ -169,7 +164,7 @@ export default function MerchandisePage() {
                   </div>
 
                   <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
-                    // {getDisplayCategory(product)}
+                    {"//"} {getDisplayCategory(product)}
                   </span>
                   <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-4 leading-snug">
                     {product.name}
@@ -204,9 +199,6 @@ export default function MerchandisePage() {
       {/* Modals */}
       <ProductModal product={selectedProductModal} onClose={() => setSelectedProductModal(null)} />
       <CartDrawer />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      <AdminAuthModal isOpen={isAdminAuthOpen} onClose={() => setIsAdminAuthOpen(false)} onSuccess={() => {}} />
-      <OrderTrackingModal isOpen={isOrderTrackingOpen} onClose={() => setIsOrderTrackingOpen(false)} />
     </>
   );
 }

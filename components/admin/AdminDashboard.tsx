@@ -2,30 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import { Product, Order, OrderStatus, StockType } from "@/types/merch";
-import { 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Package, 
-  TrendingUp, 
-  Users, 
-  Eye, 
+import { syncOrderToFirebase, syncProductToFirebase } from "@/lib/firebaseService";
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Package,
+  TrendingUp,
+  Eye,
   Image as ImageIcon,
   Save,
   X,
-  Sparkles,
   Filter,
-  DollarSign,
   Activity,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Layers,
   BarChart3,
-  SlidersHorizontal,
-  ChevronRight,
-  ShieldCheck,
-  Search
+  ShieldCheck
 } from "lucide-react";
 
 interface AdminDashboardProps {
@@ -65,6 +56,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
     if (savedOrders) {
       try {
         initialOrders = JSON.parse(savedOrders);
+        // Hydrasi cache pesanan dari localStorage saat mount (sumber eksternal, tidak tersedia saat SSR).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOrders(initialOrders);
       } catch (e) {
         console.error(e);
@@ -206,12 +199,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
       setProducts(newList);
       localStorage.setItem("gala_merch_products", JSON.stringify(newList));
       
-      try {
-        const { syncProductToFirebase } = require("@/lib/firebaseService");
-        syncProductToFirebase(newProd);
-      } catch (err) {
-        console.warn(err);
-      }
+      syncProductToFirebase(newProd).catch((err) => console.warn(err));
     }
 
     setIsProductModalOpen(false);
@@ -232,12 +220,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
 
     const targetOrder = updated.find((o) => o.id === orderId);
     if (targetOrder) {
-      try {
-        const { syncOrderToFirebase } = require("@/lib/firebaseService");
-        syncOrderToFirebase(targetOrder);
-      } catch (err) {
-        console.warn(err);
-      }
+      syncOrderToFirebase(targetOrder).catch((err) => console.warn(err));
     }
   };
 
@@ -428,7 +411,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
 
                 <div className="space-y-3">
                   {products.slice(0, 4).map((p) => {
-                    const pct = Math.min(100, Math.round(((p.soldCount || 10) / 100) * 100));
+                    const pct = Math.min(100, Math.round(((p.soldCount || 0) / 100) * 100));
 
                     return (
                       <div key={p.id} className="space-y-1">

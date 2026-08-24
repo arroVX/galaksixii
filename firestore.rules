@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// Catatan: daftar admin di bawah harus sinkron dengan NEXT_PUBLIC_ADMIN_EMAILS di .env.local.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['admin@galamerch.com'];
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      // Hanya akun admin (login Firebase Auth) yang boleh mengubah katalog.
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      // Pembeli login membuat pesanan atas namanya sendiri;
+      // guest (belum login) hanya boleh membuat pesanan dengan userId berawalan "guest-".
+      allow create: if isAdmin()
+        || (request.auth != null && request.resource.data.userId == request.auth.uid)
+        || (request.auth == null && request.resource.data.userId is string && request.resource.data.userId.matches('^guest-.*'));
+
+      // User hanya dapat membaca pesanannya sendiri; admin dapat membaca semua.
+      allow read: if isAdmin()
+        || (request.auth != null
+            && (resource.data.userId == request.auth.uid
+                || resource.data.userEmail == request.auth.token.email));
+
+      // Perubahan status pesanan & penghapusan hanya oleh admin.
+      allow update, delete: if isAdmin();
+    }
+
+    // Tolak semua koleksi lain secara default (tidak menulis aturan = ditolak).
+  }
+}

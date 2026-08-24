@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
-import { DevModal } from "./DevModal";
 
 export const Footer: React.FC = () => {
   const { isAdmin } = useAuth();
-  const [isDevModalOpen, setIsDevModalOpen] = useState(false);
 
   return (
     <>
@@ -19,8 +18,8 @@ export const Footer: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-12 mb-12">
             {/* Brand & Tagline */}
             <div className="flex flex-col items-center md:items-start text-center md:text-left">
-              <Link href="/" onClick={(e) => { e.preventDefault(); setIsDevModalOpen(true); }} className="inline-block group mb-4">
-                <img src="/logo.png" alt="Galaksi XII Logo" className="h-20 md:h-28 w-auto object-contain group-hover:scale-105 transition-transform duration-300" />
+              <Link href="/" className="inline-block group mb-4">
+                <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} className="h-20 md:h-28 w-auto object-contain group-hover:scale-105 transition-transform duration-300" />
               </Link>
               <p className="font-body-md text-on-surface-variant max-w-[320px] leading-relaxed">
                 Merayakan kreativitas, sportivitas, dan potensi tak terbatas bersama SMKN 3 Jepara.
@@ -31,11 +30,11 @@ export const Footer: React.FC = () => {
             <div className="flex flex-col items-center md:items-start">
               <h3 className="font-label-md text-primary mb-6 uppercase tracking-[0.15em]">Tautan Cepat</h3>
               <div className="flex flex-col gap-4">
-                <Link className="text-body-md font-body-md text-on-surface-variant hover:text-primary hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/" onClick={(e) => { e.preventDefault(); setIsDevModalOpen(true); }}>
+                <Link className="text-body-md font-body-md text-on-surface-variant hover:text-primary hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Beranda
                 </Link>
-                <Link className="text-body-md font-body-md text-on-surface-variant hover:text-primary hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/kompetisi" onClick={(e) => { e.preventDefault(); setIsDevModalOpen(true); }}>
+                <Link className="text-body-md font-body-md text-on-surface-variant hover:text-primary hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/kompetisi">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Kompetisi
                 </Link>
@@ -77,7 +76,6 @@ export const Footer: React.FC = () => {
         </div>
       </div>
       </footer>
-      <DevModal isOpen={isDevModalOpen} onClose={() => setIsDevModalOpen(false)} />
     </>
   );
 };

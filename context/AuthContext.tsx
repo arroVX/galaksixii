@@ -1,16 +1,26 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { UserProfile } from "@/types/merch";
-import { auth, googleProvider } from "@/lib/firebase";
-import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
+import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
+import { isAdminEmail } from "@/lib/config";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile as updateFirebaseProfile,
+  type User,
+} from "firebase/auth";
 
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
-  loginWithGoogle: (isRegister?: boolean) => Promise<void>;
-  loginAsDemoUser: (role?: "user" | "admin", customEmail?: string, customName?: string) => void;
+  loginWithGoogle: () => Promise<void>;
+  registerWithEmail: (email: string, password: string, name: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfileData: (data: Partial<UserProfile>) => void;
   showAuthAlert: (msg: string) => void;
@@ -18,65 +28,112 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const USER_STORAGE_KEY = "gala_merch_user";
+
+const getFriendlyAuthError = (err: unknown): string => {
+  const code = (err as { code?: string })?.code || "";
+  switch (code) {
+    case "auth/email-already-in-use":
+      return "Email sudah terdaftar. Silakan masuk dengan akun tersebut.";
+    case "auth/invalid-email":
+      return "Format alamat email tidak valid.";
+    case "auth/missing-password":
+    case "auth/weak-password":
+      return "Kata sandi terlalu lemah atau kosong (minimal 6 karakter).";
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "Email atau kata sandi yang Anda masukkan salah.";
+    case "auth/too-many-requests":
+      return "Terlalu banyak percobaan login. Silakan coba lagi nanti.";
+    case "auth/network-request-failed":
+      return "Gagal terhubung ke server. Periksa koneksi internet Anda.";
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return "Jendela login ditutup sebelum proses selesai.";
+    case "auth/popup-blocked":
+      return "Browser memblokir popup. Izinkan popup lalu coba lagi.";
+    case "auth/unauthorized-domain":
+      return "Domain ini belum terdaftar di Firebase Console -> Authentication -> Settings -> Authorized Domains.";
+    case "auth/operation-not-allowed":
+      return "Metode login ini belum diaktifkan di Firebase Console.";
+    default:
+      return "Terjadi kesalahan saat autentikasi. Silakan coba lagi.";
+  }
+};
+
+const ensureConfigured = () => {
+  if (!isFirebaseConfigured) {
+    throw new Error(
+      "Konfigurasi Firebase belum lengkap. Salin .env.example menjadi .env.local lalu isi semua variabel."
+    );
+  }
+};
+
+const buildUserProfile = (fbUser: User, extras: Partial<UserProfile> = {}): UserProfile => ({
+  uid: fbUser.uid,
+  email: fbUser.email,
+  displayName: fbUser.displayName || fbUser.email?.split("@")[0] || "Pelanggan GALA",
+  photoURL: fbUser.photoURL ?? null,
+  address: extras.address ?? "",
+  phone: extras.phone ?? "",
+  classGroup: extras.classGroup ?? "",
+  role: isAdminEmail(fbUser.email) ? "admin" : "user",
+});
+
+const readSavedProfile = (): Partial<UserProfile> | null => {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+// Ambil data profil tambahan (alamat, dll.) hanya jika cache lokal milik akun yang sama.
+const pickExtras = (saved: Partial<UserProfile> | null, email: string | null): Partial<UserProfile> =>
+  saved && saved.email && saved.email === email
+    ? { address: saved.address, phone: saved.phone, classGroup: saved.classGroup }
+    : {};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [authAlertMsg, setAuthAlertMsg] = useState<string | null>(null);
 
+  // Ref agar callback async selalu membaca profil terbaru (menghindari stale closure).
+  const userRef = useRef<UserProfile | null>(null);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   const showAuthAlert = (msg: string) => {
     setAuthAlertMsg(msg);
   };
 
+  const applyUser = (profile: UserProfile | null) => {
+    setUser(profile);
+    try {
+      if (profile) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(profile));
+      else localStorage.removeItem(USER_STORAGE_KEY);
+    } catch (e) {
+      console.error("Failed to access localStorage", e);
+    }
+  };
+
   useEffect(() => {
-    // Check saved user in localStorage first for quick hydration or demo state
-    const savedUser = localStorage.getItem("gala_merch_user");
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        const registeredAccounts = JSON.parse(localStorage.getItem("gala_merch_registered_accounts") || "[]");
-        const isRegistered = registeredAccounts.some((acc: any) => acc.email === parsed.email);
-        if (isRegistered || parsed.email?.includes("admin")) {
-          setUser(parsed);
-        } else {
-          localStorage.removeItem("gala_merch_user");
-        }
-      } catch (e) {
-        console.error("Failed to parse saved user", e);
-      }
+    // Hydrasi cepat dari cache lokal supaya UI tidak berkedip, validasi asli tetap oleh listener Firebase.
+    const saved = readSavedProfile();
+    if (saved && saved.uid) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrasi cache profil dari localStorage saat mount (sumber eksternal, tidak tersedia saat SSR).
+      setUser(saved as UserProfile);
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
       if (firebaseUser) {
-        const fbEmail = firebaseUser.email || "";
-        const registeredAccounts = JSON.parse(localStorage.getItem("gala_merch_registered_accounts") || "[]");
-        const isRegistered = registeredAccounts.some((acc: any) => acc.email === fbEmail);
-        
-        if (!isRegistered && !fbEmail.includes("admin")) {
-          await signOut(auth);
-          setUser(null);
-          localStorage.removeItem("gala_merch_user");
-          setLoading(false);
-          return;
-        }
-
-        const userObj: UserProfile = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Pelanggan GALA",
-          photoURL: firebaseUser.photoURL,
-          role: firebaseUser.email?.includes("admin") ? "admin" : "user",
-          address: user?.address || "",
-          phone: user?.phone || "",
-          classGroup: user?.classGroup || ""
-        };
-        setUser(userObj);
-        localStorage.setItem("gala_merch_user", JSON.stringify(userObj));
+        applyUser(buildUserProfile(firebaseUser, pickExtras(readSavedProfile(), firebaseUser.email)));
       } else {
-        // If not firebase user, keep the demo user if it's there
-        const currentSaved = localStorage.getItem("gala_merch_user");
-        if (!currentSaved) {
-          setUser(null);
-        }
+        applyUser(null);
       }
       setLoading(false);
     });
@@ -84,63 +141,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  const loginWithGoogle = async (isRegister: boolean = false) => {
+  const loginWithGoogle = async () => {
+    ensureConfigured();
+    setLoading(true);
     try {
-      setLoading(true);
       const res = await signInWithPopup(auth, googleProvider);
-      const fbUser = res.user;
-      const fbEmail = fbUser.email || "";
-
-      const registeredAccounts = JSON.parse(localStorage.getItem("gala_merch_registered_accounts") || "[]");
-      const isRegistered = registeredAccounts.some((acc: any) => acc.email === fbEmail);
-
-      if (isRegister) {
-        if (!isRegistered) {
-          registeredAccounts.push({ email: fbEmail, password: "", name: fbUser.displayName || "Google User" });
-          localStorage.setItem("gala_merch_registered_accounts", JSON.stringify(registeredAccounts));
-        }
-      } else {
-        if (!isRegistered && !fbEmail.includes("admin")) {
-          await signOut(auth);
-          throw new Error("Akun Google belum terdaftar. Silakan daftar terlebih dahulu.");
-        }
-      }
-
-      const userObj: UserProfile = {
-        uid: fbUser.uid,
-        email: fbUser.email,
-        displayName: fbUser.displayName || "Pelanggan GALA",
-        photoURL: fbUser.photoURL,
-        role: fbUser.email?.includes("admin") ? "admin" : "user",
-      };
-      setUser(userObj);
-      localStorage.setItem("gala_merch_user", JSON.stringify(userObj));
-    } catch (err: any) {
-      if (err.message === "Akun Google belum terdaftar. Silakan daftar terlebih dahulu.") {
-        showAuthAlert(err.message);
-      } else {
-        console.warn("Google Auth failed:", err);
-        showAuthAlert("Gagal terhubung ke Google Login. (Tips: Jika di Vercel, daftarkan domain vercel.app di Firebase Console -> Authentication -> Settings -> Authorized Domains. Atau silakan masuk dengan Email/Password).");
-      }
-      throw err; // Re-throw to be handled by the UI
+      applyUser(buildUserProfile(res.user, pickExtras(readSavedProfile(), res.user.email)));
+    } catch (err: unknown) {
+      showAuthAlert(getFriendlyAuthError(err));
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const loginAsDemoUser = (role: "user" | "admin" = "user", customEmail?: string, customName?: string) => {
-    const demoObj: UserProfile = {
-      uid: role === "admin" ? "admin-999" : "user-" + Date.now(),
-      email: customEmail || (role === "admin" ? "admin@galamerch.com" : "pembeli@gmail.com"),
-      displayName: customName || (role === "admin" ? "Admin Merchandise" : "Pelanggan GALA"),
-      photoURL: role === "admin" ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-      role: role,
-      phone: "081234567890",
-      address: "Jepara, Jawa Tengah",
-      classGroup: "Pelajar / Umum"
-    };
-    setUser(demoObj);
-    localStorage.setItem("gala_merch_user", JSON.stringify(demoObj));
+  const registerWithEmail = async (email: string, password: string, name: string) => {
+    ensureConfigured();
+    setLoading(true);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      if (name.trim()) {
+        await updateFirebaseProfile(cred.user, { displayName: name.trim() });
+      }
+      applyUser(buildUserProfile(cred.user, pickExtras(readSavedProfile(), cred.user.email)));
+    } catch (err: unknown) {
+      showAuthAlert(getFriendlyAuthError(err));
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithEmail = async (email: string, password: string) => {
+    ensureConfigured();
+    setLoading(true);
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      applyUser(buildUserProfile(cred.user, pickExtras(readSavedProfile(), cred.user.email)));
+    } catch (err: unknown) {
+      showAuthAlert(getFriendlyAuthError(err));
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
@@ -150,14 +193,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error(e);
     }
     setUser(null);
-    localStorage.removeItem("gala_merch_user");
+    try {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    } catch {}
   };
 
   const updateProfileData = (data: Partial<UserProfile>) => {
-    if (!user) return;
-    const updated = { ...user, ...data };
+    const current = userRef.current;
+    if (!current) return;
+    const updated = { ...current, ...data };
     setUser(updated);
-    localStorage.setItem("gala_merch_user", JSON.stringify(updated));
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+
+    if (data.displayName && auth.currentUser) {
+      updateFirebaseProfile(auth.currentUser, { displayName: data.displayName }).catch((e) =>
+        console.warn("Failed to sync display name to Firebase:", e)
+      );
+    }
   };
 
   const isAdmin = user?.role === "admin";
@@ -169,7 +221,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         isAdmin,
         loginWithGoogle,
-        loginAsDemoUser,
+        registerWithEmail,
+        loginWithEmail,
         logout,
         updateProfileData,
         showAuthAlert,

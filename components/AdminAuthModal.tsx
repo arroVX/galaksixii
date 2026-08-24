@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Shield, Lock, KeyRound, AlertCircle, Sparkles, CheckCircle2 } from "lucide-react";
+import { X, Shield, Lock, Mail, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { isAdminEmail } from "@/lib/config";
 
 interface AdminAuthModalProps {
   isOpen: boolean;
@@ -11,41 +12,34 @@ interface AdminAuthModalProps {
 }
 
 export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { loginAsDemoUser } = useAuth();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const { loginWithEmail } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    const inputUser = username.trim().toLowerCase();
-    const inputPass = password.trim();
+    if (!isAdminEmail(email.trim())) {
+      setErrorMsg("Akun ini tidak terdaftar sebagai admin.");
+      return;
+    }
 
-    // Flexible valid credentials:
-    const validUsernames = ["admin", "admin123", "admingalaksi", "admin@galamerch.com", "smkn3jepara", "gala"];
-    const validPasswords = ["admin", "admin123", "galaksi2026", "123456", "admin"];
-
-    if (
-      validUsernames.includes(inputUser) || 
-      inputUser.includes("admin") ||
-      validPasswords.includes(inputPass)
-    ) {
-      loginAsDemoUser("admin");
+    setLoading(true);
+    try {
+      await loginWithEmail(email.trim(), password);
       onSuccess();
       onClose();
-    } else {
-      setErrorMsg("Username atau Password Admin salah. Silakan coba: admin / admin123");
+    } catch {
+      // Detail penyebab sudah ditampilkan oleh AuthContext; tampilkan petunjuk retry di sini.
+      setErrorMsg("Email atau kata sandi admin salah. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleQuickDemoAdmin = () => {
-    loginAsDemoUser("admin");
-    onSuccess();
-    onClose();
   };
 
   return (
@@ -70,7 +64,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
             Autentikasi Mode Admin
           </h3>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            Masukkan Username dan Password pengelola untuk membuka Panel Manajemen Merchandise.
+            Masuk menggunakan akun email admin resmi untuk membuka Panel Manajemen Merchandise.
           </p>
         </div>
 
@@ -85,28 +79,30 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
         {/* Form */}
         <form onSubmit={handleAdminLogin} className="space-y-4 text-xs">
           <div>
-            <label className="block text-slate-700 font-bold mb-1">Username Admin</label>
+            <label className="block text-slate-700 font-bold mb-1">Email Admin</label>
             <div className="relative">
-              <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
               <input
-                type="text"
+                type="email"
                 required
-                placeholder="admin"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="email"
+                placeholder="admin@galamerch.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900 font-mono font-bold"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-slate-700 font-bold mb-1">Password Khusus Admin</label>
+            <label className="block text-slate-700 font-bold mb-1">Kata Sandi</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
               <input
                 type="password"
                 required
-                placeholder="admin123"
+                autoComplete="current-password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900 font-mono font-bold"
@@ -116,24 +112,13 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose,
 
           <button
             type="submit"
-            className="w-full py-3 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-lg flex items-center justify-center gap-2 transition transform active:scale-98"
+            disabled={loading}
+            className="w-full py-3 px-4 rounded-full bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-extrabold text-xs shadow-lg flex items-center justify-center gap-2 transition transform active:scale-98"
           >
             <Shield size={16} />
-            <span>Verifikasi & Masuk Mode Admin</span>
+            <span>{loading ? "Memverifikasi..." : "Verifikasi & Masuk Mode Admin"}</span>
           </button>
         </form>
-
-        {/* Quick Demo Access Button */}
-        <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-          <button
-            type="button"
-            onClick={handleQuickDemoAdmin}
-            className="w-full py-2.5 px-4 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-2 transition"
-          >
-            <Sparkles size={15} className="text-amber-600" />
-            <span>⚡ Masuk Mode Admin Langsung (Pintas Demo)</span>
-          </button>
-        </div>
 
       </div>
     </div>

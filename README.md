@@ -16,6 +16,30 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Konfigurasi Firebase (Wajib)
+
+Aplikasi ini memakai Firebase Auth (Email/Password & Google), Cloud Firestore, dan Realtime Database. Semua kredensial dibaca dari environment variables — **tidak ada lagi fallback hardcoded**.
+
+1. Salin `.env.example` menjadi `.env.local`.
+2. Isi semua variabel `NEXT_PUBLIC_FIREBASE_*` dari Firebase Console → Project settings → General → Your apps.
+3. Atur email admin di `NEXT_PUBLIC_ADMIN_EMAILS` (pisahkan dengan koma). Hanya email dalam daftar ini yang bisa masuk Panel Admin.
+4. Aktifkan provider **Email/Password** dan **Google** di Firebase Console → Authentication → Sign-in method, lalu daftarkan akun admin asli (mis. `admin@galamerch.com`) melalui menu Users.
+
+### Keamanan Database
+
+File `firestore.rules` dan `database.rules.json` berisi aturan keamanan:
+
+- Produk: bisa dibaca siapa pun, hanya admin yang bisa menulis.
+- Pesanan: user hanya bisa membaca pesanannya sendiri; admin bisa membaca semua; guest hanya bisa membuat pesanan dengan `userId` berawalan `guest-`.
+
+Deploy aturan dengan Firebase CLI:
+
+```bash
+firebase deploy --only firestore:rules,database
+```
+
+> Penting: daftar email admin di kedua file rules harus disinkronkan manual dengan `NEXT_PUBLIC_ADMIN_EMAILS`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

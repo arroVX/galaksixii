@@ -1,6 +1,6 @@
 import { db, rtdb } from "./firebase";
-import { doc, setDoc, collection, getDocs } from "firebase/firestore";
-import { ref, set, get, child } from "firebase/database";
+import { doc, setDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { ref, set, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
 import { Order, Product } from "@/types/merch";
 
 /**
@@ -84,6 +84,69 @@ export async function fetchOrdersFromFirebase(): Promise<Order[]> {
     }
   } catch (err) {
     console.warn("RTDB fetch orders error:", err);
+  }
+
+  const result = Array.from(ordersMap.values());
+  result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  return result;
+}
+
+/**
+ * Mengambil pesanan milik satu user tertentu (query ter-scope).
+ * Client biasa hanya boleh memakai fungsi ini — bukan fetchOrdersFromFirebase
+ * yang mengunduh seluruh koleksi (privasi data pelanggan lain).
+ */
+export async function fetchOrdersForUser(
+  userId?: string | null,
+  userEmail?: string | null
+): Promise<Order[]> {
+  const ordersMap = new Map<string, Order>();
+
+  const collectFirestore = (snapshot: { forEach: (cb: (d: { data: () => unknown; id: string }) => void) => void }) => {
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data() as Order;
+      if (data && data.id) ordersMap.set(data.id, data);
+    });
+  };
+
+  // 1. Firestore — filter dilakukan di server.
+  try {
+    if (userId) {
+      const snap = await getDocs(query(collection(db, "orders"), where("userId", "==", userId)));
+      collectFirestore(snap);
+    }
+    if (userEmail) {
+      const snap = await getDocs(query(collection(db, "orders"), where("userEmail", "==", userEmail)));
+      collectFirestore(snap);
+    }
+  } catch (err) {
+    console.warn("Firestore fetch user orders error:", err);
+  }
+
+  // 2. Realtime Database — butuh index ".indexOn": "userId,userEmail" di database.rules.json.
+  try {
+    if (userId) {
+      const snap = await get(rtdbQuery(ref(rtdb, "orders"), orderByChild("userId"), equalTo(userId)));
+      if (snap.exists()) {
+        const val = snap.val();
+        Object.keys(val).forEach((k) => {
+          const item = val[k] as Order;
+          if (item && item.id && !ordersMap.has(item.id)) ordersMap.set(item.id, item);
+        });
+      }
+    }
+    if (userEmail) {
+      const snap = await get(rtdbQuery(ref(rtdb, "orders"), orderByChild("userEmail"), equalTo(userEmail)));
+      if (snap.exists()) {
+        const val = snap.val();
+        Object.keys(val).forEach((k) => {
+          const item = val[k] as Order;
+          if (item && item.id && !ordersMap.has(item.id)) ordersMap.set(item.id, item);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("RTDB fetch user orders error:", err);
   }
 
   const result = Array.from(ordersMap.values());

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { RefreshCw, Sparkles, Hand } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface ElasticPullToRefreshProps {
   children: React.ReactNode;
@@ -24,53 +24,6 @@ export const ElasticPullToRefresh: React.FC<ElasticPullToRefreshProps> = ({ chil
 
   const MAX_PULL = 160;
   const THRESHOLD = 100;
-
-  // Touch & Mouse Event Handlers
-  useEffect(() => {
-    const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY <= 0) {
-        startYRef.current = e.touches[0].clientY;
-        currentYRef.current = e.touches[0].clientY;
-        setIsDragging(true);
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging && window.scrollY > 0) return;
-
-      const currentY = e.touches[0].clientY;
-      const dy = currentY - startYRef.current;
-
-      if (dy > 0 && window.scrollY <= 0) {
-        // Logarithmic elastic tension factor (fabric resistance)
-        const resistance = 0.45;
-        const dist = Math.min(MAX_PULL, dy * resistance);
-        setPullDistance(dist);
-        springPosRef.current = dist;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (!isDragging) return;
-      setIsDragging(false);
-
-      if (springPosRef.current >= THRESHOLD) {
-        triggerRefresh();
-      } else {
-        animateSnapBack();
-      }
-    };
-
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [isDragging]);
 
   // Spring Rubber-Band Snap Back Animation Physics
   const animateSnapBack = () => {
@@ -111,6 +64,54 @@ export const ElasticPullToRefresh: React.FC<ElasticPullToRefreshProps> = ({ chil
       }, 1000);
     }
   };
+
+  // Touch & Mouse Event Handlers
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.scrollY <= 0) {
+        startYRef.current = e.touches[0].clientY;
+        currentYRef.current = e.touches[0].clientY;
+        setIsDragging(true);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging && window.scrollY > 0) return;
+
+      const currentY = e.touches[0].clientY;
+      const dy = currentY - startYRef.current;
+
+      if (dy > 0 && window.scrollY <= 0) {
+        // Logarithmic elastic tension factor (fabric resistance)
+        const resistance = 0.45;
+        const dist = Math.min(MAX_PULL, dy * resistance);
+        setPullDistance(dist);
+        springPosRef.current = dist;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (!isDragging) return;
+      setIsDragging(false);
+
+      if (springPosRef.current >= THRESHOLD) {
+        void triggerRefresh();
+      } else {
+        animateSnapBack();
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging]);
 
   // Render 3D Cloth Deformation Mesh on Canvas2D / WebGL Shader Context
   useEffect(() => {

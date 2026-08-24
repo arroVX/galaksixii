@@ -29,6 +29,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
         try {
           const parsed: Order[] = JSON.parse(savedOrdersStr);
           const userOrders = parsed.filter(o => o.userId === user?.uid || o.userEmail === user?.email);
+          // Hydrasi cache pesanan saat modal dibuka (sumber eksternal, tidak tersedia saat SSR).
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setOrders(userOrders);
           if (userOrders.length > 0) setSelectedOrder(userOrders[0]);
         } catch (e) {

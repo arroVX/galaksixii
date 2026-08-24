@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { CartItem, Product } from "@/types/merch";
 
 interface CartContextType {
@@ -22,29 +22,47 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState<boolean>(false);
+
+  // Ref agar handler selalu membaca isi keranjang terbaru (menghindari stale closure).
+  const cartRef = useRef<CartItem[]>([]);
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
 
   // Hydrate from localStorage
   useEffect(() => {
-    const savedCart = localStorage.getItem("gala_merch_cart");
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        const validCart = parsedCart.map((item: any) => ({
-          ...item,
-          price: Number(item.price) || 0,
-          quantity: Number(item.quantity) || 1
-        }));
+    try {
+      const savedCart = localStorage.getItem("gala_merch_cart");
+      if (savedCart) {
+        const parsedCart: unknown = JSON.parse(savedCart);
+        const validCart = (Array.isArray(parsedCart) ? parsedCart : [])
+          .filter((item): item is Partial<CartItem> => Boolean(item && item.id && item.productId))
+          .map((item) => ({
+            ...item,
+            price: Number(item.price) || 0,
+            quantity: Math.max(1, Number(item.quantity) || 1)
+          })) as CartItem[];
+        // Hydrasi cache keranjang dari localStorage saat mount (sumber eksternal, tidak tersedia saat SSR).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCart(validCart);
-      } catch (e) {
-        console.error("Failed to load cart", e);
       }
+    } catch (e) {
+      console.error("Failed to load cart", e);
     }
+    setHydrated(true);
   }, []);
 
-  // Sync to localStorage
+  // Sync to localStorage — hanya setelah hydrasi selesai agar tidak menimpa
+  // data tersimpan dengan keranjang kosong saat pertama kali mount.
   useEffect(() => {
-    localStorage.setItem("gala_merch_cart", JSON.stringify(cart));
-  }, [cart]);
+    if (!hydrated) return;
+    try {
+      localStorage.setItem("gala_merch_cart", JSON.stringify(cart));
+    } catch (e) {
+      console.error("Failed to save cart", e);
+    }
+  }, [cart, hydrated]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -53,31 +71,47 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addToCart = (product: Product, size: string, color: string, quantity: number = 1) => {
     const cartItemId = `${product.id}-${size}-${color}`;
+    const limit =
+      product.stockType === "READY" ? Math.max(0, product.stockCount || 0) : Number.MAX_SAFE_INTEGER;
+
+    const existing = cartRef.current.find((item) => item.id === cartItemId);
+    const currentQty = existing?.quantity ?? 0;
+
+    if (currentQty >= limit) {
+      showToast(`Stok ${product.name} (${size} | ${color}) sudah mencapai batas maksimal di keranjang.`);
+      return;
+    }
+
+    const newQty = Math.min(currentQty + quantity, limit);
 
     setCart((prevCart) => {
-      const existingIndex = prevCart.findIndex((item) => item.id === cartItemId);
-      if (existingIndex > -1) {
+      const index = prevCart.findIndex((item) => item.id === cartItemId);
+      if (index > -1) {
         const updated = [...prevCart];
-        updated[existingIndex].quantity += quantity;
+        updated[index] = { ...updated[index], quantity: Math.min(updated[index].quantity + quantity, limit) };
         return updated;
-      } else {
-        const newItem: CartItem = {
-          id: cartItemId,
-          productId: product.id,
-          name: product.name,
-          price: product.price,
-          imageUrl: product.imageUrl,
-          selectedSize: size,
-          selectedColor: color,
-          quantity,
-          stockType: product.stockType,
-          poReleaseDate: product.poReleaseDate
-        };
-        return [...prevCart, newItem];
       }
+      const newItem: CartItem = {
+        id: cartItemId,
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        selectedSize: size,
+        selectedColor: color,
+        quantity: newQty,
+        stockType: product.stockType,
+        poReleaseDate: product.poReleaseDate,
+        maxStock: product.stockType === "READY" ? limit : undefined
+      };
+      return [...prevCart, newItem];
     });
 
-    showToast(`✓ ${product.name} (${size} | ${color}) ditambahkan ke keranjang!`);
+    showToast(
+      newQty < currentQty + quantity
+        ? `Stok terbatas — hanya ${newQty - currentQty} unit ${product.name} yang ditambahkan.`
+        : `✓ ${product.name} (${size} | ${color}) ditambahkan ke keranjang!`
+    );
   };
 
   const removeFromCart = (cartItemId: string) => {
@@ -88,11 +122,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart((prev) =>
       prev
         .map((item) => {
-          if (item.id === cartItemId) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
+          if (item.id !== cartItemId) return item;
+          const newQty = item.quantity + delta;
+          if (newQty <= 0) return null;
+          const limit = item.maxStock ?? Number.MAX_SAFE_INTEGER;
+          return { ...item, quantity: Math.min(newQty, limit) };
         })
         .filter(Boolean) as CartItem[]
     );
