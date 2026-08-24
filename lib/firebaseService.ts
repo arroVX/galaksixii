@@ -1,53 +1,92 @@
 import { db, rtdb } from "./firebase";
-import { doc, setDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { ref, set, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
-import { Order, Product } from "@/types/merch";
+import { Order, Product, GalleryItem } from "@/types/merch";
+
+/**
+ * Firestore & Realtime Database sama-sama MENOLAK properti bernilai undefined
+ * ("Unsupported field value: undefined"). Round-trip JSON membuang semua
+ * properti undefined secara aman untuk data polos (tanpa Date/Map/class).
+ */
+function stripUndefined<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+export interface SyncResult {
+  rtdbOk: boolean;
+  firestoreOk: boolean;
+}
+
+/** Jalankan operasi tulis dengan beberapa percobaan + jeda antar percobaan. */
+async function withRetry(operation: () => Promise<void>, attempts = 3): Promise<boolean> {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await operation();
+      return true;
+    } catch (err) {
+      console.warn(`Percobaan tulis ke Firebase ${attempt}/${attempts} gagal:`, err);
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+      }
+    }
+  }
+  return false;
+}
 
 /**
  * Menyimpan / Menyinkronkan pesanan baru atau pembaruan status pesanan
  * secara langsung ke Firebase Realtime Database DAN Cloud Firestore!
+ * Mengembalikan status keberhasilan masing-masing database agar UI
+ * dapat memberi tahu pengguna bila sinkronisasi tidak lengkap.
  */
-export async function syncOrderToFirebase(order: Order) {
+export async function syncOrderToFirebase(order: Order): Promise<SyncResult> {
+  const cleanOrder = stripUndefined(order);
+
   // 1. Simpan ke Firebase Realtime Database (RTDB)
-  try {
-    const orderRef = ref(rtdb, `orders/${order.id}`);
-    await set(orderRef, order);
-    console.log(`✓ Order ${order.id} berhasil terkirim ke Realtime Database`);
-  } catch (err) {
-    console.warn("Peringatan RTDB Sync Order:", err);
-  }
+  const rtdbOk = await withRetry(async () => {
+    const orderRef = ref(rtdb, `orders/${cleanOrder.id}`);
+    await set(orderRef, cleanOrder);
+    console.log(`✓ Order ${cleanOrder.id} berhasil terkirim ke Realtime Database`);
+  });
 
   // 2. Simpan ke Cloud Firestore Database
-  try {
-    const docRef = doc(db, "orders", order.id);
-    await setDoc(docRef, order);
-    console.log(`✓ Order ${order.id} berhasil terkirim ke Cloud Firestore`);
-  } catch (err) {
-    console.warn("Peringatan Firestore Sync Order:", err);
+  const firestoreOk = await withRetry(async () => {
+    const docRef = doc(db, "orders", cleanOrder.id);
+    await setDoc(docRef, cleanOrder);
+    console.log(`✓ Order ${cleanOrder.id} berhasil terkirim ke Cloud Firestore`);
+  });
+
+  if (!rtdbOk || !firestoreOk) {
+    console.error(
+      `Sinkronisasi order ${cleanOrder.id} TIDAK LENGKAP — RTDB: ${rtdbOk ? "ok" : "GAGAL"}, Firestore: ${firestoreOk ? "ok" : "GAGAL"}`
+    );
   }
+
+  return { rtdbOk, firestoreOk };
 }
 
 /**
- * Menyimpan / Menyinkronkan produk merchandise ke Firebase
+ * Menyimpan / Menyinkronkan produk merchandise ke Firebase.
+ * Mengembalikan status sinkronisasi untuk umpan balik admin.
  */
-export async function syncProductToFirebase(product: Product) {
+export async function syncProductToFirebase(product: Product): Promise<SyncResult> {
+  const cleanProduct = stripUndefined(product);
+
   // 1. Simpan ke Realtime Database
-  try {
-    const prodRef = ref(rtdb, `products/${product.id}`);
-    await set(prodRef, product);
-    console.log(`✓ Produk ${product.id} terkirim ke Realtime Database`);
-  } catch (err) {
-    console.warn("Peringatan RTDB Sync Product:", err);
-  }
+  const rtdbOk = await withRetry(async () => {
+    const prodRef = ref(rtdb, `products/${cleanProduct.id}`);
+    await set(prodRef, cleanProduct);
+    console.log(`✓ Produk ${cleanProduct.id} terkirim ke Realtime Database`);
+  });
 
   // 2. Simpan ke Firestore
-  try {
-    const docRef = doc(db, "products", product.id);
-    await setDoc(docRef, product);
-    console.log(`✓ Produk ${product.id} terkirim ke Cloud Firestore`);
-  } catch (err) {
-    console.warn("Peringatan Firestore Sync Product:", err);
-  }
+  const firestoreOk = await withRetry(async () => {
+    const docRef = doc(db, "products", cleanProduct.id);
+    await setDoc(docRef, cleanProduct);
+    console.log(`✓ Produk ${cleanProduct.id} terkirim ke Cloud Firestore`);
+  });
+
+  return { rtdbOk, firestoreOk };
 }
 
 /**
@@ -191,4 +230,49 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
   }
 
   return Array.from(productsMap.values());
+}
+
+/**
+ * Menyimpan / memperbarui satu item galeri dokumentasi di Cloud Firestore.
+ */
+export async function syncGalleryItemToFirebase(item: GalleryItem) {
+  try {
+    const docRef = doc(db, "gallery", item.id);
+    await setDoc(docRef, stripUndefined(item));
+    console.log(`✓ Galeri ${item.id} terkirim ke Cloud Firestore`);
+  } catch (err) {
+    console.warn("Firestore Sync Gallery:", err);
+  }
+}
+
+/**
+ * Menghapus satu item galeri dari Cloud Firestore.
+ */
+export async function deleteGalleryItemFromFirebase(id: string) {
+  try {
+    await deleteDoc(doc(db, "gallery", id));
+    console.log(`✓ Galeri ${id} dihapus dari Cloud Firestore`);
+  } catch (err) {
+    console.warn("Firestore Delete Gallery:", err);
+  }
+}
+
+/**
+ * Mengambil seluruh item galeri dokumentasi dari Cloud Firestore.
+ */
+export async function fetchGalleryFromFirebase(): Promise<GalleryItem[]> {
+  const galleryMap = new Map<string, GalleryItem>();
+  try {
+    const querySnapshot = await getDocs(collection(db, "gallery"));
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data() as GalleryItem;
+      if (data && data.id) {
+        galleryMap.set(data.id, data);
+      }
+    });
+  } catch (err) {
+    console.warn("Firestore fetch gallery error:", err);
+  }
+
+  return Array.from(galleryMap.values()).sort((a, b) => b.year - a.year);
 }

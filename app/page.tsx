@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { Product } from "@/types/merch";
+import { Product, GalleryItem } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
+import { INITIAL_GALLERY } from "@/data/mockGallery";
+import { fetchGalleryFromFirebase } from "@/lib/firebaseService";
 import { EVENT_DATE } from "@/lib/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -16,6 +18,7 @@ function MainApp() {
   const { isAdmin } = useAuth();
   const [activeView, setActiveView] = useState<"shop" | "admin">("shop");
   const [products, setProducts] = useState<Product[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
 
   // Admin otomatis masuk panel admin; non-admin selalu diarahkan ke toko.
   // Pola "adjust state during render" agar tidak perlu effect.
@@ -70,6 +73,42 @@ function MainApp() {
     }
   }, []);
 
+  // Hydrasi galeri dokumentasi: cache lokal lalu gabungkan data terbaru dari Firestore.
+  React.useEffect(() => {
+    let initial: GalleryItem[] = INITIAL_GALLERY;
+    const saved = localStorage.getItem("gala_merch_gallery");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as GalleryItem[];
+        if (Array.isArray(parsed) && parsed.length > 0) initial = parsed;
+      } catch {
+        initial = INITIAL_GALLERY;
+      }
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrasi cache galeri dari localStorage (sumber eksternal).
+    setGallery(initial);
+    if (!saved) {
+      localStorage.setItem("gala_merch_gallery", JSON.stringify(INITIAL_GALLERY));
+    }
+
+    const loadFirebase = async () => {
+      try {
+        const remote = await fetchGalleryFromFirebase();
+        if (remote.length > 0) {
+          const map = new Map<string, GalleryItem>();
+          initial.forEach((g) => map.set(g.id, g));
+          remote.forEach((g) => map.set(g.id, g));
+          const merged = Array.from(map.values()).sort((a, b) => b.year - a.year);
+          setGallery(merged);
+          localStorage.setItem("gala_merch_gallery", JSON.stringify(merged));
+        }
+      } catch (err) {
+        console.warn("Gagal memuat galeri dari Firebase:", err);
+      }
+    };
+    loadFirebase();
+  }, []);
+
   return (
     <div className="min-h-screen text-on-background flex flex-col font-body-md selection:bg-primary selection:text-on-primary">
       {/* Global Toast used instead */}
@@ -78,20 +117,36 @@ function MainApp() {
 
       {activeView === "admin" ? (
         <main className="flex-1 pt-6 md:pt-8 w-full flex flex-col">
-          <AdminDashboard products={products} setProducts={setProducts} />
+          <AdminDashboard products={products} setProducts={setProducts} gallery={gallery} setGallery={setGallery} />
         </main>
       ) : (
         <main className="w-full flex flex-col items-center flex-grow">
           {/* New Tech-Minimalist Hero Section */}
           <section className="w-full max-w-7xl mx-auto px-6 md:px-16 py-12 md:py-20 flex flex-col items-center justify-center fade-in relative">
-            
-            {/* Top Dot Matrix Headline */}
-            <h1 className="font-dot-matrix text-[13vw] md:text-7xl lg:text-[100px] font-bold text-neutral-900 tracking-widest uppercase mb-4 md:mb-12 text-center opacity-90 drop-shadow-sm">
-              GALA. AKSI. SISWA.
-            </h1>
+          
 
             {/* Central Node Map Graphic */}
-            <div className="relative w-full max-w-3xl h-[250px] md:h-[400px] flex items-center justify-center my-4 md:my-8">
+            
+
+            {/* Bottom Dot Matrix Headline */}
+            <h1 className="font-dot-matrix text-[15vw] md:text-7xl lg:text-[100px] font-bold text-neutral-900 tracking-widest uppercase mt-4 md:mt-12 mb-6 text-center opacity-90 drop-shadow-sm">
+              GALAKSI XII
+            </h1>
+
+            {/* Subtext and Button */}
+            <p className="text-neutral-500 text-xs md:text-sm max-w-md text-center mb-8 font-body-md leading-relaxed px-4">
+              Hadirkan pengalaman baru dalam perayaan sekolah. Menggabungkan semangat kompetisi, seni, dan kreativitas siswa tanpa batas.
+            </p>
+            
+            <Link href="/merchandise" className="bg-[#e45b45] text-white hover:bg-[#d64a34] px-6 md:px-8 py-3 rounded-full text-xs md:text-sm font-semibold transition-all shadow-md flex items-center gap-2 md:gap-3 group">
+              <span className="bg-white/20 text-white p-1 rounded-md flex items-center justify-center group-hover:scale-110 transition-transform">
+                 <span className="material-symbols-outlined text-[14px] md:text-[16px] border-white border-[1px] rounded-sm p-px border-dotted">grid_view</span>
+              </span>
+              Pesan Merchandise
+            </Link>
+          </section>
+
+          <div className="relative w-full max-w-3xl h-[250px] md:h-[400px] flex items-center justify-center my-4 md:my-8">
               {/* SVG Connector Lines */}
               <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }}>
                 {/* Horizontal lines from nodes to center box */}
@@ -122,24 +177,6 @@ function MainApp() {
                 </div>
               </div>
             </div>
-
-            {/* Bottom Dot Matrix Headline */}
-            <h1 className="font-dot-matrix text-[15vw] md:text-7xl lg:text-[100px] font-bold text-neutral-900 tracking-widest uppercase mt-4 md:mt-12 mb-6 text-center opacity-90 drop-shadow-sm">
-              GALAKSI XII.
-            </h1>
-
-            {/* Subtext and Button */}
-            <p className="text-neutral-500 text-xs md:text-sm max-w-md text-center mb-8 font-body-md leading-relaxed px-4">
-              Hadirkan pengalaman baru dalam perayaan sekolah. Menggabungkan semangat kompetisi, seni, dan kreativitas siswa tanpa batas.
-            </p>
-            
-            <Link href="/merchandise" className="bg-[#e45b45] text-white hover:bg-[#d64a34] px-6 md:px-8 py-3 rounded-full text-xs md:text-sm font-semibold transition-all shadow-md flex items-center gap-2 md:gap-3 group">
-              <span className="bg-white/20 text-white p-1 rounded-md flex items-center justify-center group-hover:scale-110 transition-transform">
-                 <span className="material-symbols-outlined text-[14px] md:text-[16px] border-white border-[1px] rounded-sm p-px border-dotted">grid_view</span>
-              </span>
-              Pesan Merchandise
-            </Link>
-          </section>
 
           {/* New Stats Bar Section */}
           <section className="w-full max-w-7xl mx-auto px-6 md:px-16 py-4 md:py-8 reveal">

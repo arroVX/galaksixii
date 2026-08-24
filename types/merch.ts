@@ -92,3 +92,16 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface GalleryItem {
+  id: string;
+  title: string;
+  /** Tahapan acara, mis. "Liga Olahraga", "Pentas Seni", "Bazar", "Puncak Acara". */
+  category: string;
+  /** Tahun edisi dokumentasi, mis. 2024 untuk arsip tahun sebelumnya. */
+  year: number;
+  /** URL foto; bila kosong, UI menampilkan placeholder. */
+  imageUrl?: string;
+  caption?: string;
+  createdAt?: string;
+}

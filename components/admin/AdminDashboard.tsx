@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Product, Order, OrderStatus, StockType } from "@/types/merch";
-import { syncOrderToFirebase, syncProductToFirebase } from "@/lib/firebaseService";
+import { Product, Order, OrderStatus, StockType, GalleryItem } from "@/types/merch";
+import { syncOrderToFirebase, syncProductToFirebase, syncGalleryItemToFirebase, deleteGalleryItemFromFirebase } from "@/lib/firebaseService";
 import {
   Plus,
   Edit3,
@@ -22,10 +22,12 @@ import {
 interface AdminDashboardProps {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  gallery: GalleryItem[];
+  setGallery: React.Dispatch<React.SetStateAction<GalleryItem[]>>;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setProducts }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders">("overview");
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setProducts, gallery, setGallery }) => {
+  const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders" | "gallery">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
 
   // Product Form Modal state
@@ -48,6 +50,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
   // Proof Modal State
   const [viewProofUrl, setViewProofUrl] = useState<string | null>(null);
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>("ALL");
+
+  // Gallery Form Modal state
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [editingGallery, setEditingGallery] = useState<GalleryItem | null>(null);
+  const [gTitle, setGTitle] = useState("");
+  const [gCategory, setGCategory] = useState("Liga Olahraga");
+  const [gYear, setGYear] = useState<number>(new Date().getFullYear());
+  const [gImageUrl, setGImageUrl] = useState("");
+  const [gCaption, setGCaption] = useState("");
 
   useEffect(() => {
     // 1. Load from localStorage first for instant display
@@ -213,6 +224,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
     }
   };
 
+  const persistGallery = (list: GalleryItem[]) => {
+    const sorted = [...list].sort((a, b) => b.year - a.year);
+    setGallery(sorted);
+    localStorage.setItem("gala_merch_gallery", JSON.stringify(sorted));
+  };
+
+  const openCreateGalleryModal = () => {
+    setEditingGallery(null);
+    setGTitle("");
+    setGCategory("Liga Olahraga");
+    setGYear(new Date().getFullYear());
+    setGImageUrl("");
+    setGCaption("");
+    setIsGalleryModalOpen(true);
+  };
+
+  const openEditGalleryModal = (item: GalleryItem) => {
+    setEditingGallery(item);
+    setGTitle(item.title);
+    setGCategory(item.category);
+    setGYear(item.year);
+    setGImageUrl(item.imageUrl || "");
+    setGCaption(item.caption || "");
+    setIsGalleryModalOpen(true);
+  };
+
+  const handleSaveGallery = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (editingGallery) {
+      const updated: GalleryItem = {
+        ...editingGallery,
+        title: gTitle,
+        category: gCategory,
+        year: Number(gYear),
+        imageUrl: gImageUrl.trim() || undefined,
+        caption: gCaption.trim() || undefined
+      };
+      persistGallery(gallery.map((g) => (g.id === editingGallery.id ? updated : g)));
+      syncGalleryItemToFirebase(updated).catch((err) => console.warn(err));
+    } else {
+      const newItem: GalleryItem = {
+        id: "gal-" + Date.now(),
+        title: gTitle,
+        category: gCategory,
+        year: Number(gYear),
+        imageUrl: gImageUrl.trim() || undefined,
+        caption: gCaption.trim() || undefined,
+        createdAt: new Date().toISOString()
+      };
+      persistGallery([newItem, ...gallery]);
+      syncGalleryItemToFirebase(newItem).catch((err) => console.warn(err));
+    }
+
+    setIsGalleryModalOpen(false);
+  };
+
+  const handleDeleteGallery = (id: string) => {
+    if (confirm("Apakah Anda yakin ingin menghapus dokumentasi ini?")) {
+      persistGallery(gallery.filter((g) => g.id !== id));
+      deleteGalleryItemFromFirebase(id).catch((err) => console.warn(err));
+    }
+  };
+
   const handleUpdateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
     const updated = orders.map((o) => (o.id === orderId ? { ...o, status: newStatus, updatedAt: new Date().toISOString() } : o));
     setOrders(updated);
@@ -289,6 +364,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
               }`}
             >
               📋 Transaksi ({orders.length})
+            </button>
+
+            <button
+              onClick={() => setActiveTab("gallery")}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                activeTab === "gallery"
+                  ? "bg-slate-900 text-white shadow-md"
+                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-100"
+              }`}
+            >
+              📸 Galeri ({gallery.length})
             </button>
           </div>
         </div>
@@ -546,6 +632,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(p.id)}
+                        className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition"
+                        title="Hapus"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB: GALERI DOKUMENTASI */}
+        {activeTab === "gallery" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-base font-serif-title flex items-center gap-2">
+                <ImageIcon size={18} /> Galeri Dokumentasi ({gallery.length})
+              </h3>
+
+              <button
+                onClick={openCreateGalleryModal}
+                className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md flex items-center gap-1.5 transition"
+              >
+                <Plus size={16} /> + Tambah Dokumentasi
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-500 font-mono bg-white/70 border border-slate-300/80 rounded-2xl px-4 py-2.5 leading-relaxed">
+              Dokumentasi liga hingga puncak acara & arsip tahun sebelumnya akan tampil di halaman Kompetisi (Galeri).
+              Item tanpa foto otomatis tampil sebagai placeholder.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {gallery.map((g) => (
+                <div key={g.id} className="bg-white rounded-3xl border border-slate-300/80 overflow-hidden flex flex-col shadow-sm">
+                  <div className="relative aspect-video bg-slate-100 flex items-center justify-center shrink-0">
+                    {g.imageUrl ? (
+                      <img src={g.imageUrl} alt={g.title} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1.5 text-slate-400 py-8">
+                        <ImageIcon size={28} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">Placeholder</span>
+                      </div>
+                    )}
+                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-slate-900/85 text-white text-[9px] font-bold rounded-full">
+                      {g.year}
+                    </span>
+                    <span className="absolute top-2 right-2 px-2 py-0.5 bg-white/90 text-slate-700 text-[9px] font-bold rounded-full border border-slate-200">
+                      {g.category}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 flex flex-col flex-1">
+                    <h4 className="font-bold text-slate-900 text-sm font-serif-title line-clamp-1">{g.title}</h4>
+                    {g.caption && <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{g.caption}</p>}
+
+                    <div className="pt-3 mt-auto border-t border-slate-100 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => openEditGalleryModal(g)}
+                        className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                        title="Edit"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteGallery(g.id)}
                         className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition"
                         title="Hapus"
                       >
@@ -847,6 +1001,121 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, setPro
                   className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold flex items-center gap-1.5 shadow-md"
                 >
                   <Save size={14} /> Simpan Merchandise
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Gallery Form (Create / Edit) */}
+      {isGalleryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative my-8 text-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <h3 className="font-bold text-slate-900 text-base font-serif-title">
+                {editingGallery ? "Edit Dokumentasi" : "Tambah Dokumentasi"}
+              </h3>
+              <button onClick={() => setIsGalleryModalOpen(false)} className="text-slate-400 hover:text-slate-900">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveGallery} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-600 mb-1">Judul Momen *</label>
+                <input
+                  type="text"
+                  required
+                  value={gTitle}
+                  onChange={(e) => setGTitle(e.target.value)}
+                  placeholder="mis. Final Futsal Antar Kelas"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:border-slate-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-600 mb-1">Tahapan Acara</label>
+                  <select
+                    value={gCategory}
+                    onChange={(e) => setGCategory(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900"
+                  >
+                    <option value="Liga Olahraga">Liga Olahraga</option>
+                    <option value="Liga E-Sport">Liga E-Sport</option>
+                    <option value="Pentas Seni">Pentas Seni</option>
+                    <option value="Bazar">Bazar</option>
+                    <option value="Puncak Acara">Puncak Acara</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1">Tahun Edisi *</label>
+                  <input
+                    type="number"
+                    required
+                    min={2010}
+                    max={2100}
+                    value={gYear}
+                    onChange={(e) => setGYear(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 mb-1">Keterangan Singkat</label>
+                <input
+                  type="text"
+                  value={gCaption}
+                  onChange={(e) => setGCaption(e.target.value)}
+                  placeholder="mis. Gilang resmi pembukaan liga futsal."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:border-slate-900"
+                />
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <label className="block text-xs font-bold text-slate-700">Foto Dokumentasi (opsional)</label>
+                {gImageUrl ? (
+                  <img src={gImageUrl} alt="Preview" className="w-full aspect-video object-cover rounded-xl border border-slate-200" />
+                ) : (
+                  <div className="aspect-video rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                    <ImageIcon size={24} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest">Kosong = Placeholder</span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setGImageUrl(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGalleryModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold flex items-center gap-1.5 shadow-md"
+                >
+                  <Save size={14} /> Simpan Dokumentasi
                 </button>
               </div>
             </form>
