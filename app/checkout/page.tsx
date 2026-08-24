@@ -28,6 +28,8 @@ export default function CheckoutPage() {
   const [proofFile, setProofFile] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [syncFailed, setSyncFailed] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const mounted = useMounted();
 
   // Prefill form dari profil user — pola "adjust state during render", bukan effect.
@@ -161,29 +163,35 @@ export default function CheckoutPage() {
     };
 
     try {
-      // Tunggu sampai data berhasil masuk Firebase
-      await syncOrderToFirebase(newOrder);
+      // Tunggu sampai data benar-benar terkirim; syncOrderToFirebase melaporkan
+      // status per-database (RTDB & Firestore) setelah beberapa percobaan ulang.
+      const result = await syncOrderToFirebase(newOrder);
+      setSyncFailed(!result.rtdbOk && !result.firestoreOk);
     } catch (err) {
-      console.warn("Gagal sinkronisasi ke Firebase:", err);
-      alert("Terjadi kendala jaringan saat menyimpan pesanan. Pesanan akan disimpan ke lokal.");
+      console.error("Gagal sinkronisasi ke Firebase:", err);
+      setSyncFailed(true);
     }
+    setLastOrderId(orderId);
 
     // Kurangi stok & tambah soldCount untuk setiap produk yang dipesan.
     try {
       const saved = localStorage.getItem("gala_merch_products");
       if (saved) {
         const products: Product[] = JSON.parse(saved);
-        cart.forEach((item) => {
+        for (const item of cart) {
           const idx = products.findIndex((p) => p.id === item.productId);
-          if (idx === -1) return;
+          if (idx === -1) continue;
           const updated: Product = { ...products[idx] };
           if (updated.stockType === "READY") {
             updated.stockCount = Math.max(0, (updated.stockCount || 0) - item.quantity);
           }
           updated.soldCount = (updated.soldCount ?? 0) + item.quantity;
           products[idx] = updated;
-          void syncProductToFirebase(updated);
-        });
+          const r = await syncProductToFirebase(updated);
+          if (!r.rtdbOk && !r.firestoreOk) {
+            console.warn(`Stok produk ${updated.id} gagal disinkronkan ke Firebase`);
+          }
+        }
         localStorage.setItem("gala_merch_products", JSON.stringify(products));
       }
     } catch (e) {
@@ -479,14 +487,31 @@ export default function CheckoutPage() {
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => router.push("/orders")}></div>
           <div className="relative w-full max-w-sm bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl z-10 text-center animate-in zoom-in-95">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
-              <span className="material-symbols-outlined text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border ${syncFailed ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
+              <span className="material-symbols-outlined text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>{syncFailed ? "cloud_off" : "check_circle"}</span>
             </div>
             
-            <h3 className="font-bold text-2xl text-slate-900 mb-2 font-serif-title">Pesanan Berhasil!</h3>
-            <p className="text-xs text-slate-500 mb-8 leading-relaxed max-w-[250px] mx-auto">
-              Terima kasih! Pesanan Anda telah diterima dan sedang diproses. Silakan pantau status pesanan Anda.
-            </p>
+            <h3 className="font-bold text-2xl text-slate-900 mb-2 font-serif-title">{syncFailed ? "Pesanan Tersimpan di Perangkat" : "Pesanan Berhasil!"}</h3>
+            
+            {syncFailed ? (
+              <div className="text-xs text-slate-500 mb-6 leading-relaxed space-y-2 max-w-[280px] mx-auto">
+                <p>
+                  Pesanan Anda tersimpan, namun <strong>belum terkirim ke server panitia</strong> (kendala jaringan).
+                </p>
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left">
+                  <p className="font-bold text-amber-800 mb-1">PENTING — lakukan salah satu:</p>
+                  <p className="text-amber-800">
+                    1. Screenshot halaman ini &amp; pesan WhatsApp ke panitia, atau<br />
+                    2. Buka menu Pesanan saat sinyal membaik lalu hubungi panitia dengan kode:
+                  </p>
+                  <p className="font-mono font-bold text-amber-900 mt-1.5 select-all">{lastOrderId}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 mb-8 leading-relaxed max-w-[250px] mx-auto">
+                Terima kasih! Pesanan Anda telah diterima dan sedang diproses. Silakan pantau status pesanan Anda.
+              </p>
+            )}
             
             <div className="flex flex-col gap-3">
               <button 
