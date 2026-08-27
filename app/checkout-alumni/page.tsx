@@ -5,22 +5,19 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useMounted } from "@/lib/useMounted";
-import { AlumniTicket, AlumniVerificationType, Order, OrderItem } from "@/types/merch";
-import { syncOrderToFirebase, syncAlumniTicketToFirebase, syncProductToFirebase } from "@/lib/firebaseService";
+import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, OrderItem } from "@/types/merch";
+import { syncOrderToFirebase, syncAlumniTicketToFirebase } from "@/lib/firebaseService";
 import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
 import { ALUMNI_TICKET_BUNDLES, GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
-import { INITIAL_PRODUCTS } from "@/data/mockProducts";
-import { Product, DeliveryMethod } from "@/types/merch";
+import { DeliveryMethod } from "@/types/merch";
 import Link from "next/link";
 
 interface CheckoutData {
   bundleId: string;
   bundleName: string;
   ticketPrice: number;
-  merchProductId: string;
   totalPrice: number;
-  selectedSize: string;
-  selectedColor: string;
+  bundleItems: AlumniTicketBundleItem[];
   verificationType: AlumniVerificationType;
   verificationFileUrl: string;
   verificationFileName: string;
@@ -178,8 +175,8 @@ export default function CheckoutAlumniPage() {
         productId: checkoutData.bundleId,
         name: checkoutData.bundleName,
         price: checkoutData.totalPrice,
-        selectedSize: checkoutData.selectedSize,
-        selectedColor: checkoutData.selectedColor,
+        selectedSize: "-",
+        selectedColor: "-",
         quantity: 1,
         imageUrl: bundle?.imageUrl || "",
         stockType: "READY"
@@ -227,11 +224,9 @@ export default function CheckoutAlumniPage() {
       verificationType,
       verificationFileUrl,
       graduationYear: Number(graduationYear),
-      bundleMerchProductId: checkoutData.merchProductId,
-      bundleMerchVariant: {
-        size: checkoutData.selectedSize,
-        color: checkoutData.selectedColor
-      },
+      bundleId: checkoutData.bundleId,
+      bundleName: checkoutData.bundleName,
+      bundleItems: checkoutData.bundleItems,
       status: "PENDING_VERIFICATION",
       createdAt: new Date().toISOString()
     };
@@ -246,24 +241,6 @@ export default function CheckoutAlumniPage() {
     }
 
     setLastOrderId(orderId);
-
-    try {
-      const saved = localStorage.getItem("gala_merch_products");
-      const products: Product[] = saved ? JSON.parse(saved) : [...INITIAL_PRODUCTS];
-      const idx = products.findIndex((p) => p.id === checkoutData.merchProductId);
-      if (idx !== -1) {
-        const updated: Product = { ...products[idx] };
-        if (updated.stockType === "READY") {
-          updated.stockCount = Math.max(0, (updated.stockCount || 0) - 1);
-        }
-        updated.soldCount = (updated.soldCount ?? 0) + 1;
-        products[idx] = updated;
-        await syncProductToFirebase(updated);
-        localStorage.setItem("gala_merch_products", JSON.stringify(products));
-      }
-    } catch (e) {
-      console.error("Gagal memperbarui stok produk:", e);
-    }
 
     const existingTicketsStr = localStorage.getItem("gala_alumni_tickets");
     const existingTickets: AlumniTicket[] = existingTicketsStr ? JSON.parse(existingTicketsStr) : [];
@@ -428,24 +405,38 @@ export default function CheckoutAlumniPage() {
               <span className="material-symbols-outlined text-[18px] text-primary">shopping_bag</span> Detail Bundle
             </h4>
 
-            <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-5 flex items-center gap-4">
-              <img
-                src={bundle.imageUrl}
-                alt={bundle.name}
-                className="w-20 h-20 rounded-xl object-cover bg-white border border-outline-variant/30"
-              />
-              <div className="flex-1">
-                <p className="font-bold text-primary text-sm font-headline-md">{bundle.name}</p>
-                <p className="text-xs text-on-surface-variant mt-1">
-                  Ukuran: {checkoutData.selectedSize} • Warna: {checkoutData.selectedColor}
-                </p>
-                <p className="text-xs text-on-surface-variant mt-1">
-                  Tahun Lulus: {graduationYear} • Verifikasi: {verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"}
-                </p>
+            <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={bundle.imageUrl}
+                  alt={bundle.name}
+                  className="w-16 h-16 rounded-xl object-cover bg-white border border-outline-variant/30"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-primary text-sm font-headline-md">{bundle.name}</p>
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    Tahun Lulus: {graduationYear} • Verifikasi: {verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"}
+                  </p>
+                </div>
+                <span className="font-bold text-primary font-headline-md text-sm">
+                  Rp {checkoutData.totalPrice.toLocaleString("id-ID")}
+                </span>
               </div>
-              <span className="font-bold text-primary font-headline-md text-sm">
-                Rp {checkoutData.totalPrice.toLocaleString("id-ID")}
-              </span>
+
+              <div className="border-t border-outline-variant/30 pt-3 space-y-1.5">
+                {checkoutData.bundleItems.map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1.5">
+                    <img src={item.imageUrl} alt={item.name} className="w-8 h-8 rounded-lg object-cover bg-white border border-outline-variant/30" />
+                    <span className="text-xs text-on-surface-variant flex-1">{item.name}</span>
+                    <span className="text-[10px] text-on-surface-variant">x{item.quantity}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-outline-variant/30 pt-3 flex justify-between text-xs">
+                <span className="text-on-surface-variant">Harga Tiket Alumni</span>
+                <span className="font-bold text-primary">Rp {checkoutData.ticketPrice.toLocaleString("id-ID")}</span>
+              </div>
             </div>
           </div>
 

@@ -117,15 +117,19 @@ export interface AlumniTicket {
   verificationType: AlumniVerificationType;
   verificationFileUrl: string;
   graduationYear: number;
-  bundleMerchProductId: string;
-  bundleMerchVariant: {
-    size: string;
-    color: string;
-  };
+  bundleId: string;
+  bundleName: string;
+  bundleItems: AlumniTicketBundleItem[];
   status: AlumniTicketStatus;
   createdAt: string;
   verifiedAt?: string;
   verifiedBy?: string;
+}
+
+export interface AlumniTicketBundleItem {
+  name: string;
+  quantity: number;
+  imageUrl?: string;
 }
 
 export interface AlumniTicketBundle {
@@ -133,11 +137,7 @@ export interface AlumniTicketBundle {
   name: string;
   description: string;
   ticketPrice: number;
-  merchProductId: string;
   totalPrice: number;
-  merchVariants: {
-    sizes: string[];
-    colors: string[];
-  };
+  items: AlumniTicketBundleItem[];
   imageUrl?: string;
 }

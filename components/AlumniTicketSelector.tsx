@@ -17,8 +17,6 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const router = useRouter();
   const { user, showAuthAlert } = useAuth();
 
-  const [selectedSize, setSelectedSize] = useState<string>("");
-  const [selectedColor, setSelectedColor] = useState<string>("");
   const [verificationType, setVerificationType] = useState<"KARTU_PELAJAR" | "SKL">("KARTU_PELAJAR");
   const [verificationFileUrl, setVerificationFileUrl] = useState<string | null>(null);
   const [verificationFileName, setVerificationFileName] = useState<string | null>(null);
@@ -26,23 +24,13 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sizes = bundle.merchVariants.sizes;
-  const colors = bundle.merchVariants.colors;
-
   const [prevBundleId, setPrevBundleId] = useState<string | null>(null);
   if (bundle.id !== prevBundleId) {
     setPrevBundleId(bundle.id);
-    if (sizes.length > 0) setSelectedSize(sizes[0]);
-    if (colors.length > 0) setSelectedColor(colors[0]);
   }
 
   const handleContinue = () => {
     setError(null);
-
-    if (!selectedSize || !selectedColor) {
-      setError("Pilih ukuran dan warna merchandise terlebih dahulu.");
-      return;
-    }
 
     if (!verificationFileUrl) {
       setError("Upload bukti verifikasi (Kartu Pelajar / SKL) terlebih dahulu.");
@@ -63,10 +51,8 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       bundleId: bundle.id,
       bundleName: bundle.name,
       ticketPrice: bundle.ticketPrice,
-      merchProductId: bundle.merchProductId,
       totalPrice: bundle.totalPrice,
-      selectedSize,
-      selectedColor,
+      bundleItems: bundle.items,
       verificationType,
       verificationFileUrl,
       verificationFileName,
@@ -108,6 +94,20 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
                 Rp {bundle.totalPrice.toLocaleString("id-ID")}
               </div>
             </div>
+
+            {/* Bundle Items Grid */}
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              {bundle.items.map((item, i) => (
+                <div key={i} className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-col items-center gap-1.5">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-full aspect-square object-cover rounded-xl bg-slate-50"
+                  />
+                  <span className="text-[9px] font-bold text-slate-500 text-center leading-tight line-clamp-2">{item.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* RIGHT: Form */}
@@ -127,72 +127,34 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
               {bundle.description}
             </p>
 
-            {/* Detail & Deskripsi Box */}
+            {/* Detail Bundle */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-3">
               <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest mb-4">
-                <span className="material-symbols-outlined text-[16px] text-slate-700">shopping_bag</span> DETAIL BUNDLE
-              </h3>
-              <div className="flex justify-between text-sm text-slate-600">
-                <span>Harga Tiket Alumni</span>
-                <span className="font-bold text-slate-900">Rp {bundle.ticketPrice.toLocaleString("id-ID")}</span>
-              </div>
-              <div className="flex justify-between text-sm text-slate-600 border-t border-slate-100 pt-3">
-                <span>Merchandise</span>
-                <span className="font-bold text-slate-900">Rp {(bundle.totalPrice - bundle.ticketPrice).toLocaleString("id-ID")}</span>
-              </div>
-              <div className="flex justify-between text-slate-900 font-bold text-lg border-t border-slate-200 pt-3">
-                <span>Total</span>
-                <span className="text-slate-900">Rp {bundle.totalPrice.toLocaleString("id-ID")}</span>
-              </div>
-            </div>
-
-            {/* Variant Selectors */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-5">
-              <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest">
-                <span className="material-symbols-outlined text-[16px] text-slate-700">straighten</span> PILIH VARIAN MERCHANDISE
+                <span className="material-symbols-outlined text-[16px] text-slate-700">shopping_bag</span> ISI BUNDLE
               </h3>
 
-              {sizes.length > 0 && (
-                <div>
-                  <h4 className="text-[11px] font-black text-slate-900 tracking-widest mb-3">UKURAN</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {sizes.map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => setSelectedSize(s)}
-                        className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                          selectedSize === s
-                            ? "bg-slate-900 text-white shadow-md"
-                            : "bg-white border border-slate-300 text-slate-700 hover:border-slate-900"
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    ))}
+              <div className="space-y-2.5">
+                {bundle.items.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+                    <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-900 truncate">{item.name}</p>
+                      <p className="text-[10px] text-slate-400">Qty: {item.quantity}</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
 
-              {colors.length > 0 && (
-                <div>
-                  <h4 className="text-[11px] font-black text-slate-900 tracking-widest mb-3">WARNA</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {colors.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setSelectedColor(c)}
-                        className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                          selectedColor === c
-                            ? "bg-slate-900 text-white shadow-md"
-                            : "bg-white border border-slate-300 text-slate-700 hover:border-slate-900"
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
+              <div className="border-t border-slate-200 pt-3 mt-3 space-y-1.5">
+                <div className="flex justify-between text-sm text-slate-500">
+                  <span>Harga Tiket Alumni</span>
+                  <span className="font-bold text-slate-900">Rp {bundle.ticketPrice.toLocaleString("id-ID")}</span>
                 </div>
-              )}
+                <div className="flex justify-between text-slate-900 font-bold text-lg">
+                  <span>Total</span>
+                  <span>Rp {bundle.totalPrice.toLocaleString("id-ID")}</span>
+                </div>
+              </div>
             </div>
 
             {/* Verifikasi Alumni */}

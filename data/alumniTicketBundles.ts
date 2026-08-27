@@ -3,58 +3,75 @@ import { AlumniTicketBundle } from "@/types/merch";
 export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
   {
     id: "ticket-alumni-bundle-1",
-    name: "Tiket Alumni + Kaos Oversized Gala Aksi Siswa",
-    description: "Tiket masuk khusus alumni SMK + Kaos Combed 24s Cotton Premium Boxy Fit edisi Dies Natalis GALAKSI XII",
+    name: "Keychain + Sticker Pack + Cermin",
+    description: "Tiket masuk khusus alumni SMK + Bundle Gantungan Kunci, Sticker Pack, dan Cermin Aesthetic Frame Emas",
     ticketPrice: 150000,
-    merchProductId: "prod-8",
-    totalPrice: 270000,
-    merchVariants: {
-      sizes: ["S", "M", "L", "XL", "XXL"],
-      colors: ["Off White", "Washed Black", "Vintage Sage"]
-    },
-    imageUrl: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800&auto=format&fit=crop"
+    totalPrice: 175000,
+    items: [
+      { name: "Keychain Ball & Dice", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop" },
+      { name: "Sticker Pack All City", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop" },
+      { name: "Cermin Aesthetic Frame Emas", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop" }
+    ],
+    imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
   },
   {
     id: "ticket-alumni-bundle-2",
-    name: "Tiket Alumni + Tumbler Aesthetic Set",
-    description: "Tiket masuk khusus alumni SMK + Botol minum insulated tumbler double-wall stainless steel 500ml",
+    name: "Totebag + Topi",
+    description: "Tiket masuk khusus alumni SMK + Bundle Totebag Canvas dan Topi",
     ticketPrice: 150000,
-    merchProductId: "prod-3",
-    totalPrice: 180000,
-    merchVariants: {
-      sizes: ["500 ml"],
-      colors: ["Terracotta", "Off White", "Sky Blue"]
-    },
-    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop"
-  },
-  {
-    id: "ticket-alumni-bundle-3",
-    name: "Tiket Alumni + Totebag Canvas Free Mockup",
-    description: "Tiket masuk khusus alumni SMK + Tas kain bahan Kanvas Tebal 14oz ramah lingkungan, muat laptop 15 inch",
-    ticketPrice: 150000,
-    merchProductId: "prod-5",
-    totalPrice: 195000,
-    merchVariants: {
-      sizes: ["38 x 42 cm"],
-      colors: ["Natural White", "Midnight Black"]
-    },
+    totalPrice: 213000,
+    items: [
+      { name: "Totebag Canvas Free Mockup", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
+      { name: "Topi Gala Aksi Siswa", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?q=80&w=800&auto=format&fit=crop" }
+    ],
     imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"
   },
   {
-    id: "ticket-alumni-bundle-4",
-    name: "Tiket Alumni + Notebook Dreamora Test",
-    description: "Tiket masuk khusus alumni SMK + Buku catatan hardcover eksklusif A5 ring spiral kertas bookpaper 80gsm",
+    id: "ticket-alumni-bundle-3",
+    name: "Keychain + Totebag + Topi",
+    description: "Tiket masuk khusus alumni SMK + Bundle Gantungan Kunci, Totebag Canvas, dan Topi",
     ticketPrice: 150000,
-    merchProductId: "prod-1",
-    totalPrice: 205000,
-    merchVariants: {
-      sizes: ["A5 Hardcover"],
-      colors: ["Cream Beige", "Charcoal Gray", "Sage"]
-    },
-    imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop"
+    totalPrice: 225000,
+    items: [
+      { name: "Keychain Ball & Dice", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop" },
+      { name: "Totebag Canvas Free Mockup", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
+      { name: "Topi Gala Aksi Siswa", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?q=80&w=800&auto=format&fit=crop" }
+    ],
+    imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+  },
+  {
+    id: "ticket-alumni-bundle-4",
+    name: "Tumbler + Totebag + Keychain + Sticker Pack",
+    description: "Tiket masuk khusus alumni SMK + Bundle Tumbler Aesthetic, Totebag Canvas, Gantungan Kunci, dan Sticker Pack",
+    ticketPrice: 150000,
+    totalPrice: 239000,
+    items: [
+      { name: "Tumbler Aesthetic Set", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop" },
+      { name: "Totebag Canvas Free Mockup", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
+      { name: "Keychain Ball & Dice", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop" },
+      { name: "Sticker Pack All City", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop" }
+    ],
+    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop"
+  },
+  {
+    id: "ticket-alumni-bundle-5",
+    name: "Tumbler + Topi + Totebag + Keychain + Sticker Pack + Cermin",
+    description: "Tiket masuk khusus alumni SMK + Bundle Lengkap: Tumbler, Topi, Totebag, Gantungan Kunci, Sticker Pack, dan Cermin",
+    ticketPrice: 150000,
+    totalPrice: 275000,
+    items: [
+      { name: "Tumbler Aesthetic Set", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop" },
+      { name: "Topi Gala Aksi Siswa", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?q=80&w=800&auto=format&fit=crop" },
+      { name: "Totebag Canvas Free Mockup", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
+      { name: "Keychain Ball & Dice", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop" },
+      { name: "Sticker Pack All City", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop" },
+      { name: "Cermin Aesthetic Frame Emas", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop" }
+    ],
+    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop"
   }
 ];
 
+export const TICKET_PRICE = 150000;
 export const GRADUATION_YEAR_MIN = 2000;
 export const GRADUATION_YEAR_MAX = new Date().getFullYear();
 export const MAX_VERIFICATION_FILE_SIZE = 2 * 1024 * 1024; // 2MB
