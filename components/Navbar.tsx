@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,32 +27,20 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isLogoutSuccessModalOpen, setIsLogoutSuccessModalOpen] = useState(false);
   const mounted = useMounted();
 
-  // Live Jepara Clock
-  const [timeString, setTimeString] = useState("");
-
-  useEffect(() => {
-    const updateClock = () => {
-      setTimeString(new Date().toLocaleTimeString("en-US", { hour12: false }));
-    };
-
-    // Pembaruan pertama lewat interval (callback async), bukan setState sinkron di body effect.
-    const interval = setInterval(updateClock, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   const navLinks = [
     { name: "Merchandise", path: "/merchandise" },
     { name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true },
     { name: "Cek Pesanan", path: "/orders" }
   ];
 
+  const isAdminMode = activeView === "admin";
+
   return (
     <>
-      {/* Mobile Top App-Bar — ringkas, navigasi utama ada di bottom bar */}
+      {/* Mobile Top App-Bar */}
       <div className="lg:hidden w-full flex justify-center sticky top-0 z-50 px-4 pb-2">
         <header className="w-full max-w-md bg-white/95 backdrop-blur-md border border-neutral-200 rounded-b-[26px] pl-4 pr-2 py-3 shadow-sm flex justify-between items-center">
-          <Link href="/" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
+          <Link href="/merchandise" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
             <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} priority className="h-8 w-auto max-w-[140px] object-contain" />
           </Link>
           <div className="flex items-center">
@@ -77,105 +65,150 @@ export const Navbar: React.FC<NavbarProps> = ({
         </header>
       </div>
 
-      {/* Desktop Header */}
-      <div className="hidden lg:flex w-full justify-center sticky top-8 z-50 mb-8 px-6 md:px-16">
-        <header className="w-full max-w-7xl bg-white/95 backdrop-blur-md border border-neutral-200 rounded-full px-4 sm:px-6 py-3 md:py-4 shadow-sm flex justify-between items-center transition-all duration-300">
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Brand */}
-            <Link 
-              href="/" 
-              className="flex items-center shrink-0 hover:scale-105 transition-transform duration-200"
-            >
-              <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} priority className="h-8 sm:h-9 md:h-10 w-auto max-w-[150px] object-contain" />
-            </Link>
-            {/* Badge */}
-            <div className="hidden md:flex items-center gap-2 bg-neutral-100 border border-neutral-200 px-3 py-1.5 transition-colors" style={{ borderRadius: '2px' }}>
-              <div className="w-1.5 h-1.5 bg-neutral-900 animate-pulse" style={{ borderRadius: '1px' }}></div>
-              <span className="font-dot-matrix text-[10px] font-bold text-neutral-900 tracking-widest uppercase mt-0.5">JEPARA {timeString || "..."}</span>
-            </div>
-          </div>
+      {/* ═══════════════════════════════════════════════════════════════
+          Desktop Header — Floating Pill, 3-Section Layout
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="hidden lg:flex w-full justify-center sticky top-6 z-50 mb-6 px-6 xl:px-12">
+        <header
+          className={`w-full max-w-6xl backdrop-blur-xl border rounded-full px-5 py-3 shadow-lg flex items-center justify-between transition-all duration-500 ease-out ${
+            isAdminMode
+              ? "bg-red-50/80 border-red-200/60 shadow-red-900/5"
+              : "bg-white/90 border-neutral-200/60 shadow-neutral-900/5"
+          }`}
+        >
+          {/* ── Left: Logo ── */}
+          <Link
+            href="/merchandise"
+            className="flex items-center shrink-0 transition-transform duration-200 hover:scale-105"
+          >
+            <Image
+              src="/logo.png"
+              alt="Galaksi XII Logo"
+              width={512}
+              height={512}
+              priority
+              className="h-9 w-auto max-w-[140px] object-contain"
+            />
+          </Link>
 
-          {/* Navigation Links (Desktop) */}
-          <nav className="hidden lg:flex items-center gap-8">
-            {activeView === "admin" ? (
+          {/* ── Center: Navigation Links ── */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {isAdminMode ? (
               <>
-                <Link href="/merchandise" className={`font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 ${pathname === '/merchandise' ? 'text-primary border-b-2 border-primary pb-1 font-bold' : 'text-on-surface-variant hover:text-primary'}`}>Dashboard Admin</Link>
-                <button onClick={() => { setActiveView("shop"); router.push("/merchandise"); }} className="font-label-md text-label-md text-red-500 hover:text-red-700 transition-all duration-200 font-bold">Keluar Admin</button>
+                <Link
+                  href="/merchandise"
+                  className={`px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
+                    pathname === "/merchandise"
+                      ? "bg-red-600 text-white shadow-md shadow-red-600/20"
+                      : "text-red-600 hover:bg-red-100"
+                  }`}
+                >
+                  Dashboard Admin
+                </Link>
+                <button
+                  onClick={() => { setActiveView("shop"); router.push("/merchandise"); }}
+                  className="px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-all duration-200"
+                >
+                  Keluar Admin
+                </button>
               </>
             ) : (
-              <>
-                {navLinks.map((link) => {
-                  return (
-                    <Link 
-                      key={link.name} 
-                      href={link.path}
-                      className={`font-sans text-[11px] tracking-[0.2em] uppercase transition-all duration-200 hover:-translate-y-0.5 ${pathname === link.path ? 'text-neutral-900 font-bold border-b-2 border-neutral-900 pb-1' : 'text-neutral-400 hover:text-neutral-900 font-bold'}`}
-                    >
-                      {link.name}
-                    </Link>
-                  );
-                })}
-                {isAdmin && (
-                  <button 
-                    onClick={() => {
-                      setActiveView("admin");
-                      if (pathname !== "/merchandise") router.push("/merchandise");
-                    }} 
-                    className="font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 text-red-600 hover:text-red-700 font-bold flex items-center gap-1"
+              navLinks.map((link) => {
+                const isActive = pathname === link.path;
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.path}
+                    className={`relative px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
+                      isActive
+                        ? "bg-neutral-900 text-white shadow-md shadow-neutral-900/15"
+                        : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span>
-                    <span>Dashboard Admin</span>
-                  </button>
-                )}
-              </>
+                    {link.name}
+                    {link.isSpecial && !isActive && (
+                      <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-[#e45b45] rounded-full align-middle animate-pulse" />
+                    )}
+                  </Link>
+                );
+              })
+            )}
+            {isAdmin && !isAdminMode && (
+              <button
+                onClick={() => {
+                  setActiveView("admin");
+                  if (pathname !== "/merchandise") router.push("/merchandise");
+                }}
+                className="px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase text-red-500 hover:bg-red-50 transition-all duration-200 flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[15px]">admin_panel_settings</span>
+                Admin
+              </button>
             )}
           </nav>
 
-          {/* Trailing Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {activeView !== "admin" ? (
+          {/* ── Right: Actions ── */}
+          <div className="flex items-center gap-2">
+            {isAdminMode ? (
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-full text-[11px] font-bold tracking-wider uppercase">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                Admin
+              </div>
+            ) : (
               <>
-                {/* Cart Icon Button */}
-                <button onClick={() => setIsCartOpen(true)} aria-label="shopping_bag" className="flex items-center justify-center w-10 h-10 bg-white border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:border-neutral-900 transition-all relative" style={{ borderRadius: '2px' }}>
-                  <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+                {/* Cart */}
+                <button
+                  onClick={() => setIsCartOpen(true)}
+                  aria-label="Keranjang"
+                  className="relative flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-neutral-900 transition-all duration-200 active:scale-90"
+                >
+                  <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
                   {totalItemCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center animate-bounce" style={{ borderRadius: '2px' }}>{totalItemCount}</span>
+                    <span className="absolute -top-0.5 -right-0.5 bg-[#e45b45] text-white text-[9px] font-bold min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+                      {totalItemCount}
+                    </span>
                   )}
                 </button>
 
-                {/* User Auth Profile */}
-                <div className="hidden md:block relative group">
-                  {mounted ? (
-                    user ? (
-                      <button type="button" onClick={() => setIsLogoutModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-200 text-neutral-900 font-bold text-[11px] uppercase tracking-wider hover:bg-neutral-100 transition-all shadow-sm active:scale-95" style={{ borderRadius: '2px' }}>
-                        <span className="w-1.5 h-1.5 bg-neutral-900"></span>
-                        <span className="max-w-[120px] truncate">{user.displayName || user.email?.split("@")[0]}</span>
-                        <span className="material-symbols-outlined text-[14px]">logout</span>
-                      </button>
-                    ) : (
-                      <Link href="/login" className="inline-flex items-center gap-2 px-5 py-2 bg-neutral-900 text-white font-bold text-[11px] uppercase tracking-wider hover:bg-[#e45b45] transition-colors shadow-sm active:scale-95" style={{ borderRadius: '2px' }}>
-                        <span className="w-1.5 h-1.5 bg-white"></span>
-                        <span>Masuk</span>
-                      </Link>
-                    )
+                {/* Auth */}
+                {mounted ? (
+                  user ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsLogoutModalOpen(true)}
+                      className="flex items-center gap-2.5 pl-2 pr-4 py-1.5 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-all duration-200 active:scale-95"
+                    >
+                      <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center text-[11px] font-bold">
+                        {(user.displayName || "U").charAt(0).toUpperCase()}
+                      </span>
+                      <span className="max-w-[100px] truncate text-[11px] font-semibold tracking-wide">
+                        {user.displayName || user.email?.split("@")[0]}
+                      </span>
+                    </button>
                   ) : (
-                    <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-50 border border-neutral-200 text-neutral-400 font-bold text-xs" style={{ borderRadius: '2px' }}>
-                      <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent text-neutral-400 rounded-full" />
-                    </div>
-                  )}
-                </div>
+                    <Link
+                      href="/login"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-full hover:bg-[#e45b45] transition-all duration-200 text-[11px] font-bold tracking-wider uppercase active:scale-95"
+                    >
+                      <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                      Masuk
+                    </Link>
+                  )
+                ) : (
+                  <div className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center">
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-neutral-300 border-t-transparent rounded-full" />
+                  </div>
+                )}
               </>
-            ) : (
-              <div className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-red-50 border border-red-100 text-red-600 font-bold rounded-full text-xs">
-                <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> Administrator
-              </div>
             )}
-
           </div>
         </header>
       </div>
 
-      {/* Bottom Navigation (Mobile) — navigasi ala aplikasi */}
+      {/* Bottom Navigation (Mobile) */}
       <MobileNav activeView={activeView} setActiveView={setActiveView} />
 
       {/* Logout Modal */}
@@ -192,7 +225,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </p>
             <div className="flex items-center gap-3">
               <button onClick={() => setIsLogoutModalOpen(false)} className="flex-1 bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-on-surface font-bold py-2.5 px-4 rounded-full text-xs transition-colors">Batal</button>
-              <button onClick={async () => { setIsLogoutModalOpen(false); await logout(); setIsLogoutSuccessModalOpen(true); router.refresh(); router.push("/"); }} className="flex-1 bg-black text-white hover:bg-neutral-800 font-bold py-2.5 px-4 rounded-full text-xs transition-all shadow-md active:scale-95">Ya, Keluar</button>
+              <button onClick={async () => { setIsLogoutModalOpen(false); await logout(); setIsLogoutSuccessModalOpen(true); router.refresh(); router.push("/merchandise"); }} className="flex-1 bg-black text-white hover:bg-neutral-800 font-bold py-2.5 px-4 rounded-full text-xs transition-all shadow-md active:scale-95">Ya, Keluar</button>
             </div>
           </div>
         </div>,
