@@ -5,7 +5,7 @@ import { Product, Order } from "@/types/merch";
 
 interface AdminOverviewProps {
   products: Product[];
-  onSwitchTab: (tab: "overview" | "products" | "orders" | "gallery") => void;
+  onSwitchTab: (tab: "overview" | "products" | "orders") => void;
 }
 
 const loadInitialOrders = (): Order[] => {

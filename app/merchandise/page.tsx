@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { ProductModal } from "@/components/ProductModal";
 import { AdminDashboard } from "@/components/admin";
-import { Product, GalleryItem } from "@/types/merch";
+import { Product } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
 
 import { useAuth } from "@/context/AuthContext";
@@ -24,21 +24,11 @@ const loadInitialProducts = (): Product[] => {
   return INITIAL_PRODUCTS;
 };
 
-const loadInitialGallery = (): GalleryItem[] => {
-  if (typeof window === "undefined") return [];
-  const saved = localStorage.getItem("gala_merch_gallery");
-  if (saved) {
-    try { return JSON.parse(saved); } catch { return []; }
-  }
-  return [];
-};
-
 export default function MerchandisePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>(loadInitialProducts);
-  const [gallery, setGallery] = useState<GalleryItem[]>(loadInitialGallery);
   const [activeView, setActiveView] = useState<"shop" | "admin">("shop");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -91,8 +81,6 @@ export default function MerchandisePage() {
           <AdminDashboard
             products={products}
             setProducts={setProducts}
-            gallery={gallery}
-            setGallery={setGallery}
             onExit={() => setActiveView("shop")}
           />
         ) : (

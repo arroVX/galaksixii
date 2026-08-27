@@ -1,34 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
-import { Product, GalleryItem } from "@/types/merch";
+import { Product } from "@/types/merch";
 import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminOrders } from "./AdminOrders";
-import { AdminGallery } from "./AdminGallery";
 
 interface AdminDashboardProps {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
-  gallery: GalleryItem[];
-  setGallery: React.Dispatch<React.SetStateAction<GalleryItem[]>>;
   onExit: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   products,
   setProducts,
-  gallery,
-  setGallery,
   onExit
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders" | "gallery">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders">("overview");
 
   const tabs = [
     { key: "overview" as const, label: "Ringkasan" },
     { key: "products" as const, label: "Produk" },
-    { key: "orders" as const, label: "Pesanan" },
-    { key: "gallery" as const, label: "Galeri" }
+    { key: "orders" as const, label: "Pesanan" }
   ];
 
   return (
@@ -75,9 +69,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
         {activeTab === "orders" && (
           <AdminOrders />
-        )}
-        {activeTab === "gallery" && (
-          <AdminGallery gallery={gallery} setGallery={setGallery} />
         )}
 
       </div>
