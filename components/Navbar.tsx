@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useMounted } from "@/lib/useMounted";
+import { MobileNav } from "@/components/MobileNav";
 
 interface NavbarProps {
   activeView?: "shop" | "admin";
@@ -22,7 +23,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
   const { user, isAdmin, logout } = useAuth();
   const { totalItemCount, setIsCartOpen } = useCart();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLogoutSuccessModalOpen, setIsLogoutSuccessModalOpen] = useState(false);
   const mounted = useMounted();
@@ -45,12 +45,42 @@ export const Navbar: React.FC<NavbarProps> = ({
     { name: "Beranda", path: "/" },
     { name: "Kompetisi", path: "/kompetisi" },
     { name: "Merchandise", path: "/merchandise" },
+    { name: "Tiket Alumni", path: "/tiket-alumni", isSpecial: true },
     { name: "Cek Pesanan", path: "/orders" }
   ];
 
   return (
     <>
-      <div className="w-full flex justify-center sticky top-4 md:top-8 z-50 mb-4 md:mb-8 px-4 sm:px-6 md:px-16">
+      {/* Mobile Top App-Bar — ringkas, navigasi utama ada di bottom bar */}
+      <div className="lg:hidden w-full flex justify-center sticky top-0 z-50 px-4 pb-2">
+        <header className="w-full max-w-md bg-white/95 backdrop-blur-md border border-neutral-200 rounded-b-[26px] pl-4 pr-2 py-3 shadow-sm flex justify-between items-center">
+          <Link href="/" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
+            <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} priority className="h-8 w-auto max-w-[140px] object-contain" />
+          </Link>
+          <div className="flex items-center">
+            {mounted ? (
+              user ? (
+                <button type="button" onClick={() => setIsLogoutModalOpen(true)} aria-label="Keluar akun" className="flex items-center gap-2 pl-2 pr-3 py-2 bg-neutral-100 border border-neutral-200 rounded-full active:scale-95 transition-transform">
+                  <span className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center font-bold text-[11px]">{(user.displayName || "U").charAt(0).toUpperCase()}</span>
+                  <span className="max-w-[100px] truncate font-bold text-[11px] uppercase tracking-wide text-neutral-900">{user.displayName || user.email?.split("@")[0]}</span>
+                  <span className="material-symbols-outlined text-[16px] text-red-500">logout</span>
+                </button>
+              ) : (
+                <Link href="/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white font-bold text-[11px] uppercase tracking-wider rounded-full active:scale-95 transition-transform shadow-sm">
+                  <span className="w-1.5 h-1.5 bg-white"></span>Masuk
+                </Link>
+              )
+            ) : (
+              <div className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center">
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-neutral-300 border-t-transparent rounded-full" />
+              </div>
+            )}
+          </div>
+        </header>
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden lg:flex w-full justify-center sticky top-8 z-50 mb-8 px-6 md:px-16">
         <header className="w-full max-w-7xl bg-white/95 backdrop-blur-md border border-neutral-200 rounded-full px-4 sm:px-6 py-3 md:py-4 shadow-sm flex justify-between items-center transition-all duration-300">
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Brand */}
@@ -143,97 +173,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Mobile Menu Toggle */}
-            <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-surface-container-low border border-outline-variant text-secondary hover:text-primary hover:bg-surface-container-high transition-all" aria-label="Buka Menu">
-              <span className="material-symbols-outlined text-[20px]">menu</span>
-            </button>
           </div>
         </header>
       </div>
 
-      {/* Mobile Navigation Drawer */}
-      {isMobileMenuOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-[100] transition-opacity duration-300">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
-          <div className="relative w-full max-w-sm ml-auto h-full bg-[#fbf8f8] shadow-2xl flex flex-col p-6 animate-in slide-in-from-right">
-            <div className="flex items-center justify-between border-b border-outline-variant/30 pb-4 mb-4">
-              <div className="flex items-center gap-3">
-                <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} className="h-9 w-auto object-contain" />
-                <span className="font-bold text-sm text-primary tracking-wider uppercase">Menu</span>
-              </div>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
-                <span className="material-symbols-outlined text-[22px]">close</span>
-              </button>
-            </div>
-
-            {mounted && (
-              <div className="mb-4">
-                {user ? (
-                  <div className="p-3.5 bg-white border border-outline-variant/40 rounded-2xl flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shrink-0">{(user.displayName || "U").charAt(0).toUpperCase()}</div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-xs text-black capitalize truncate">{user.displayName || user.email?.split("@")[0]}</p>
-                        <p className="text-[10px] text-gray-500">Akun Terverifikasi</p>
-                      </div>
-                    </div>
-                    <button onClick={async () => { setIsMobileMenuOpen(false); setIsLogoutModalOpen(true); }} className="text-red-600 hover:bg-red-50 text-[11px] font-bold px-3 py-1.5 rounded-full border border-red-200 transition-colors shrink-0">Keluar</button>
-                  </div>
-                ) : (
-                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full bg-black text-white font-bold py-3 px-4 rounded-xl text-center text-xs flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all">
-                    <span className="material-symbols-outlined text-[18px]">account_circle</span> Masuk Akun
-                  </Link>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2 flex-grow">
-              <Link 
-                href="/" 
-                onClick={() => setIsMobileMenuOpen(false)} 
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium text-base ${pathname === '/' ? 'bg-primary text-on-primary font-bold shadow-md' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'} transition-all`}
-              >
-                <span className="material-symbols-outlined text-[22px]">home</span> Beranda
-              </Link>
-              <Link 
-                href="/kompetisi" 
-                onClick={() => setIsMobileMenuOpen(false)} 
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium text-base ${pathname === '/kompetisi' ? 'bg-primary text-on-primary font-bold shadow-md' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'} transition-all`}
-              >
-                <span className="material-symbols-outlined text-[22px]">emoji_events</span> Kompetisi
-              </Link>
-              <Link href="/merchandise" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium text-base ${pathname === '/merchandise' ? 'bg-primary text-on-primary font-bold shadow-md' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'} transition-all`}>
-                <span className="material-symbols-outlined text-[22px]">storefront</span> Merchandise
-              </Link>
-              <Link href="/orders" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium text-base ${pathname === '/orders' ? 'bg-primary text-on-primary font-bold shadow-md' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary'} transition-all`}>
-                <span className="material-symbols-outlined text-[22px]">payments</span> Cek Pesanan
-              </Link>
-              <button onClick={() => { setIsMobileMenuOpen(false); setIsCartOpen(true); }} className="flex items-center justify-between px-4 py-3.5 rounded-xl font-medium text-base text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-all">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[22px]">shopping_bag</span> Keranjang Belanja
-                </div>
-                {totalItemCount > 0 && <span className="bg-error text-on-error text-xs font-bold px-2 py-0.5 rounded-full">{totalItemCount}</span>}
-              </button>
-              {isAdmin && (
-                <button 
-                  onClick={() => { 
-                    setIsMobileMenuOpen(false); 
-                    setActiveView("admin");
-                    if (pathname !== "/") router.push("/");
-                  }} 
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-base text-red-600 hover:bg-red-50 transition-all border border-red-100 mt-2"
-                >
-                  <span className="material-symbols-outlined text-[22px]">admin_panel_settings</span> Dashboard Admin
-                </button>
-              )}
-            </div>
-            <div className="border-t border-outline-variant/30 pt-4 mt-auto">
-              <p className="text-xs text-on-surface-variant/70 text-center font-medium">GALAKSI XII SMKN 3 Jepara</p>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Bottom Navigation (Mobile) — navigasi ala aplikasi */}
+      <MobileNav activeView={activeView} setActiveView={setActiveView} />
 
       {/* Logout Modal */}
       {isLogoutModalOpen && mounted && createPortal(

@@ -105,3 +105,39 @@ export interface GalleryItem {
   caption?: string;
   createdAt?: string;
 }
+
+export type AlumniVerificationType = "KARTU_PELAJAR" | "SKL";
+
+export type AlumniTicketStatus = "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED";
+
+export interface AlumniTicket {
+  id: string;
+  orderId: string;
+  userId: string;
+  verificationType: AlumniVerificationType;
+  verificationFileUrl: string;
+  graduationYear: number;
+  bundleMerchProductId: string;
+  bundleMerchVariant: {
+    size: string;
+    color: string;
+  };
+  status: AlumniTicketStatus;
+  createdAt: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+}
+
+export interface AlumniTicketBundle {
+  id: string;
+  name: string;
+  description: string;
+  ticketPrice: number;
+  merchProductId: string;
+  totalPrice: number;
+  merchVariants: {
+    sizes: string[];
+    colors: string[];
+  };
+  imageUrl?: string;
+}

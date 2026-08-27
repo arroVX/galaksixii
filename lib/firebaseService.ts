@@ -1,7 +1,7 @@
 import { db, rtdb } from "./firebase";
 import { doc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { ref, set, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
-import { Order, Product, GalleryItem } from "@/types/merch";
+import { Order, Product, GalleryItem, AlumniTicket } from "@/types/merch";
 
 /**
  * Firestore & Realtime Database sama-sama MENOLAK properti bernilai undefined
@@ -275,4 +275,90 @@ export async function fetchGalleryFromFirebase(): Promise<GalleryItem[]> {
   }
 
   return Array.from(galleryMap.values()).sort((a, b) => b.year - a.year);
+}
+
+/**
+ * Menyimpan / Menyinkronkan tiket alumni ke Firebase.
+ */
+export async function syncAlumniTicketToFirebase(ticket: AlumniTicket): Promise<SyncResult> {
+  const cleanTicket = stripUndefined(ticket);
+
+  const rtdbOk = await withRetry(async () => {
+    const ticketRef = ref(rtdb, `alumniTickets/${cleanTicket.id}`);
+    await set(ticketRef, cleanTicket);
+    console.log(`✓ AlumniTicket ${cleanTicket.id} berhasil terkirim ke Realtime Database`);
+  });
+
+  const firestoreOk = await withRetry(async () => {
+    const docRef = doc(db, "alumniTickets", cleanTicket.id);
+    await setDoc(docRef, cleanTicket);
+    console.log(`✓ AlumniTicket ${cleanTicket.id} berhasil terkirim ke Cloud Firestore`);
+  });
+
+  if (!rtdbOk || !firestoreOk) {
+    console.error(
+      `Sinkronisasi alumniTicket ${cleanTicket.id} TIDAK LENGKAP — RTDB: ${rtdbOk ? "ok" : "GAGAL"}, Firestore: ${firestoreOk ? "ok" : "GAGAL"}`
+    );
+  }
+
+  return { rtdbOk, firestoreOk };
+}
+
+/**
+ * Mengambil tiket alumni milik satu user tertentu.
+ */
+export async function fetchAlumniTicketsForUser(
+  userId?: string | null,
+  userEmail?: string | null
+): Promise<AlumniTicket[]> {
+  const ticketsMap = new Map<string, AlumniTicket>();
+
+  const collectFirestore = (snapshot: { forEach: (cb: (d: { data: () => unknown; id: string }) => void) => void }) => {
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data() as AlumniTicket;
+      if (data && data.id) ticketsMap.set(data.id, data);
+    });
+  };
+
+  try {
+    if (userId) {
+      const snap = await getDocs(query(collection(db, "alumniTickets"), where("userId", "==", userId)));
+      collectFirestore(snap);
+    }
+    if (userEmail) {
+      const snap = await getDocs(query(collection(db, "alumniTickets"), where("userEmail", "==", userEmail)));
+      collectFirestore(snap);
+    }
+  } catch (err) {
+    console.warn("Firestore fetch user alumni tickets error:", err);
+  }
+
+  try {
+    if (userId) {
+      const snap = await get(rtdbQuery(ref(rtdb, "alumniTickets"), orderByChild("userId"), equalTo(userId)));
+      if (snap.exists()) {
+        const val = snap.val();
+        Object.keys(val).forEach((k) => {
+          const item = val[k] as AlumniTicket;
+          if (item && item.id && !ticketsMap.has(item.id)) ticketsMap.set(item.id, item);
+        });
+      }
+    }
+    if (userEmail) {
+      const snap = await get(rtdbQuery(ref(rtdb, "alumniTickets"), orderByChild("userEmail"), equalTo(userEmail)));
+      if (snap.exists()) {
+        const val = snap.val();
+        Object.keys(val).forEach((k) => {
+          const item = val[k] as AlumniTicket;
+          if (item && item.id && !ticketsMap.has(item.id)) ticketsMap.set(item.id, item);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("RTDB fetch user alumni tickets error:", err);
+  }
+
+  const result = Array.from(ticketsMap.values());
+  result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  return result;
 }
