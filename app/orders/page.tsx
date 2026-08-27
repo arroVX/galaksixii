@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { CartDrawer } from "@/components/CartDrawer";
 import { Order, OrderStatus } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
 
@@ -103,7 +102,6 @@ export default function OrdersPage() {
           </div>
         </main>
 
-        <CartDrawer />
       </div>
     );
   }
@@ -347,8 +345,6 @@ export default function OrdersPage() {
         )}
 
       </main>
-
-      <CartDrawer />
 
     </div>
   );

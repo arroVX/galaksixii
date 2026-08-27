@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { CartDrawer } from "@/components/CartDrawer";
 import { GalleryItem } from "@/types/merch";
 import { INITIAL_GALLERY } from "@/data/mockGallery";
 import { fetchGalleryFromFirebase } from "@/lib/firebaseService";
@@ -234,7 +233,6 @@ export default function KompetisiPage() {
         </div>
       )}
 
-      <CartDrawer />
     </div>
   );
 }

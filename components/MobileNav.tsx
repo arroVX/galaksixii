@@ -17,20 +17,20 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const pathname = usePathname();
   const router = useRouter();
   const { isAdmin } = useAuth();
-  const { totalItemCount, setIsCartOpen } = useCart();
+  const { totalItemCount } = useCart();
   const [popKey, setPopKey] = useState(0);
 
   if (activeView === "admin") return null;
 
   const navTabs = [
     { name: "Toko", path: "/merchandise", icon: "storefront" },
+    { name: "Keranjang", path: "/keranjang", icon: "shopping_bag" },
     { name: "Tiket", path: "/tiket-alumni", icon: "verified_user" },
     { name: "Pesanan", path: "/orders", icon: "receipt_long" }
   ];
 
   const extraTabs = [
-    ...(isAdmin ? [{ name: "Admin", path: "__admin__", icon: "admin_panel_settings" }] : []),
-    { name: "Keranjang", path: "__cart__", icon: "shopping_bag" }
+    ...(isAdmin ? [{ name: "Admin", path: "__admin__", icon: "admin_panel_settings" }] : [])
   ];
 
   const tabs = [...navTabs, ...extraTabs];
@@ -40,10 +40,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
   const handleTabPress = (tabPath: string) => {
     setPopKey((k) => k + 1);
-    if (tabPath === "__cart__") {
-      setIsCartOpen(true);
-      return;
-    }
     if (tabPath === "__admin__") {
       setActiveView("admin");
       if (pathname !== "/merchandise") router.push("/merchandise");

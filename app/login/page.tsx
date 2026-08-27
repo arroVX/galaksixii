@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 import { isAdminEmail } from "@/lib/config";
 import { useMounted } from "@/lib/useMounted";
 import { Navbar } from "@/components/Navbar";
-import { CartDrawer } from "@/components/CartDrawer";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -225,8 +224,6 @@ export default function LoginPage() {
           )}
         </div>
       </main>
-
-      <CartDrawer />
 
       {/* Login Success Modal */}
       {showSuccessModal && mounted && createPortal(

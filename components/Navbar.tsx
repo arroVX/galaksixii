@@ -22,13 +22,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAdmin, logout } = useAuth();
-  const { totalItemCount, setIsCartOpen } = useCart();
+  const { totalItemCount } = useCart();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLogoutSuccessModalOpen, setIsLogoutSuccessModalOpen] = useState(false);
   const mounted = useMounted();
 
   const navLinks = [
     { name: "Merchandise", path: "/merchandise" },
+    { name: "Keranjang", path: "/keranjang" },
     { name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true },
     { name: "Cek Pesanan", path: "/orders" }
   ];
@@ -160,8 +161,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <>
                 {/* Cart */}
-                <button
-                  onClick={() => setIsCartOpen(true)}
+                <Link
+                  href="/keranjang"
                   aria-label="Keranjang"
                   className="relative flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-neutral-900 transition-all duration-200 active:scale-90"
                 >
@@ -171,7 +172,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {totalItemCount}
                     </span>
                   )}
-                </button>
+                </Link>
 
                 {/* Auth */}
                 {mounted ? (
