@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { name: "Beranda", path: "/" },
     { name: "Kompetisi", path: "/kompetisi" },
     { name: "Merchandise", path: "/merchandise" },
-    { name: "Tiket Alumni", path: "/tiket-alumni", isSpecial: true },
+    { name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true },
     { name: "Cek Pesanan", path: "/orders" }
   ];
 

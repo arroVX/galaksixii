@@ -38,11 +38,11 @@ export default function AlumniTicketPage() {
             </div>
 
             <h2 className="text-2xl font-bold font-headline-md text-primary">
-              Akses Terbatas - Khusus Alumni
+              Akses Terbatas - Khusus Pelanggan
             </h2>
 
             <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed font-medium">
-              Halaman Tiket Alumni hanya dapat diakses oleh alumni SMK yang sudah login. Silakan masuk ke akun Anda terlebih dahulu.
+              Halaman Tiket & Bundling hanya dapat diakses oleh pelanggan yang sudah login. Silakan masuk ke akun Anda terlebih dahulu.
             </p>
 
             <div className="pt-3 space-y-3">
@@ -88,25 +88,11 @@ export default function AlumniTicketPage() {
             </div>
             <div>
               <h1 className="font-dot-matrix text-5xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-2 opacity-90">
-                TIKET ALUMNI
+                TIKET PRE-ORDER
               </h1>
               <p className="text-xs sm:text-sm text-neutral-500 max-w-2xl leading-relaxed font-medium">
-                Tiket masuk eksklusif untuk alumni SMK dengan bundling merchandise official GALAKSI XII.
+                Tiket masuk puncak Dies Natalis - SMK NEGERI 3 Jepara
               </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-10 animate-in slide-in-from-top-2">
-          <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-[20px] text-amber-700 mt-0.5 shrink-0">info</span>
-            <div className="text-xs text-amber-800 leading-relaxed space-y-1">
-              <p className="font-bold">Syarat Pembelian Tiket Alumni:</p>
-              <p>• Khusus alumni SMK (Semua jurusan)</p>
-              <p>• Wajib melampirkan <strong>Kartu Pelajar</strong> atau <strong>SKL (Surat Keterangan Lulus)</strong></p>
-              <p>• Wajib mengisi tahun lulus (minimal 2000)</p>
-              <p>• Tiket sudah termasuk bundling merchandise (1 tiket = 1 merch)</p>
-              <p>• Verifikasi manual oleh panitia (1-2 hari kerja)</p>
             </div>
           </div>
         </div>
@@ -128,16 +114,10 @@ export default function AlumniTicketPage() {
               <div>
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 mb-4 flex items-center justify-center p-2" style={{ borderRadius: '2px' }}>
                   <img src={bundle.imageUrl} alt={bundle.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
-
-                  <div className="absolute top-3 right-3">
-                    <span className="px-2 py-1 bg-neutral-900 text-white font-black text-[9px] tracking-wider uppercase" style={{ borderRadius: '2px' }}>
-                      ALUMNI ONLY
-                    </span>
-                  </div>
                 </div>
 
                 <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
-                  {"//"} TIKET ALUMNI BUNDLE
+                  {"//"} TIKET BUNDLE
                 </span>
                 <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-2 leading-snug">
                   {bundle.name}
@@ -156,7 +136,7 @@ export default function AlumniTicketPage() {
                 <button
                   className="shrink-0 bg-neutral-900 text-white w-10 h-10 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
                   style={{ borderRadius: '2px' }}
-                  title="Beli Tiket Alumni"
+                  title="Beli Tiket & Bundling"
                 >
                   <span className="material-symbols-outlined text-[18px]">confirmation_number</span>
                 </button>

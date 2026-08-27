@@ -42,7 +42,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-background text-on-background font-body-md selection:bg-primary selection:text-on-primary transition-colors duration-300 relative">
         <DotMatrixBackground />
-        <div className="relative z-10 flex flex-col min-h-screen">
+        <div className="relative z-10 flex flex-col min-h-screen pb-[90px] lg:pb-0">
           <Providers>{children}</Providers>
         </div>
       </body>

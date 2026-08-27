@@ -27,7 +27,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
     setError(null);
 
     if (!user) {
-      showAuthAlert("Silakan masuk terlebih dahulu untuk membeli tiket alumni.");
+      showAuthAlert("Silakan masuk terlebih dahulu untuk membeli tiket.");
       return;
     }
 
@@ -56,7 +56,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-full text-slate-700 text-xs font-bold shadow-sm hover:bg-slate-50 hover:scale-105 transition-all"
           >
             <ArrowLeft size={16} />
-            Kembali ke Tiket Alumni
+            Kembali ke Tiket & Bundling
           </button>
         </div>
 
@@ -127,7 +127,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
 
               <div className="border-t border-slate-200 pt-3 mt-3 space-y-1.5">
                 <div className="flex justify-between text-sm text-slate-500">
-                  <span>Harga Tiket Alumni</span>
+                  <span>Harga Tiket</span>
                   <span className="font-bold text-slate-900">Rp {bundle.ticketPrice.toLocaleString("id-ID")}</span>
                 </div>
                 <div className="flex justify-between text-slate-900 font-bold text-lg">

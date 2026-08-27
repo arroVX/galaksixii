@@ -267,11 +267,11 @@ export default function CheckoutAlumniPage() {
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary font-semibold text-sm transition"
         >
           <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          Kembali ke Tiket Alumni
+          Kembali ke Tiket & Bundling
         </Link>
         <div className="text-xs font-bold text-on-surface-variant bg-surface-container-high px-3 py-1.5 rounded-full">
           <span className="material-symbols-outlined text-[14px] align-middle mr-1">verified_user</span>
-          Checkout Alumni
+          Checkout
         </div>
       </div>
 
@@ -283,8 +283,8 @@ export default function CheckoutAlumniPage() {
             <span className="material-symbols-outlined text-[24px]">verified_user</span>
           </div>
           <div>
-            <h1 className="font-bold text-amber-600 text-3xl font-headline-md tracking-tight">Checkout Tiket Alumni</h1>
-            <p className="text-sm text-on-surface-variant mt-1">Lengkapi data diri, verifikasi alumni, dan pilih cara pembayaran</p>
+            <h1 className="font-bold text-primary text-3xl font-headline-md tracking-tight">Checkout Tiket & Bundling</h1>
+            <p className="text-sm text-on-surface-variant mt-1">Lengkapi data diri, verifikasi identitas, dan pilih cara pembayaran</p>
           </div>
         </div>
 
@@ -337,12 +337,12 @@ export default function CheckoutAlumniPage() {
           {/* 2. VERIFIKASI ALUMNI */}
           <div className="space-y-4 pt-4 border-t border-outline-variant/30">
             <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">verified_user</span> Verifikasi Alumni (Wajib)
+              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">verified_user</span> Verifikasi Identitas (Wajib)
             </h4>
 
             <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5">
               <p className="text-xs text-slate-500 leading-relaxed">
-                Tiket alumni khusus untuk alumni SMK. Wajib melampirkan bukti verifikasi dan tahun lulus.
+                Tiket ini khusus untuk pelanggan terdaftar. Wajib melampirkan bukti verifikasi dan tahun lulus.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -438,7 +438,7 @@ export default function CheckoutAlumniPage() {
               </div>
 
               <div className="border-t border-outline-variant/30 pt-3 flex justify-between text-xs">
-                <span className="text-on-surface-variant">Harga Tiket Alumni</span>
+                <span className="text-on-surface-variant">Harga Tiket</span>
                 <span className="font-bold text-primary">Rp {checkoutData.ticketPrice.toLocaleString("id-ID")}</span>
               </div>
             </div>
@@ -467,7 +467,7 @@ export default function CheckoutAlumniPage() {
                   </div>
                   <div>
                     <h5 className="font-bold text-sm font-headline-md">Ambil di Aula SMKN 3</h5>
-                    <span className="text-xs opacity-80 block font-medium">Khusus Alumni / Siswa Internal</span>
+                    <span className="text-xs opacity-80 block font-medium">Khusus Pelanggan / Siswa Internal</span>
                   </div>
                 </div>
                 <p className={`text-xs leading-relaxed ${deliveryMethod === "PICKUP_AULA_SMKN3" ? "text-white/80" : "text-on-surface-variant"}`}>
@@ -491,7 +491,7 @@ export default function CheckoutAlumniPage() {
                   </div>
                   <div>
                     <h5 className="font-bold text-sm font-headline-md">COD Area Jepara</h5>
-                    <span className="text-xs opacity-80 block font-medium">Pembeli Umum / Alumni</span>
+                    <span className="text-xs opacity-80 block font-medium">Pembeli Umum</span>
                   </div>
                 </div>
                 <p className={`text-xs leading-relaxed ${deliveryMethod === "COD_AREA_JEPARA" ? "text-white/80" : "text-on-surface-variant"}`}>
@@ -630,7 +630,7 @@ export default function CheckoutAlumniPage() {
               ) : (
                 <>
                   <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <span>Konfirmasi & Buat Pesanan Tiket Alumni</span>
+                  <span>Konfirmasi & Buat Pesanan</span>
                 </>
               )}
             </button>
@@ -649,7 +649,7 @@ export default function CheckoutAlumniPage() {
               <span className="material-symbols-outlined text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>{syncFailed ? "cloud_off" : "check_circle"}</span>
             </div>
 
-            <h3 className="font-bold text-2xl text-slate-900 mb-2 font-serif-title">{syncFailed ? "Pesanan Tersimpan di Perangkat" : "Pesanan Tiket Alumni Berhasil!"}</h3>
+            <h3 className="font-bold text-2xl text-slate-900 mb-2 font-serif-title">{syncFailed ? "Pesanan Tersimpan di Perangkat" : "Pesanan Berhasil!"}</h3>
 
             {syncFailed ? (
               <div className="text-xs text-slate-500 mb-6 leading-relaxed space-y-2 max-w-[280px] mx-auto">
@@ -667,7 +667,7 @@ export default function CheckoutAlumniPage() {
               </div>
             ) : (
               <p className="text-xs text-slate-500 mb-8 leading-relaxed max-w-[250px] mx-auto">
-                Terima kasih! Pesanan tiket alumni Anda telah diterima. Verifikasi akan diproses dalam 1-2 hari kerja.
+                Terima kasih! Pesanan Anda telah diterima. Verifikasi akan diproses dalam 1-2 hari kerja.
               </p>
             )}
 

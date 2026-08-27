@@ -4,7 +4,7 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
   {
     id: "ticket-alumni-bundle-1",
     name: "Keychain + Sticker Pack + Cermin",
-    description: "Tiket masuk khusus alumni SMK + Bundle Gantungan Kunci, Sticker Pack, dan Cermin Aesthetic Frame Emas",
+    description: "Tiket masuk puncak Dies Natalis + Bundle Gantungan Kunci, Sticker Pack, dan Cermin Aesthetic Frame Emas",
     ticketPrice: 150000,
     totalPrice: 175000,
     items: [
@@ -17,7 +17,7 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
   {
     id: "ticket-alumni-bundle-2",
     name: "Totebag + Topi",
-    description: "Tiket masuk khusus alumni SMK + Bundle Totebag Canvas dan Topi",
+    description: "Tiket masuk puncak Dies Natalis + Bundle Totebag Canvas dan Topi",
     ticketPrice: 150000,
     totalPrice: 213000,
     items: [
@@ -29,7 +29,7 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
   {
     id: "ticket-alumni-bundle-3",
     name: "Keychain + Totebag + Topi",
-    description: "Tiket masuk khusus alumni SMK + Bundle Gantungan Kunci, Totebag Canvas, dan Topi",
+    description: "Tiket masuk puncak Dies Natalis + Bundle Gantungan Kunci, Totebag Canvas, dan Topi",
     ticketPrice: 150000,
     totalPrice: 225000,
     items: [
@@ -42,7 +42,7 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
   {
     id: "ticket-alumni-bundle-4",
     name: "Tumbler + Totebag + Keychain + Sticker Pack",
-    description: "Tiket masuk khusus alumni SMK + Bundle Tumbler Aesthetic, Totebag Canvas, Gantungan Kunci, dan Sticker Pack",
+    description: "Tiket masuk puncak Dies Natalis + Bundle Tumbler Aesthetic, Totebag Canvas, Gantungan Kunci, dan Sticker Pack",
     ticketPrice: 150000,
     totalPrice: 239000,
     items: [
@@ -56,7 +56,7 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
   {
     id: "ticket-alumni-bundle-5",
     name: "Tumbler + Topi + Totebag + Keychain + Sticker Pack + Cermin",
-    description: "Tiket masuk khusus alumni SMK + Bundle Lengkap: Tumbler, Topi, Totebag, Gantungan Kunci, Sticker Pack, dan Cermin",
+    description: "Tiket masuk puncak Dies Natalis + Bundle Lengkap: Tumbler, Topi, Totebag, Gantungan Kunci, Sticker Pack, dan Cermin",
     ticketPrice: 150000,
     totalPrice: 275000,
     items: [

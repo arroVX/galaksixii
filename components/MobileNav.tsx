@@ -26,7 +26,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     { name: "Beranda", path: "/", icon: "home" },
     { name: "Galeri", path: "/kompetisi", icon: "photo_library" },
     { name: "Toko", path: "/merchandise", icon: "storefront" },
-    { name: "Tiket Alumni", path: "/tiket-alumni", icon: "verified_user" },
+    { name: "Tiket", path: "/tiket-alumni", icon: "verified_user" },
     { name: "Pesanan", path: "/orders", icon: "receipt_long" }
   ];
 
