@@ -119,10 +119,9 @@ export default function AlumniTicketPage() {
                 <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
                   {"//"} TIKET BUNDLE
                 </span>
-                <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-2 leading-snug">
+                <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-4 leading-snug">
                   {bundle.name}
                 </h3>
-                <p className="text-xs text-neutral-500 mb-4 leading-relaxed line-clamp-2">{bundle.description}</p>
               </div>
 
               <div className="flex items-end justify-between pt-4 border-t border-dashed border-neutral-200">
