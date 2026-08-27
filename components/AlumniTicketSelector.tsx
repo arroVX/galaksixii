@@ -29,7 +29,6 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const sizes = bundle.merchVariants.sizes;
   const colors = bundle.merchVariants.colors;
 
-  // Set default varian dari bundle — pola "adjust state during render", bukan effect.
   const [prevBundleId, setPrevBundleId] = useState<string | null>(null);
   if (bundle.id !== prevBundleId) {
     setPrevBundleId(bundle.id);
@@ -83,7 +82,8 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center bg-[#F8F8F6] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 flex flex-col min-h-full relative">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 flex flex-col min-h-full relative">
+
         <div className="mb-6 sm:mb-10">
           <button
             onClick={onClose}
@@ -95,6 +95,8 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start flex-1 pb-20">
+
+          {/* LEFT: Product Image */}
           <div className="w-full lg:w-1/2 shrink-0">
             <div className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group">
               <img
@@ -108,14 +110,16 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
             </div>
           </div>
 
+          {/* RIGHT: Form */}
           <div className="w-full lg:w-1/2 flex flex-col pt-2 sm:pt-6">
+
             <div className="flex items-center gap-3 mb-5">
-              <span className="px-3 py-1 bg-amber-100 text-amber-700 font-black text-[10px] tracking-wider uppercase rounded-full">
+              <span className="px-3 py-1 bg-slate-200/70 text-slate-700 font-black text-[10px] tracking-wider uppercase rounded-full">
                 TIKET ALUMNI BUNDLE
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-black font-serif-title text-slate-900 leading-[1.1] tracking-tight mb-3">
+            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-black font-serif-title text-slate-900 leading-[1.1] tracking-tight mb-5">
               {bundle.name}
             </h1>
 
@@ -123,27 +127,27 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
               {bundle.description}
             </p>
 
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-5">
+            {/* Detail & Deskripsi Box */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-3">
               <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest mb-4">
                 <span className="material-symbols-outlined text-[16px] text-slate-700">shopping_bag</span> DETAIL BUNDLE
               </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between text-slate-600">
-                  <span>Harga Tiket Alumni</span>
-                  <span className="font-bold text-slate-900">Rp {bundle.ticketPrice.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between text-slate-600 border-t border-slate-100 pt-3">
-                  <span>Merchandise</span>
-                  <span className="font-bold text-slate-900">Rp {(bundle.totalPrice - bundle.ticketPrice).toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between text-slate-900 font-bold text-lg border-t border-slate-200 pt-3">
-                  <span>Total</span>
-                  <span className="text-primary">Rp {bundle.totalPrice.toLocaleString("id-ID")}</span>
-                </div>
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>Harga Tiket Alumni</span>
+                <span className="font-bold text-slate-900">Rp {bundle.ticketPrice.toLocaleString("id-ID")}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-600 border-t border-slate-100 pt-3">
+                <span>Merchandise</span>
+                <span className="font-bold text-slate-900">Rp {(bundle.totalPrice - bundle.ticketPrice).toLocaleString("id-ID")}</span>
+              </div>
+              <div className="flex justify-between text-slate-900 font-bold text-lg border-t border-slate-200 pt-3">
+                <span>Total</span>
+                <span className="text-slate-900">Rp {bundle.totalPrice.toLocaleString("id-ID")}</span>
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-6">
+            {/* Variant Selectors */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-5">
               <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest">
                 <span className="material-symbols-outlined text-[16px] text-slate-700">straighten</span> PILIH VARIAN MERCHANDISE
               </h3>
@@ -191,82 +195,91 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
               )}
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 space-y-5 animate-in slide-in-from-top-2">
-              <h3 className="flex items-center gap-2 text-[11px] font-black text-amber-800 tracking-widest">
-                <span className="material-symbols-outlined text-[16px]">verified_user</span> VERIFIKASI ALUMNI (WAJIB)
+            {/* Verifikasi Alumni */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-5">
+              <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest">
+                <span className="material-symbols-outlined text-[16px] text-slate-700">verified_user</span> VERIFIKASI ALUMNI (WAJIB)
               </h3>
 
-              <p className="text-xs text-amber-700 leading-relaxed">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Tiket alumni khusus untuk alumni SMK. Wajib melampirkan bukti verifikasi dan tahun lulus.
               </p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">Jenis Verifikasi *</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {["KARTU_PELAJAR", "SKL"].map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setVerificationType(type as "KARTU_PELAJAR" | "SKL")}
-                        className={`p-4 rounded-xl border-2 text-center transition ${
-                          verificationType === type
-                            ? "border-amber-500 bg-amber-50 text-amber-900 shadow-md"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
-                        }`}
-                      >
-                        <div className="font-bold text-sm">{type === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL (Surat Keterangan Lulus)"}</div>
-                        <div className="text-xs opacity-70 mt-1">
-                          {type === "KARTU_PELAJAR" ? "Kartu pelajar SMK yang masih berlaku" : "Surat keterangan lulus dari sekolah"}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <AlumniVerificationUpload
-                  onFileChange={(url, name) => {
-                    setVerificationFileUrl(url);
-                    setVerificationFileName(name);
-                  }}
-                  currentFileUrl={verificationFileUrl}
-                  currentFileName={verificationFileName}
-                  label={`Upload ${verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"} *`}
-                />
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tahun Lulus *</label>
-                  <div className="relative">
-                    <select
-                      value={graduationYear}
-                      onChange={(e) => setGraduationYear(e.target.value ? Number(e.target.value) : "")}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+              <div>
+                <label className="text-[11px] font-black text-slate-900 tracking-widest mb-3 block">JENIS VERIFIKASI *</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {["KARTU_PELAJAR", "SKL"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setVerificationType(type as "KARTU_PELAJAR" | "SKL")}
+                      className={`p-4 rounded-2xl border-2 text-center transition ${
+                        verificationType === type
+                          ? "border-slate-900 bg-slate-900 text-white shadow-md"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-900"
+                      }`}
                     >
-                      <option value="">Pilih Tahun Lulus</option>
-                      {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
-                        <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
-                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-1">Rentang: {GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX}</p>
+                      <span className={`material-symbols-outlined text-[24px] block mb-2 ${verificationType === type ? "text-white" : "text-slate-400"}`}>
+                        {type === "KARTU_PELAJAR" ? "badge" : "description"}
+                      </span>
+                      <div className="font-bold text-xs">
+                        {type === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"}
+                      </div>
+                      <div className={`text-[10px] mt-1 ${verificationType === type ? "text-white/70" : "text-slate-400"}`}>
+                        {type === "KARTU_PELAJAR" ? "Kartu pelajar SMK" : "Surat Keterangan Lulus"}
+                      </div>
+                    </button>
+                  ))}
                 </div>
+              </div>
+
+              <AlumniVerificationUpload
+                onFileChange={(url, name) => {
+                  setVerificationFileUrl(url);
+                  setVerificationFileName(name);
+                }}
+                currentFileUrl={verificationFileUrl}
+                currentFileName={verificationFileName}
+                label={`Upload ${verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"} *`}
+              />
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">TAHUN LULUS *</label>
+                <div className="relative">
+                  <select
+                    value={graduationYear}
+                    onChange={(e) => setGraduationYear(e.target.value ? Number(e.target.value) : "")}
+                    className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
+                  >
+                    <option value="">Pilih Tahun Lulus</option>
+                    {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">Rentang: {GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX}</p>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-2xl flex items-center gap-2 mb-4 animate-in slide-in-from-top-2">
                 <span className="material-symbols-outlined text-[16px]">error</span>
                 {error}
               </div>
             )}
 
-            <button
-              onClick={handleContinue}
-              disabled={isSubmitting}
-              className="mt-4 w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold text-sm shadow-md transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? "Memproses..." : "Lanjut ke Checkout"}
-            </button>
+            {/* Action Bar */}
+            <div className="mt-auto bg-[#222] p-2.5 rounded-full flex items-center justify-center shadow-2xl w-full gap-2">
+              <button
+                onClick={handleContinue}
+                disabled={isSubmitting}
+                className="flex-[1.2] py-3 px-6 bg-white text-slate-900 hover:bg-slate-100 rounded-full flex items-center justify-center gap-2 text-xs font-black transition-colors shadow-inner disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[16px]">confirmation_number</span>
+                <span>{isSubmitting ? "Memproses..." : "Lanjut ke Checkout"}</span>
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
