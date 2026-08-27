@@ -157,10 +157,6 @@ export default function MerchandisePage() {
                 <div>
                   <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 mb-4 flex items-center justify-center p-2" style={{ borderRadius: '2px' }}>
                     <img src={product.images?.[0] || product.imageUrl || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518"} alt={product.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
-                    
-                    <button type="button" aria-label="Add to Wishlist" className="absolute top-3 right-3 w-8 h-8 bg-white border border-neutral-200 flex items-center justify-center text-neutral-400 hover:text-red-500 transition-colors z-10" onClick={(e) => { e.stopPropagation(); alert('Disimpan ke Favorit!'); }} style={{ borderRadius: '2px' }}>
-                      <span className="material-symbols-outlined text-[16px]">favorite</span>
-                    </button>
                   </div>
 
                   <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
