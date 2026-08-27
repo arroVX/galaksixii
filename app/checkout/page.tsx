@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
@@ -9,14 +9,11 @@ import { Order, OrderItem, DeliveryMethod, Product } from "@/types/merch";
 import { syncOrderToFirebase, syncProductToFirebase } from "@/lib/firebaseService";
 import { useMounted } from "@/lib/useMounted";
 import Link from "next/link";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, subtotal, clearCart, totalItemCount } = useCart();
   const { user } = useAuth();
-  const invoiceRef = useRef<HTMLDivElement>(null);
 
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
@@ -205,18 +202,6 @@ export default function CheckoutPage() {
     setLastOrder(newOrder);
     setIsSubmitting(false);
     setShowInvoiceModal(true);
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!invoiceRef.current) return;
-    const el = invoiceRef.current;
-    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Invoice-${lastOrder?.id || "order"}.pdf`);
   };
 
   if (cart.length === 0 && !isSubmitting && !showInvoiceModal) return null;
@@ -524,7 +509,7 @@ export default function CheckoutPage() {
 
             {/* Invoice Content (scrollable) */}
             <div className="overflow-y-auto p-6 sm:p-8">
-              <div ref={invoiceRef} className="bg-white p-6 sm:p-8">
+              <div className="bg-white p-6 sm:p-8">
                 {/* Invoice Header */}
                 <div className="text-center mb-6 pb-4 border-b border-neutral-200">
                   <h2 className="text-lg font-bold text-neutral-900">GALAKSI XII</h2>
@@ -612,13 +597,6 @@ export default function CheckoutPage() {
 
             {/* Actions */}
             <div className="border-t border-neutral-100 p-6 sm:p-8 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleDownloadPDF}
-                className="flex-1 py-3 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">download</span>
-                Cetak PDF
-              </button>
               <button
                 onClick={() => router.push("/merchandise")}
                 className="flex-1 py-3 px-4 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"

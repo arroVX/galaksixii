@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -10,8 +10,6 @@ import { syncOrderToFirebase, syncAlumniTicketToFirebase } from "@/lib/firebaseS
 import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
 import { ALUMNI_TICKET_BUNDLES, GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
 import Link from "next/link";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 interface CheckoutData {
   bundleId: string;
@@ -29,7 +27,6 @@ export default function CheckoutAlumniPage() {
   const router = useRouter();
   const { user } = useAuth();
   const mounted = useMounted();
-  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("alumni_ticket_checkout");
@@ -247,18 +244,6 @@ export default function CheckoutAlumniPage() {
     setLastOrder(newOrder);
     setIsSubmitting(false);
     setShowInvoiceModal(true);
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!invoiceRef.current) return;
-    const el = invoiceRef.current;
-    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Invoice-${lastOrder?.id || "order"}.pdf`);
   };
 
   if (!checkoutData || !bundle) return null;
@@ -676,7 +661,7 @@ export default function CheckoutAlumniPage() {
           <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl z-10 animate-in zoom-in-95 overflow-hidden max-h-[90vh] flex flex-col">
 
             <div className="overflow-y-auto p-6 sm:p-8">
-              <div ref={invoiceRef} className="bg-white p-6 sm:p-8">
+              <div className="bg-white p-6 sm:p-8">
                 <div className="text-center mb-6 pb-4 border-b border-neutral-200">
                   <h2 className="text-lg font-bold text-neutral-900">GALAKSI XII</h2>
                   <p className="text-[11px] text-neutral-400 mt-0.5">Invoice Tiket Alumni</p>
@@ -758,13 +743,6 @@ export default function CheckoutAlumniPage() {
             </div>
 
             <div className="border-t border-neutral-100 p-6 sm:p-8 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleDownloadPDF}
-                className="flex-1 py-3 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">download</span>
-                Cetak PDF
-              </button>
               <button
                 onClick={() => router.push("/merchandise")}
                 className="flex-1 py-3 px-4 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
