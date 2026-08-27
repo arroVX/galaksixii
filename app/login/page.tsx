@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 import { isAdminEmail } from "@/lib/config";
 import { useMounted } from "@/lib/useMounted";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
 
 export default function LoginPage() {
@@ -227,7 +226,6 @@ export default function LoginPage() {
         </div>
       </main>
 
-      <Footer />
       <CartDrawer />
 
       {/* Login Success Modal */}

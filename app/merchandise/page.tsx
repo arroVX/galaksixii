@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+
+
 import { ProductModal } from "@/components/ProductModal";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Product } from "@/types/merch";
@@ -189,8 +190,6 @@ export default function MerchandisePage() {
           </div>
         )}
       </main>
-
-      <Footer />
 
       {/* Modals */}
       <ProductModal product={selectedProductModal} onClose={() => setSelectedProductModal(null)} />

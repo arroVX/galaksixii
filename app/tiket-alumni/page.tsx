@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 import { AlumniTicketSelector } from "@/components/AlumniTicketSelector";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 import { useAuth } from "@/context/AuthContext";
@@ -22,7 +21,6 @@ export default function AlumniTicketPage() {
             <span>Memuat...</span>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -63,7 +61,6 @@ export default function AlumniTicketPage() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -149,8 +146,6 @@ export default function AlumniTicketPage() {
           </Link>
         </div>
       </main>
-
-      <Footer />
 
       {selectedBundle && (
         <AlumniTicketSelector

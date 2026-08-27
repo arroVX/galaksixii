@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
 import { GalleryItem } from "@/types/merch";
 import { INITIAL_GALLERY } from "@/data/mockGallery";
@@ -235,7 +234,6 @@ export default function KompetisiPage() {
         </div>
       )}
 
-      <Footer />
       <CartDrawer />
     </div>
   );
