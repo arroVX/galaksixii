@@ -111,60 +111,55 @@ export default function AlumniTicketPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
           {ALUMNI_TICKET_BUNDLES.map((bundle) => (
             <div
               key={bundle.id}
               onClick={() => handleOpenSelector(bundle)}
-              className="group bg-white p-5 sm:p-6 border border-neutral-200 hover:border-amber-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative"
+              className="group bg-white p-4 sm:p-5 border border-neutral-200 hover:border-neutral-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative"
               style={{ borderRadius: '2px' }}
             >
-              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              {/* Decoration corners */}
+              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-              <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 mb-4 flex items-center justify-center p-2" style={{ borderRadius: '2px' }}>
-                <img src={bundle.imageUrl} alt={bundle.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
-                
-                <div className="absolute top-3 left-3">
-                  <span className="px-2 py-1 bg-amber-600 text-white font-black text-[9px] tracking-wider uppercase rounded-full">
-                    ALUMNI ONLY
-                  </span>
+              <div>
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 mb-4 flex items-center justify-center p-2" style={{ borderRadius: '2px' }}>
+                  <img src={bundle.imageUrl} alt={bundle.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
+
+                  <div className="absolute top-3 right-3">
+                    <span className="px-2 py-1 bg-neutral-900 text-white font-black text-[9px] tracking-wider uppercase" style={{ borderRadius: '2px' }}>
+                      ALUMNI ONLY
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                <span className="font-dot-matrix text-[10px] font-bold text-amber-600 tracking-widest uppercase block">
+                <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
                   {"//"} TIKET ALUMNI BUNDLE
                 </span>
                 <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-2 leading-snug">
                   {bundle.name}
                 </h3>
-                <p className="text-xs text-neutral-500 line-clamp-2">{bundle.description}</p>
+                <p className="text-xs text-neutral-500 mb-4 leading-relaxed line-clamp-2">{bundle.description}</p>
+              </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-amber-700">Harga Tiket</span>
-                    <span className="font-bold text-amber-900">Rp {bundle.ticketPrice.toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between text-xs border-t border-amber-200 pt-1">
-                    <span className="text-amber-700">Merchandise</span>
-                    <span className="font-bold text-amber-900">Rp {(bundle.totalPrice - bundle.ticketPrice).toLocaleString("id-ID")}</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-extrabold text-amber-800 border-t border-amber-300 pt-2">
-                    <span>TOTAL</span>
-                    <span>Rp {bundle.totalPrice.toLocaleString("id-ID")}</span>
-                  </div>
+              <div className="flex items-end justify-between pt-4 border-t border-dashed border-neutral-200">
+                <div>
+                  <span className="text-[9px] font-bold tracking-widest uppercase text-neutral-400 block mb-1">TOTAL</span>
+                  <span className="font-dot-matrix text-lg md:text-xl font-bold text-neutral-900 tracking-wider">
+                    Rp {bundle.totalPrice.toLocaleString("id-ID")}
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-dashed border-neutral-200">
-                  <div className="flex items-center gap-2 text-xs text-neutral-500">
-                    <span className="material-symbols-outlined text-[16px]">shopping_bag</span>
-                    <span>Pilih varian merch di halaman selanjutnya</span>
-                  </div>
-                  <span className="material-symbols-outlined text-neutral-400 group-hover:text-amber-600 transition-colors">chevron_right</span>
-                </div>
+                <button
+                  className="shrink-0 bg-neutral-900 text-white w-10 h-10 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
+                  style={{ borderRadius: '2px' }}
+                  title="Beli Tiket Alumni"
+                >
+                  <span className="material-symbols-outlined text-[18px]">confirmation_number</span>
+                </button>
               </div>
             </div>
           ))}
