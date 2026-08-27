@@ -109,18 +109,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               {product.name}
             </h1>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex items-center gap-0.5">
-                {[1,2,3,4,5].map((star) => (
-                  <span key={star} className={`material-symbols-outlined text-[18px] ${star <= Math.round(product.rating || 0) ? "text-amber-400" : "text-neutral-200"}`} style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                ))}
-              </div>
-              <span className="text-xs text-neutral-500">{product.rating?.toFixed(1) || "5.0"}</span>
-              <span className="text-[11px] text-neutral-400">&middot;</span>
-              <span className="text-[11px] text-neutral-400">{product.soldCount || 0} terjual</span>
-            </div>
-
             {/* Detail & Deskripsi Box */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm">
               <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest mb-4">

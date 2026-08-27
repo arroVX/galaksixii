@@ -169,10 +169,6 @@ export default function MerchandisePage() {
                   <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-2 leading-snug">
                     {product.name}
                   </h3>
-                  <span className="text-[11px] text-neutral-400 flex items-center gap-1 mb-2">
-                    <span className="material-symbols-outlined text-[12px] text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    {product.rating?.toFixed(1) || "5.0"}
-                  </span>
                 </div>
 
                 <div className="flex items-end justify-between pt-4 border-t border-dashed border-neutral-200">
