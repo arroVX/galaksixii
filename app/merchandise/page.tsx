@@ -4,39 +4,46 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { ProductModal } from "@/components/ProductModal";
-import { Product } from "@/types/merch";
+import { AdminDashboard } from "@/components/admin";
+import { Product, GalleryItem } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
 
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 
+const loadInitialProducts = (): Product[] => {
+  if (typeof window === "undefined") return INITIAL_PRODUCTS;
+  const saved = localStorage.getItem("gala_merch_products");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved) as Product[];
+      if (parsed.length > 0) return parsed;
+    } catch { /* ignore */ }
+  }
+  localStorage.setItem("gala_merch_products", JSON.stringify(INITIAL_PRODUCTS));
+  return INITIAL_PRODUCTS;
+};
+
+const loadInitialGallery = (): GalleryItem[] => {
+  if (typeof window === "undefined") return [];
+  const saved = localStorage.getItem("gala_merch_gallery");
+  if (saved) {
+    try { return JSON.parse(saved); } catch { return []; }
+  }
+  return [];
+};
+
 export default function MerchandisePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToCart } = useCart();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(loadInitialProducts);
+  const [gallery, setGallery] = useState<GalleryItem[]>(loadInitialGallery);
+  const [activeView, setActiveView] = useState<"shop" | "admin">("shop");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
-
-  React.useEffect(() => {
-    let savedProducts: Product[] | null = null;
-    const saved = localStorage.getItem("gala_merch_products");
-    if (saved) {
-      try {
-        savedProducts = JSON.parse(saved) as Product[];
-      } catch {
-        savedProducts = null;
-      }
-    }
-    // Hydrasi cache produk dari localStorage (sumber eksternal, tidak tersedia saat SSR).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProducts(savedProducts ?? INITIAL_PRODUCTS);
-    if (!savedProducts) {
-      localStorage.setItem("gala_merch_products", JSON.stringify(INITIAL_PRODUCTS));
-    }
-  }, []);
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
@@ -78,8 +85,17 @@ export default function MerchandisePage() {
 
   return (
     <>
-        <Navbar />
+        <Navbar activeView={activeView} setActiveView={setActiveView} />
 
+        {activeView === "admin" ? (
+          <AdminDashboard
+            products={products}
+            setProducts={setProducts}
+            gallery={gallery}
+            setGallery={setGallery}
+            onExit={() => setActiveView("shop")}
+          />
+        ) : (
         <main className="flex-grow pt-2 pb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 fade-in">
         
         {/* Title & Description */}
@@ -187,6 +203,7 @@ export default function MerchandisePage() {
           </div>
         )}
       </main>
+        )}
 
       {/* Modals */}
       <ProductModal product={selectedProductModal} onClose={() => setSelectedProductModal(null)} />
