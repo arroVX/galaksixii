@@ -3,8 +3,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlumniTicketBundle } from "@/types/merch";
-import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
-import { GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft } from "lucide-react";
 
@@ -17,10 +15,6 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const router = useRouter();
   const { user, showAuthAlert } = useAuth();
 
-  const [verificationType, setVerificationType] = useState<"KARTU_PELAJAR" | "SKL">("KARTU_PELAJAR");
-  const [verificationFileUrl, setVerificationFileUrl] = useState<string | null>(null);
-  const [verificationFileName, setVerificationFileName] = useState<string | null>(null);
-  const [graduationYear, setGraduationYear] = useState<number | "">(new Date().getFullYear());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,16 +26,6 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const handleContinue = () => {
     setError(null);
 
-    if (!verificationFileUrl) {
-      setError("Upload bukti verifikasi (Kartu Pelajar / SKL) terlebih dahulu.");
-      return;
-    }
-
-    if (!graduationYear || graduationYear < GRADUATION_YEAR_MIN || graduationYear > GRADUATION_YEAR_MAX) {
-      setError(`Masukkan tahun lulus yang valid (${GRADUATION_YEAR_MIN} - ${GRADUATION_YEAR_MAX}).`);
-      return;
-    }
-
     if (!user) {
       showAuthAlert("Silakan masuk terlebih dahulu untuk membeli tiket alumni.");
       return;
@@ -52,11 +36,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       bundleName: bundle.name,
       ticketPrice: bundle.ticketPrice,
       totalPrice: bundle.totalPrice,
-      bundleItems: bundle.items,
-      verificationType,
-      verificationFileUrl,
-      verificationFileName,
-      graduationYear: Number(graduationYear)
+      bundleItems: bundle.items
     };
 
     sessionStorage.setItem("alumni_ticket_checkout", JSON.stringify(checkoutData));
@@ -154,72 +134,6 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
                   <span>Total</span>
                   <span>Rp {bundle.totalPrice.toLocaleString("id-ID")}</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Verifikasi Alumni */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 mb-8 shadow-sm space-y-5">
-              <h3 className="flex items-center gap-2 text-[11px] font-black text-slate-900 tracking-widest">
-                <span className="material-symbols-outlined text-[16px] text-slate-700">verified_user</span> VERIFIKASI ALUMNI (WAJIB)
-              </h3>
-
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Tiket alumni khusus untuk alumni SMK. Wajib melampirkan bukti verifikasi dan tahun lulus.
-              </p>
-
-              <div>
-                <label className="text-[11px] font-black text-slate-900 tracking-widest mb-3 block">JENIS VERIFIKASI *</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {["KARTU_PELAJAR", "SKL"].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setVerificationType(type as "KARTU_PELAJAR" | "SKL")}
-                      className={`p-4 rounded-2xl border-2 text-center transition ${
-                        verificationType === type
-                          ? "border-slate-900 bg-slate-900 text-white shadow-md"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-900"
-                      }`}
-                    >
-                      <span className={`material-symbols-outlined text-[24px] block mb-2 ${verificationType === type ? "text-white" : "text-slate-400"}`}>
-                        {type === "KARTU_PELAJAR" ? "badge" : "description"}
-                      </span>
-                      <div className="font-bold text-xs">
-                        {type === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"}
-                      </div>
-                      <div className={`text-[10px] mt-1 ${verificationType === type ? "text-white/70" : "text-slate-400"}`}>
-                        {type === "KARTU_PELAJAR" ? "Kartu pelajar SMK" : "Surat Keterangan Lulus"}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <AlumniVerificationUpload
-                onFileChange={(url, name) => {
-                  setVerificationFileUrl(url);
-                  setVerificationFileName(name);
-                }}
-                currentFileUrl={verificationFileUrl}
-                currentFileName={verificationFileName}
-                label={`Upload ${verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"} *`}
-              />
-
-              <div>
-                <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">TAHUN LULUS *</label>
-                <div className="relative">
-                  <select
-                    value={graduationYear}
-                    onChange={(e) => setGraduationYear(e.target.value ? Number(e.target.value) : "")}
-                    className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
-                  >
-                    <option value="">Pilih Tahun Lulus</option>
-                    {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-2">Rentang: {GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX}</p>
               </div>
             </div>
 

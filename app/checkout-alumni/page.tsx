@@ -336,36 +336,40 @@ export default function CheckoutAlumniPage() {
 
           {/* 2. VERIFIKASI ALUMNI */}
           <div className="space-y-4 pt-4 border-t border-outline-variant/30">
-            <h4 className="font-bold text-sm text-amber-600 uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-amber-600">verified_user</span> Verifikasi Alumni (Wajib)
+            <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">verified_user</span> Verifikasi Alumni (Wajib)
             </h4>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-5">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Tiket alumni khusus untuk alumni SMK. Wajib melampirkan bukti verifikasi dan tahun lulus.
+              </p>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div
                   onClick={() => setVerificationType("KARTU_PELAJAR")}
-                  className={`p-4 rounded-xl border-2 cursor-pointer text-center transition ${
+                  className={`p-5 rounded-2xl border-2 cursor-pointer text-center transition ${
                     verificationType === "KARTU_PELAJAR"
-                      ? "border-amber-500 bg-amber-50 text-amber-900 shadow-md"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                      ? "border-slate-900 bg-slate-900 text-white shadow-md"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-900"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[24px] block mb-2">badge</span>
+                  <span className={`material-symbols-outlined text-[28px] block mb-2 ${verificationType === "KARTU_PELAJAR" ? "text-white" : "text-slate-400"}`}>badge</span>
                   <div className="font-bold text-sm">Kartu Pelajar</div>
-                  <div className="text-xs opacity-70 mt-1">Kartu pelajar SMK</div>
+                  <div className={`text-xs mt-1 ${verificationType === "KARTU_PELAJAR" ? "text-white/70" : "text-slate-400"}`}>Kartu pelajar SMK</div>
                 </div>
 
                 <div
                   onClick={() => setVerificationType("SKL")}
-                  className={`p-4 rounded-xl border-2 cursor-pointer text-center transition ${
+                  className={`p-5 rounded-2xl border-2 cursor-pointer text-center transition ${
                     verificationType === "SKL"
-                      ? "border-amber-500 bg-amber-50 text-amber-900 shadow-md"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
+                      ? "border-slate-900 bg-slate-900 text-white shadow-md"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-900"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[24px] block mb-2">description</span>
+                  <span className={`material-symbols-outlined text-[28px] block mb-2 ${verificationType === "SKL" ? "text-white" : "text-slate-400"}`}>description</span>
                   <div className="font-bold text-sm">SKL</div>
-                  <div className="text-xs opacity-70 mt-1">Surat Keterangan Lulus</div>
+                  <div className={`text-xs mt-1 ${verificationType === "SKL" ? "text-white/70" : "text-slate-400"}`}>Surat Keterangan Lulus</div>
                 </div>
               </div>
 
@@ -380,12 +384,12 @@ export default function CheckoutAlumniPage() {
               />
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tahun Lulus *</label>
+                <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">TAHUN LULUS *</label>
                 <div className="relative">
                   <select
                     value={graduationYear}
                     onChange={(e) => setGraduationYear(e.target.value ? Number(e.target.value) : "")}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                    className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
                   >
                     <option value="">Pilih Tahun Lulus</option>
                     {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
@@ -394,7 +398,7 @@ export default function CheckoutAlumniPage() {
                   </select>
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">Rentang: {GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX}</p>
+                <p className="text-[10px] text-slate-400 mt-2">Rentang: {GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX}</p>
               </div>
             </div>
           </div>
