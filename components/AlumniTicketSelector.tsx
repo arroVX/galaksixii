@@ -23,6 +23,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const [verificationFileUrl, setVerificationFileUrl] = useState<string | null>(null);
   const [verificationFileName, setVerificationFileName] = useState<string | null>(null);
   const [graduationYear, setGraduationYear] = useState<number | "">(new Date().getFullYear());
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const sizes = bundle.merchVariants.sizes;
