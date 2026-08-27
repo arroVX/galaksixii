@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useMounted } from "@/lib/useMounted";
-import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, OrderItem } from "@/types/merch";
+import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, OrderItem, DeliveryMethod } from "@/types/merch";
 import { syncOrderToFirebase, syncAlumniTicketToFirebase } from "@/lib/firebaseService";
 import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
 import { ALUMNI_TICKET_BUNDLES, GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
-import { DeliveryMethod } from "@/types/merch";
 import Link from "next/link";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface CheckoutData {
   bundleId: string;
@@ -28,6 +29,7 @@ export default function CheckoutAlumniPage() {
   const router = useRouter();
   const { user } = useAuth();
   const mounted = useMounted();
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("alumni_ticket_checkout");
@@ -37,22 +39,19 @@ export default function CheckoutAlumniPage() {
     }
   }, [router]);
 
-  // Hydrasi data checkout dari sessionStorage — pola "adjust state during render", bukan effect.
   const [loadedCheckoutData, setLoadedCheckoutData] = useState<CheckoutData | null>(null);
   const savedCheckoutRaw = typeof window !== "undefined" ? sessionStorage.getItem("alumni_ticket_checkout") : null;
   if (savedCheckoutRaw && !loadedCheckoutData) {
     try {
       const data = JSON.parse(savedCheckoutRaw) as CheckoutData;
       setLoadedCheckoutData(data);
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }
 
   const checkoutData = loadedCheckoutData;
   const [customerName, setCustomerName] = useState("");
-  const [phone, setPhone] = useState("081234567890");
-  const [addressOrClass, setAddressOrClass] = useState("Alumni SMK");
+  const [phone, setPhone] = useState("");
+  const [addressOrClass, setAddressOrClass] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("PICKUP_AULA_SMKN3");
   const [codLocationDetail, setCodLocationDetail] = useState("Halte SMKN 2 Jepara");
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "BANK_TRANSFER_QRIS">("COD");
@@ -60,15 +59,14 @@ export default function CheckoutAlumniPage() {
   const [proofFile, setProofFile] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [syncFailed, setSyncFailed] = useState(false);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [verificationType, setVerificationType] = useState<AlumniVerificationType>("KARTU_PELAJAR");
   const [verificationFileUrl, setVerificationFileUrl] = useState<string | null>(null);
   const [verificationFileName, setVerificationFileName] = useState<string | null>(null);
   const [graduationYear, setGraduationYear] = useState<number | "">("");
 
-  // Prefill dari checkoutData sekali saja — pola "adjust state during render".
   const [initializedFromCheckout, setInitializedFromCheckout] = useState(false);
   if (checkoutData && !initializedFromCheckout) {
     setInitializedFromCheckout(true);
@@ -78,21 +76,39 @@ export default function CheckoutAlumniPage() {
     setGraduationYear(checkoutData.graduationYear);
   }
 
-  const [initializedForUserId, setInitializedForUserId] = useState<string | null>(null);
-  if (user && user.uid !== initializedForUserId) {
-    setInitializedForUserId(user.uid);
-    if (user.displayName) setCustomerName(user.displayName);
-    if (user.phone) setPhone(user.phone);
-    if (user.address || user.classGroup) setAddressOrClass(user.address || user.classGroup || "Alumni SMK");
-  }
+  const [errors, setErrors] = useState({
+    customerName: false,
+    phone: false,
+    addressOrClass: false,
+    verificationFile: false,
+    graduationYear: false,
+    proofFile: false
+  });
 
   const bundle = useMemo(
     () => ALUMNI_TICKET_BUNDLES.find((b) => b.id === checkoutData?.bundleId) ?? null,
     [checkoutData]
   );
 
+  const clearError = (field: keyof typeof errors) => {
+    setErrors((prev) => ({ ...prev, [field]: false }));
+  };
+
+  const validate = (): boolean => {
+    const newErrors = {
+      customerName: customerName.trim() === "",
+      phone: phone.trim() === "",
+      addressOrClass: addressOrClass.trim() === "",
+      verificationFile: !verificationFileUrl,
+      graduationYear: !graduationYear || graduationYear < GRADUATION_YEAR_MIN || graduationYear > GRADUATION_YEAR_MAX,
+      proofFile: paymentMethod === "BANK_TRANSFER_QRIS" && !proofFile
+    };
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(Boolean);
+  };
+
   const handleCopyAccount = async () => {
-    const accountNumber = "1234567890";
+    const accountNumber = "2041317529";
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(accountNumber);
@@ -125,24 +141,17 @@ export default function CheckoutAlumniPage() {
           const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
-
           if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
           } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
           }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
           ctx?.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-          setProofFile(dataUrl);
+          setProofFile(canvas.toDataURL("image/jpeg", 0.7));
+          clearError("proofFile");
         };
         img.src = event.target?.result as string;
       };
@@ -151,22 +160,8 @@ export default function CheckoutAlumniPage() {
   };
 
   const handleSubmitOrder = async () => {
-    if (!customerName || !phone) {
-      alert("Mohon lengkapi Nama Lengkap dan No. WhatsApp.");
-      return;
-    }
-    if (!checkoutData) {
-      alert("Data checkout tidak ditemukan. Silakan kembali dan pilih tiket lagi.");
-      return;
-    }
-    if (!verificationFileUrl) {
-      alert("Upload bukti verifikasi (Kartu Pelajar / SKL) terlebih dahulu.");
-      return;
-    }
-    if (!graduationYear || graduationYear < GRADUATION_YEAR_MIN || graduationYear > GRADUATION_YEAR_MAX) {
-      alert(`Masukkan tahun lulus yang valid (${GRADUATION_YEAR_MIN} - ${GRADUATION_YEAR_MAX}).`);
-      return;
-    }
+    if (!validate()) return;
+    if (!checkoutData) return;
 
     setIsSubmitting(true);
 
@@ -219,10 +214,10 @@ export default function CheckoutAlumniPage() {
 
     const alumniTicket: AlumniTicket = {
       id: ticketId,
-      orderId: orderId,
+      orderId,
       userId: user?.uid || guestId,
       verificationType,
-      verificationFileUrl,
+      verificationFileUrl: verificationFileUrl || "",
       graduationYear: Number(graduationYear),
       bundleId: checkoutData.bundleId,
       bundleName: checkoutData.bundleName,
@@ -240,8 +235,6 @@ export default function CheckoutAlumniPage() {
       setSyncFailed(true);
     }
 
-    setLastOrderId(orderId);
-
     const existingTicketsStr = localStorage.getItem("gala_alumni_tickets");
     const existingTickets: AlumniTicket[] = existingTicketsStr ? JSON.parse(existingTicketsStr) : [];
     localStorage.setItem("gala_alumni_tickets", JSON.stringify([alumniTicket, ...existingTickets]));
@@ -251,11 +244,31 @@ export default function CheckoutAlumniPage() {
     localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
 
     sessionStorage.removeItem("alumni_ticket_checkout");
+    setLastOrder(newOrder);
     setIsSubmitting(false);
-    setShowSuccessModal(true);
+    setShowInvoiceModal(true);
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!invoiceRef.current) return;
+    const el = invoiceRef.current;
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Invoice-${lastOrder?.id || "order"}.pdf`);
   };
 
   if (!checkoutData || !bundle) return null;
+
+  const inputClass = (hasError: boolean) =>
+    `w-full bg-surface border rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 transition ${
+      hasError
+        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+        : "border-outline-variant/50 focus:border-primary focus:ring-primary"
+    }`;
 
   return (
     <div className="min-h-screen bg-background text-on-background py-10 px-4 sm:px-6 lg:px-8 font-body-md flex flex-col items-center selection:bg-primary selection:text-on-primary">
@@ -301,36 +314,37 @@ export default function CheckoutAlumniPage() {
                 <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Nama Lengkap *</label>
                 <input
                   type="text"
-                  required
                   placeholder="Contoh: Budi Santoso"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+                  onChange={(e) => { setCustomerName(e.target.value); clearError("customerName"); }}
+                  className={inputClass(errors.customerName)}
                 />
+                {errors.customerName && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib diisi</p>}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">No. WhatsApp *</label>
                 <input
                   type="text"
-                  required
                   placeholder="081234567890"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+                  onChange={(e) => { setPhone(e.target.value); clearError("phone"); }}
+                  className={inputClass(errors.phone)}
                 />
+                {errors.phone && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib diisi</p>}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Kelas / Asal Sekolah</label>
+              <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Kelas / Asal Sekolah *</label>
               <input
                 type="text"
                 placeholder="Contoh: XII RPL 1 SMKN 3 Jepara"
                 value={addressOrClass}
-                onChange={(e) => setAddressOrClass(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+                onChange={(e) => { setAddressOrClass(e.target.value); clearError("addressOrClass"); }}
+                className={inputClass(errors.addressOrClass)}
               />
+              {errors.addressOrClass && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib diisi</p>}
             </div>
           </div>
 
@@ -377,19 +391,23 @@ export default function CheckoutAlumniPage() {
                 onFileChange={(url, name) => {
                   setVerificationFileUrl(url);
                   setVerificationFileName(name);
+                  clearError("verificationFile");
                 }}
                 currentFileUrl={verificationFileUrl}
                 currentFileName={verificationFileName}
                 label={`Upload ${verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"} *`}
               />
+              {errors.verificationFile && <p className="text-[11px] text-red-500 font-medium">Wajib upload bukti verifikasi</p>}
 
               <div>
                 <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">TAHUN LULUS *</label>
                 <div className="relative">
                   <select
                     value={graduationYear}
-                    onChange={(e) => setGraduationYear(e.target.value ? Number(e.target.value) : "")}
-                    className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
+                    onChange={(e) => { setGraduationYear(e.target.value ? Number(e.target.value) : ""); clearError("graduationYear"); }}
+                    className={`w-full bg-white border rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-1 transition ${
+                      errors.graduationYear ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                    }`}
                   >
                     <option value="">Pilih Tahun Lulus</option>
                     {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
@@ -398,7 +416,7 @@ export default function CheckoutAlumniPage() {
                   </select>
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-2">Rentang: {GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX}</p>
+                {errors.graduationYear && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib pilih tahun lulus ({GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX})</p>}
               </div>
             </div>
           </div>
@@ -411,11 +429,7 @@ export default function CheckoutAlumniPage() {
 
             <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-5 space-y-3">
               <div className="flex items-center gap-3">
-                <img
-                  src={bundle.imageUrl}
-                  alt={bundle.name}
-                  className="w-16 h-16 rounded-xl object-cover bg-white border border-outline-variant/30"
-                />
+                <img src={bundle.imageUrl} alt={bundle.name} className="w-16 h-16 rounded-xl object-cover bg-white border border-outline-variant/30" />
                 <div className="flex-1">
                   <p className="font-bold text-primary text-sm font-headline-md">{bundle.name}</p>
                   <p className="text-xs text-on-surface-variant mt-1">
@@ -586,14 +600,30 @@ export default function CheckoutAlumniPage() {
                 </div>
 
                 <div className="pt-4 border-t border-outline-variant/30">
-                  <label className="block text-xs font-semibold text-on-surface-variant mb-2">Upload Bukti Pembayaran (Opsional)</label>
-                  <label className="w-full flex items-center justify-center gap-2 bg-surface-container-lowest border-2 border-dashed border-outline-variant rounded-xl p-6 cursor-pointer hover:border-outline hover:bg-surface transition">
-                    <span className="material-symbols-outlined text-[20px] text-outline">upload_file</span>
-                    <span className="text-xs font-medium text-on-surface-variant">
-                      {proofFile ? "Bukti sudah dipilih. Klik untuk mengubah." : "Pilih file gambar / foto bukti transfer"}
-                    </span>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-                  </label>
+                  <label className="block text-xs font-semibold text-on-surface-variant mb-2">Upload Bukti Pembayaran *</label>
+                  {proofFile ? (
+                    <div className="space-y-3">
+                      <div className={`rounded-xl overflow-hidden border ${errors.proofFile ? "border-red-500" : "border-outline-variant/30"}`}>
+                        <img src={proofFile} alt="Bukti pembayaran" className="w-full max-h-48 object-contain bg-surface" />
+                      </div>
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-[11px] font-bold text-on-surface-variant hover:bg-surface cursor-pointer transition">
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                        Ganti Foto
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                      </label>
+                    </div>
+                  ) : (
+                    <>
+                      <label className={`w-full flex items-center justify-center gap-2 bg-surface-container-lowest border-2 border-dashed rounded-xl p-6 cursor-pointer hover:border-outline hover:bg-surface transition ${
+                        errors.proofFile ? "border-red-500" : "border-outline-variant"
+                      }`}>
+                        <span className="material-symbols-outlined text-[20px] text-outline">upload_file</span>
+                        <span className="text-xs font-medium text-on-surface-variant">Pilih file gambar / foto bukti transfer</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                      </label>
+                      {errors.proofFile && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib upload bukti transfer</p>}
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -603,7 +633,7 @@ export default function CheckoutAlumniPage() {
           <div className="pt-4 border-t border-outline-variant/30">
             <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Catatan Pesanan (Opsional)</label>
             <textarea
-              placeholder="*Catatan untuk Panitia Galaksi XII"
+              placeholder="Catatan untuk Panitia Galaksi XII"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-24 resize-none transition"
@@ -612,7 +642,6 @@ export default function CheckoutAlumniPage() {
 
           {/* Action Footer */}
           <div className="mt-10 pt-6 border-t border-outline-variant/30 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-6">
-
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 flex-1 w-full max-w-sm">
               <span className="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest block mb-1">TOTAL PEMBAYARAN:</span>
               <p className="text-3xl font-black text-amber-600 font-headline-md">
@@ -640,49 +669,108 @@ export default function CheckoutAlumniPage() {
 
       </div>
 
-      {/* Checkout Success Modal */}
-      {showSuccessModal && mounted && createPortal(
+      {/* Invoice Modal */}
+      {showInvoiceModal && mounted && lastOrder && createPortal(
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => router.push("/orders")}></div>
-          <div className="relative w-full max-w-sm bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl z-10 text-center animate-in zoom-in-95">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border ${syncFailed ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
-              <span className="material-symbols-outlined text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>{syncFailed ? "cloud_off" : "check_circle"}</span>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl z-10 animate-in zoom-in-95 overflow-hidden max-h-[90vh] flex flex-col">
+
+            <div className="overflow-y-auto p-6 sm:p-8">
+              <div ref={invoiceRef} className="bg-white p-6 sm:p-8">
+                <div className="text-center mb-6 pb-4 border-b border-neutral-200">
+                  <h2 className="text-lg font-bold text-neutral-900">GALAKSI XII</h2>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">Invoice Tiket Alumni</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-5 text-xs">
+                  <div>
+                    <span className="text-neutral-400">Kode Pesanan</span>
+                    <p className="font-bold text-neutral-900 font-mono">{lastOrder.id}</p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">Tanggal</span>
+                    <p className="font-bold text-neutral-900">
+                      {new Date(lastOrder.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">Nama Pemesan</span>
+                    <p className="font-bold text-neutral-900">{lastOrder.customerName}</p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">No. WhatsApp</span>
+                    <p className="font-bold text-neutral-900">{lastOrder.phone}</p>
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <h3 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pesanan</h3>
+                  <div className="space-y-2">
+                    {lastOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs py-2 border-b border-neutral-100 last:border-0">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-neutral-900 truncate">{item.name}</p>
+                          <p className="text-neutral-400">Rp {item.price.toLocaleString("id-ID")}</p>
+                        </div>
+                        <span className="font-bold text-neutral-900 ml-3">
+                          Rp {item.price.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-neutral-200 pt-4 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Subtotal</span>
+                    <span className="font-bold text-neutral-900">Rp {lastOrder.subtotal.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Pengiriman</span>
+                    <span className="font-bold text-emerald-600">GRATIS</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-neutral-200">
+                    <span className="font-bold text-neutral-900">Total</span>
+                    <span className="font-bold text-neutral-900 text-sm">Rp {lastOrder.totalPrice.toLocaleString("id-ID")}</span>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-neutral-200 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-neutral-400">Pembayaran</span>
+                    <p className="font-bold text-neutral-900">{lastOrder.paymentMethod === "COD" ? "COD" : "Transfer Bank / QRIS"}</p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">Pengambilan</span>
+                    <p className="font-bold text-neutral-900">
+                      {lastOrder.deliveryMethod === "PICKUP_AULA_SMKN3" ? "Aula SMKN 3" : "COD Jepara"}
+                    </p>
+                  </div>
+                </div>
+
+                {syncFailed && (
+                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800">
+                    <p className="font-bold mb-1">Catatan: Pesanan belum terkirim ke server</p>
+                    <p>Screenshot invoice ini & kirim ke panitia via WhatsApp.</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <h3 className="font-bold text-2xl text-slate-900 mb-2 font-serif-title">{syncFailed ? "Pesanan Tersimpan di Perangkat" : "Pesanan Berhasil!"}</h3>
-
-            {syncFailed ? (
-              <div className="text-xs text-slate-500 mb-6 leading-relaxed space-y-2 max-w-[280px] mx-auto">
-                <p>
-                  Pesanan Anda tersimpan, namun <strong>belum terkirim ke server panitia</strong> (kendala jaringan).
-                </p>
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left">
-                  <p className="font-bold text-amber-800 mb-1">PENTING — lakukan salah satu:</p>
-                  <p className="text-amber-800">
-                    1. Screenshot halaman ini &amp; pesan WhatsApp ke panitia, atau<br />
-                    2. Buka menu Pesanan saat sinyal membaik lalu hubungi panitia dengan kode:
-                  </p>
-                  <p className="font-mono font-bold text-amber-900 mt-1.5 select-all">{lastOrderId}</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500 mb-8 leading-relaxed max-w-[250px] mx-auto">
-                Terima kasih! Pesanan Anda telah diterima. Verifikasi akan diproses dalam 1-2 hari kerja.
-              </p>
-            )}
-
-            <div className="flex flex-col gap-3">
+            <div className="border-t border-neutral-100 p-6 sm:p-8 flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => router.push("/orders")}
-                className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold py-3.5 px-4 rounded-full text-xs transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                onClick={handleDownloadPDF}
+                className="flex-1 py-3 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
-                Cek Pesanan Saya <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+                <span className="material-symbols-outlined text-[16px]">download</span>
+                Cetak PDF
               </button>
               <button
-                onClick={() => router.push("/")}
-                className="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold py-3.5 px-4 rounded-full text-xs transition-all active:scale-95"
+                onClick={() => router.push("/merchandise")}
+                className="flex-1 py-3 px-4 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
               >
-                Kembali ke Beranda
+                Konfirmasi
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
               </button>
             </div>
           </div>

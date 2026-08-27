@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
@@ -9,52 +9,67 @@ import { Order, OrderItem, DeliveryMethod, Product } from "@/types/merch";
 import { syncOrderToFirebase, syncProductToFirebase } from "@/lib/firebaseService";
 import { useMounted } from "@/lib/useMounted";
 import Link from "next/link";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, subtotal, clearCart, totalItemCount } = useCart();
   const { user } = useAuth();
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   const [customerName, setCustomerName] = useState("");
-  const [phone, setPhone] = useState("081234567890");
-  const [addressOrClass, setAddressOrClass] = useState("Kelas / Umum");
-  
+  const [phone, setPhone] = useState("");
+  const [addressOrClass, setAddressOrClass] = useState("");
+
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("PICKUP_AULA_SMKN3");
   const [codLocationDetail, setCodLocationDetail] = useState("Halte SMKN 2 Jepara");
-  
+
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "BANK_TRANSFER_QRIS">("COD");
   const [copiedBank, setCopiedBank] = useState(false);
   const [proofFile, setProofFile] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [syncFailed, setSyncFailed] = useState(false);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const mounted = useMounted();
 
-  // Prefill form dari profil user — pola "adjust state during render", bukan effect.
-  const [initializedForUserId, setInitializedForUserId] = useState<string | null>(null);
-  if (user && user.uid !== initializedForUserId) {
-    setInitializedForUserId(user.uid);
-    if (user.displayName) setCustomerName(user.displayName);
-    if (user.phone) setPhone(user.phone);
-    if (user.address || user.classGroup) setAddressOrClass(user.address || user.classGroup || "Kelas / Umum");
-  }
+  const [errors, setErrors] = useState({
+    customerName: false,
+    phone: false,
+    addressOrClass: false,
+    proofFile: false
+  });
 
   // Redirect if cart is empty
   React.useEffect(() => {
-    if (cart.length === 0 && !isSubmitting) {
-      router.push("/");
+    if (cart.length === 0 && !isSubmitting && !showInvoiceModal) {
+      router.push("/keranjang");
     }
-  }, [cart.length, isSubmitting, router]);
+  }, [cart.length, isSubmitting, showInvoiceModal, router]);
+
+  const clearError = (field: keyof typeof errors) => {
+    setErrors((prev) => ({ ...prev, [field]: false }));
+  };
+
+  const validate = (): boolean => {
+    const newErrors = {
+      customerName: customerName.trim() === "",
+      phone: phone.trim() === "",
+      addressOrClass: addressOrClass.trim() === "",
+      proofFile: paymentMethod === "BANK_TRANSFER_QRIS" && !proofFile
+    };
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(Boolean);
+  };
 
   const handleCopyAccount = async () => {
-    const accountNumber = "1234567890";
+    const accountNumber = "2041317529";
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(accountNumber);
       } else {
-        // Fallback untuk konteks non-HTTPS atau browser tanpa Clipboard API.
         const textarea = document.createElement("textarea");
         textarea.value = accountNumber;
         textarea.style.position = "fixed";
@@ -83,24 +98,17 @@ export default function CheckoutPage() {
           const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
-
           if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
           } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
           }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
           ctx?.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-          setProofFile(dataUrl);
+          setProofFile(canvas.toDataURL("image/jpeg", 0.7));
+          clearError("proofFile");
         };
         img.src = event.target?.result as string;
       };
@@ -109,10 +117,7 @@ export default function CheckoutPage() {
   };
 
   const handleSubmitOrder = async () => {
-    if (!customerName || !phone) {
-      alert("Mohon lengkapi Nama Lengkap dan No. WhatsApp.");
-      return;
-    }
+    if (!validate()) return;
 
     setIsSubmitting(true);
 
@@ -127,14 +132,12 @@ export default function CheckoutPage() {
       stockType: item.stockType
     }));
 
-    const deliveryLabel = deliveryMethod === "PICKUP_AULA_SMKN3" 
+    const deliveryLabel = deliveryMethod === "PICKUP_AULA_SMKN3"
       ? "Ambil Sendiri di Aula SMKN 3 Jepara"
       : `COD Area Jepara (${codLocationDetail})`;
 
-    // ID unik: timestamp base36 + random, sehingga tidak mudah tabrakan.
     const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-    // ID guest yang stabil antar sesi (disimpan di localStorage).
     let guestId = localStorage.getItem("gala_merch_guest_id");
     if (!guestId) {
       guestId = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -163,17 +166,13 @@ export default function CheckoutPage() {
     };
 
     try {
-      // Tunggu sampai data benar-benar terkirim; syncOrderToFirebase melaporkan
-      // status per-database (RTDB & Firestore) setelah beberapa percobaan ulang.
       const result = await syncOrderToFirebase(newOrder);
       setSyncFailed(!result.rtdbOk && !result.firestoreOk);
     } catch (err) {
       console.error("Gagal sinkronisasi ke Firebase:", err);
       setSyncFailed(true);
     }
-    setLastOrderId(orderId);
 
-    // Kurangi stok & tambah soldCount untuk setiap produk yang dipesan.
     try {
       const saved = localStorage.getItem("gala_merch_products");
       if (saved) {
@@ -203,23 +202,43 @@ export default function CheckoutPage() {
     localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
 
     clearCart();
+    setLastOrder(newOrder);
     setIsSubmitting(false);
-    setShowSuccessModal(true);
+    setShowInvoiceModal(true);
   };
 
-  if (cart.length === 0 && !isSubmitting && !showSuccessModal) return null;
+  const handleDownloadPDF = async () => {
+    if (!invoiceRef.current) return;
+    const el = invoiceRef.current;
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Invoice-${lastOrder?.id || "order"}.pdf`);
+  };
+
+  if (cart.length === 0 && !isSubmitting && !showInvoiceModal) return null;
+
+  const inputClass = (hasError: boolean) =>
+    `w-full bg-surface border rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 transition ${
+      hasError
+        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+        : "border-outline-variant/50 focus:border-primary focus:ring-primary"
+    }`;
 
   return (
     <div className="min-h-screen bg-background text-on-background py-10 px-4 sm:px-6 lg:px-8 font-body-md flex flex-col items-center selection:bg-primary selection:text-on-primary">
-      
+
       {/* Top Nav */}
       <div className="w-full max-w-3xl mb-8 flex items-center justify-between">
-        <Link 
-          href="/merchandise"
+        <Link
+          href="/keranjang"
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary font-semibold text-sm transition"
         >
           <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          Kembali ke Belanja
+          Kembali ke Keranjang
         </Link>
         <div className="text-xs font-bold text-on-surface-variant bg-surface-container-high px-3 py-1.5 rounded-full">
           {totalItemCount} Barang di Keranjang
@@ -227,7 +246,7 @@ export default function CheckoutPage() {
       </div>
 
       <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl max-w-3xl w-full p-6 sm:p-10 shadow-sm relative mb-10">
-        
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 border-b border-outline-variant/30 pb-8 mb-8">
           <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-md">
@@ -240,48 +259,49 @@ export default function CheckoutPage() {
         </div>
 
         <div className="space-y-8">
-          
+
           {/* 1. INFORMASI PEMESAN */}
           <div className="space-y-4">
             <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">person</span> Informasi Pemesan
             </h4>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Nama Lengkap *</label>
                 <input
                   type="text"
-                  required
                   placeholder="Contoh: Budi Santoso"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+                  onChange={(e) => { setCustomerName(e.target.value); clearError("customerName"); }}
+                  className={inputClass(errors.customerName)}
                 />
+                {errors.customerName && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib diisi</p>}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">No. WhatsApp *</label>
                 <input
                   type="text"
-                  required
                   placeholder="081234567890"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+                  onChange={(e) => { setPhone(e.target.value); clearError("phone"); }}
+                  className={inputClass(errors.phone)}
                 />
+                {errors.phone && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib diisi</p>}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Kelas / Identitas Siswa</label>
+              <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Kelas / Identitas Siswa *</label>
               <input
                 type="text"
                 placeholder="Contoh: XII MIPA 2 SMKN 3 Jepara / Umum"
                 value={addressOrClass}
-                onChange={(e) => setAddressOrClass(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+                onChange={(e) => { setAddressOrClass(e.target.value); clearError("addressOrClass"); }}
+                className={inputClass(errors.addressOrClass)}
               />
+              {errors.addressOrClass && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib diisi</p>}
             </div>
           </div>
 
@@ -292,7 +312,6 @@ export default function CheckoutPage() {
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Option 1 */}
               <div
                 onClick={() => setDeliveryMethod("PICKUP_AULA_SMKN3")}
                 className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
@@ -317,7 +336,6 @@ export default function CheckoutPage() {
                 </p>
               </div>
 
-              {/* Option 2 */}
               <div
                 onClick={() => setDeliveryMethod("COD_AREA_JEPARA")}
                 className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
@@ -366,7 +384,7 @@ export default function CheckoutPage() {
             <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">credit_card</span> Metode Pembayaran
             </h4>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div
                 onClick={() => setPaymentMethod("COD")}
@@ -429,14 +447,30 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="pt-4 border-t border-outline-variant/30">
-                  <label className="block text-xs font-semibold text-on-surface-variant mb-2">Upload Bukti Pembayaran (Opsional)</label>
-                  <label className="w-full flex items-center justify-center gap-2 bg-surface-container-lowest border-2 border-dashed border-outline-variant rounded-xl p-6 cursor-pointer hover:border-outline hover:bg-surface transition">
-                    <span className="material-symbols-outlined text-[20px] text-outline">upload_file</span>
-                    <span className="text-xs font-medium text-on-surface-variant">
-                      {proofFile ? "Bukti sudah dipilih. Klik untuk mengubah." : "Pilih file gambar / foto bukti transfer"}
-                    </span>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-                  </label>
+                  <label className="block text-xs font-semibold text-on-surface-variant mb-2">Upload Bukti Pembayaran *</label>
+                  {proofFile ? (
+                    <div className="space-y-3">
+                      <div className={`rounded-xl overflow-hidden border ${errors.proofFile ? "border-red-500" : "border-outline-variant/30"}`}>
+                        <img src={proofFile} alt="Bukti pembayaran" className="w-full max-h-48 object-contain bg-surface" />
+                      </div>
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-[11px] font-bold text-on-surface-variant hover:bg-surface cursor-pointer transition">
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                        Ganti Foto
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                      </label>
+                    </div>
+                  ) : (
+                    <>
+                      <label className={`w-full flex items-center justify-center gap-2 bg-surface-container-lowest border-2 border-dashed rounded-xl p-6 cursor-pointer hover:border-outline hover:bg-surface transition ${
+                        errors.proofFile ? "border-red-500" : "border-outline-variant"
+                      }`}>
+                        <span className="material-symbols-outlined text-[20px] text-outline">upload_file</span>
+                        <span className="text-xs font-medium text-on-surface-variant">Pilih file gambar / foto bukti transfer</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                      </label>
+                      {errors.proofFile && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib upload bukti transfer</p>}
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -445,7 +479,7 @@ export default function CheckoutPage() {
           <div className="pt-4 border-t border-outline-variant/30">
             <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">Catatan Pesanan (Opsional)</label>
             <textarea
-              placeholder="*Catatan untuk Panitia Galaksi XII"
+              placeholder="Catatan untuk Panitia Galaksi XII"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full bg-surface border border-outline-variant/50 rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-24 resize-none transition"
@@ -454,7 +488,7 @@ export default function CheckoutPage() {
 
           {/* Action Footer */}
           <div className="mt-10 pt-6 border-t border-outline-variant/30 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-6">
-            
+
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 flex-1 w-full max-w-sm">
               <span className="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest block mb-1">TOTAL PEMBAYARAN:</span>
               <p className="text-3xl font-black text-primary font-headline-md">
@@ -482,49 +516,115 @@ export default function CheckoutPage() {
 
       </div>
 
-      {/* Checkout Success Modal */}
-      {showSuccessModal && mounted && createPortal(
+      {/* Invoice Modal */}
+      {showInvoiceModal && mounted && lastOrder && createPortal(
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => router.push("/orders")}></div>
-          <div className="relative w-full max-w-sm bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl z-10 text-center animate-in zoom-in-95">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border ${syncFailed ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
-              <span className="material-symbols-outlined text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>{syncFailed ? "cloud_off" : "check_circle"}</span>
-            </div>
-            
-            <h3 className="font-bold text-2xl text-slate-900 mb-2 font-serif-title">{syncFailed ? "Pesanan Tersimpan di Perangkat" : "Pesanan Berhasil!"}</h3>
-            
-            {syncFailed ? (
-              <div className="text-xs text-slate-500 mb-6 leading-relaxed space-y-2 max-w-[280px] mx-auto">
-                <p>
-                  Pesanan Anda tersimpan, namun <strong>belum terkirim ke server panitia</strong> (kendala jaringan).
-                </p>
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left">
-                  <p className="font-bold text-amber-800 mb-1">PENTING — lakukan salah satu:</p>
-                  <p className="text-amber-800">
-                    1. Screenshot halaman ini &amp; pesan WhatsApp ke panitia, atau<br />
-                    2. Buka menu Pesanan saat sinyal membaik lalu hubungi panitia dengan kode:
-                  </p>
-                  <p className="font-mono font-bold text-amber-900 mt-1.5 select-all">{lastOrderId}</p>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl z-10 animate-in zoom-in-95 overflow-hidden max-h-[90vh] flex flex-col">
+
+            {/* Invoice Content (scrollable) */}
+            <div className="overflow-y-auto p-6 sm:p-8">
+              <div ref={invoiceRef} className="bg-white p-6 sm:p-8">
+                {/* Invoice Header */}
+                <div className="text-center mb-6 pb-4 border-b border-neutral-200">
+                  <h2 className="text-lg font-bold text-neutral-900">GALAKSI XII</h2>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">SMKN 3 Jepara — Invoice Pesanan</p>
                 </div>
+
+                {/* Order Info */}
+                <div className="grid grid-cols-2 gap-3 mb-5 text-xs">
+                  <div>
+                    <span className="text-neutral-400">Kode Pesanan</span>
+                    <p className="font-bold text-neutral-900 font-mono">{lastOrder.id}</p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">Tanggal</span>
+                    <p className="font-bold text-neutral-900">
+                      {new Date(lastOrder.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">Nama Pemesan</span>
+                    <p className="font-bold text-neutral-900">{lastOrder.customerName}</p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">No. WhatsApp</span>
+                    <p className="font-bold text-neutral-900">{lastOrder.phone}</p>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="mb-5">
+                  <h3 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-3">Detail Pesanan</h3>
+                  <div className="space-y-2">
+                    {lastOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs py-2 border-b border-neutral-100 last:border-0">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-neutral-900 truncate">{item.name}</p>
+                          <p className="text-neutral-400">{item.selectedSize} · Rp {item.price.toLocaleString("id-ID")} × {item.quantity}</p>
+                        </div>
+                        <span className="font-bold text-neutral-900 ml-3">
+                          Rp {(item.price * item.quantity).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <div className="border-t border-neutral-200 pt-4 space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Subtotal</span>
+                    <span className="font-bold text-neutral-900">Rp {lastOrder.subtotal.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Pengiriman</span>
+                    <span className="font-bold text-emerald-600">GRATIS</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-neutral-200">
+                    <span className="font-bold text-neutral-900">Total</span>
+                    <span className="font-bold text-neutral-900 text-sm">Rp {lastOrder.totalPrice.toLocaleString("id-ID")}</span>
+                  </div>
+                </div>
+
+                {/* Payment & Delivery */}
+                <div className="mt-5 pt-4 border-t border-neutral-200 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-neutral-400">Pembayaran</span>
+                    <p className="font-bold text-neutral-900">{lastOrder.paymentMethod === "COD" ? "COD" : "Transfer Bank / QRIS"}</p>
+                  </div>
+                  <div>
+                    <span className="text-neutral-400">Pengambilan</span>
+                    <p className="font-bold text-neutral-900">
+                      {lastOrder.deliveryMethod === "PICKUP_AULA_SMKN3" ? "Aula SMKN 3" : "COD Jepara"}
+                    </p>
+                  </div>
+                </div>
+
+                {syncFailed && (
+                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800">
+                    <p className="font-bold mb-1">Catatan: Pesanan belum terkirim ke server</p>
+                    <p>Screenshot invoice ini & kirim ke panitia via WhatsApp.</p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <p className="text-xs text-slate-500 mb-8 leading-relaxed max-w-[250px] mx-auto">
-                Terima kasih! Pesanan Anda telah diterima dan sedang diproses. Silakan pantau status pesanan Anda.
-              </p>
-            )}
-            
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => router.push("/orders")}
-                className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold py-3.5 px-4 rounded-full text-xs transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+            </div>
+
+            {/* Actions */}
+            <div className="border-t border-neutral-100 p-6 sm:p-8 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleDownloadPDF}
+                className="flex-1 py-3 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
-                Cek Pesanan Saya <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+                <span className="material-symbols-outlined text-[16px]">download</span>
+                Cetak PDF
               </button>
-              <button 
-                onClick={() => router.push("/")}
-                className="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold py-3.5 px-4 rounded-full text-xs transition-all active:scale-95"
+              <button
+                onClick={() => router.push("/merchandise")}
+                className="flex-1 py-3 px-4 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
               >
-                Kembali ke Beranda
+                Konfirmasi
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
               </button>
             </div>
           </div>
