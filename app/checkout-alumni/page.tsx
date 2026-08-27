@@ -746,10 +746,10 @@ export default function CheckoutAlumniPage() {
 
             <div className="border-t border-neutral-100 p-6 sm:p-8 flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => router.push("/merchandise")}
+                onClick={() => router.push("/")}
                 className="flex-1 py-3 px-4 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
               >
-                Konfirmasi
+                Kembali ke Beranda
                 <span className="material-symbols-outlined text-[16px]">check_circle</span>
               </button>
             </div>

@@ -144,10 +144,12 @@ export default function MerchandisePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
             {filteredProducts.map((product) => (
-              <div 
+              <button 
                 key={product.id}
+                type="button"
+                aria-label={`Lihat detail ${product.name}`}
                 onClick={() => setSelectedProductModal(product)} 
-                className="group bg-white p-4 sm:p-5 border border-neutral-200 hover:border-neutral-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative"
+                className="group bg-white p-4 sm:p-5 border border-neutral-200 hover:border-neutral-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative text-left"
                 style={{ borderRadius: '2px' }}
               >
                 {/* Decoration corners */}
@@ -164,9 +166,13 @@ export default function MerchandisePage() {
                   <span className="font-dot-matrix text-[11px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
                     {"//"} {getDisplayCategory(product)}
                   </span>
-                  <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-4 leading-snug">
+                  <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-2 leading-snug">
                     {product.name}
                   </h3>
+                  <span className="text-[11px] text-neutral-400 flex items-center gap-1 mb-2">
+                    <span className="material-symbols-outlined text-[12px] text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    {product.rating?.toFixed(1) || "5.0"}
+                  </span>
                 </div>
 
                 <div className="flex items-end justify-between pt-4 border-t border-dashed border-neutral-200">
@@ -186,7 +192,7 @@ export default function MerchandisePage() {
                     <span className="material-symbols-outlined text-[18px]">add</span>
                   </button>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}

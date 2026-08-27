@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserProfile } from "@/types/merch";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { isAdminEmail } from "@/lib/config";
@@ -98,6 +99,7 @@ const pickExtras = (saved: Partial<UserProfile> | null, email: string | null): P
     : {};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [authAlertMsg, setAuthAlertMsg] = useState<string | null>(null);
@@ -238,7 +240,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         message={authAlertMsg || ""}
         icon="error"
         iconColor="red"
-        buttonText="Mengerti"
+        buttonText="Tutup"
+        actionLabel="Masuk"
+        onAction={() => { setAuthAlertMsg(null); router.push("/login"); }}
       />
     </AuthContext.Provider>
   );

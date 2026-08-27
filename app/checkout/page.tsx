@@ -300,7 +300,10 @@ export default function CheckoutPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setDeliveryMethod("PICKUP_AULA_SMKN3")}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDeliveryMethod("PICKUP_AULA_SMKN3"); } }}
                 className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
                   deliveryMethod === "PICKUP_AULA_SMKN3"
                     ? "bg-primary text-on-primary border-primary shadow-md"
@@ -324,7 +327,10 @@ export default function CheckoutPage() {
               </div>
 
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setDeliveryMethod("COD_AREA_JEPARA")}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDeliveryMethod("COD_AREA_JEPARA"); } }}
                 className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
                   deliveryMethod === "COD_AREA_JEPARA"
                     ? "bg-primary text-on-primary border-primary shadow-md"
@@ -374,7 +380,10 @@ export default function CheckoutPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setPaymentMethod("COD")}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPaymentMethod("COD"); } }}
                 className={`p-4 rounded-xl border-2 cursor-pointer flex items-center gap-3 transition ${
                   paymentMethod === "COD"
                     ? "border-emerald-500 bg-emerald-50 text-emerald-900"
@@ -393,7 +402,10 @@ export default function CheckoutPage() {
               </div>
 
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setPaymentMethod("BANK_TRANSFER_QRIS")}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPaymentMethod("BANK_TRANSFER_QRIS"); } }}
                 className={`p-4 rounded-xl border-2 cursor-pointer flex items-center gap-3 transition ${
                   paymentMethod === "BANK_TRANSFER_QRIS"
                     ? "border-primary bg-surface-container text-primary"
@@ -600,10 +612,10 @@ export default function CheckoutPage() {
             {/* Actions */}
             <div className="border-t border-neutral-100 p-6 sm:p-8 flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => router.push("/merchandise")}
+                onClick={() => router.push("/")}
                 className="flex-1 py-3 px-4 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
               >
-                Konfirmasi
+                Kembali ke Beranda
                 <span className="material-symbols-outlined text-[16px]">check_circle</span>
               </button>
             </div>

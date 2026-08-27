@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Product } from "@/types/merch";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowLeft, Star, Info, Plus, Minus, Heart, ShoppingBag, Zap } from "lucide-react";
+import { ArrowLeft, Star, Info, Plus, Minus, ShoppingBag, Zap } from "lucide-react";
 
 interface ProductModalProps {
   product: Product | null;
@@ -12,10 +13,10 @@ interface ProductModalProps {
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
+  const router = useRouter();
   const { addToCart, setIsCartOpen } = useCart();
   const { user, showAuthAlert } = useAuth();
   const [quantity, setQuantity] = useState<number>(1);
-  const [isLiked, setIsLiked] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
 
@@ -51,7 +52,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     addToCart(product, selectedSize || "Standard", selectedColor || "Standard", quantity);
     onClose();
     if (isBuyNow) {
-      setIsCartOpen(true);
+      router.push("/checkout");
     }
   };
 
@@ -83,14 +84,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               
-              {/* Heart Button */}
-              <button
-                onClick={() => setIsLiked(!isLiked)}
-                className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md hover:scale-110 transition-all text-slate-400"
-              >
-                <Heart size={18} className={isLiked ? "fill-red-500 text-red-500" : ""} />
-              </button>
-
               {/* Price Tag Capsule */}
               <div className="absolute bottom-5 right-5 bg-[#111] text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-xl">
                 {formattedPrice}
@@ -117,16 +110,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             </h1>
 
             {/* Rating */}
-            <div className="flex items-center gap-1.5 mb-8">
-              <div className="flex items-center text-amber-400">
-                <Star size={16} />
-                <Star size={16} />
-                <Star size={16} />
-                <Star size={16} />
-                <Star size={16} className="text-slate-300" />
+            <div className="flex items-center gap-2 mb-6">
+              <div className="flex items-center gap-0.5">
+                {[1,2,3,4,5].map((star) => (
+                  <span key={star} className={`material-symbols-outlined text-[18px] ${star <= Math.round(product.rating || 0) ? "text-amber-400" : "text-neutral-200"}`} style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                ))}
               </div>
-              <span className="text-xs font-bold text-slate-900 ml-1">4.8/5</span>
-              <span className="text-xs text-slate-500">(berdasarkan 256 ulasan siswa)</span>
+              <span className="text-xs text-neutral-500">{product.rating?.toFixed(1) || "5.0"}</span>
+              <span className="text-[11px] text-neutral-400">&middot;</span>
+              <span className="text-[11px] text-neutral-400">{product.soldCount || 0} terjual</span>
             </div>
 
             {/* Detail & Deskripsi Box */}

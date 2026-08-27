@@ -11,6 +11,8 @@ interface AlertModalProps {
   icon?: string;
   iconColor?: "red" | "amber" | "emerald" | "neutral";
   buttonText?: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 const iconColorMap = {
@@ -27,7 +29,9 @@ export const AlertModal: React.FC<AlertModalProps> = ({
   message,
   icon = "info",
   iconColor = "neutral",
-  buttonText = "Mengerti"
+  buttonText = "Mengerti",
+  actionLabel,
+  onAction,
 }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm">
@@ -37,12 +41,29 @@ export const AlertModal: React.FC<AlertModalProps> = ({
         </div>
         <h3 className="text-sm font-bold text-neutral-900 mb-1">{title}</h3>
         <p className="text-xs text-neutral-500 mb-6 leading-relaxed">{message}</p>
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-sm"
-        >
-          {buttonText}
-        </button>
+        {actionLabel ? (
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 px-4 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-xl text-xs font-semibold transition-all active:scale-95"
+            >
+              {buttonText}
+            </button>
+            <button
+              onClick={onAction}
+              className="flex-1 py-2.5 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-sm"
+            >
+              {actionLabel}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-sm"
+          >
+            {buttonText}
+          </button>
+        )}
       </div>
     </Modal>
   );
