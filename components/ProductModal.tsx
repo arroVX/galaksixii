@@ -200,10 +200,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             )}
 
             {/* Action Bar (Black Capsule) */}
-            <div className="mt-auto bg-[#222] p-2.5 rounded-full flex items-center justify-between shadow-2xl max-w-lg w-full gap-2">
+            <div className="mt-auto bg-[#222] p-2.5 rounded-full flex items-center justify-between shadow-2xl max-w-lg w-full gap-1.5 overflow-hidden">
               
               {/* Left: Quantity Selector */}
-              <div className="flex items-center gap-3 px-4">
+              <div className="flex items-center gap-2.5 px-3 shrink-0">
                 <button 
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
@@ -222,19 +222,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               {/* Middle: Keranjang */}
               <button 
                 onClick={() => handleAction(false)}
-                className="flex-1 py-3 px-2 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center gap-2 text-xs font-bold transition-colors"
+                className="flex-1 min-w-0 py-3 px-2 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center gap-1.5 text-xs font-bold transition-colors"
               >
-                <ShoppingBag size={14} />
-                <span>+ Keranjang</span>
+                <ShoppingBag size={14} className="shrink-0" />
+                <span className="truncate">+ Keranjang</span>
               </button>
 
               {/* Right: Beli Sekarang */}
               <button 
                 onClick={() => handleAction(true)}
-                className="flex-[1.2] py-3 px-2 bg-white text-slate-900 hover:bg-slate-100 rounded-full flex items-center justify-center gap-1.5 text-xs font-black transition-colors shadow-inner"
+                className="flex-[1.2] min-w-0 py-3 px-2 bg-white text-slate-900 hover:bg-slate-100 rounded-full flex items-center justify-center gap-1.5 text-xs font-black transition-colors shadow-inner"
               >
-                <Zap size={14} />
-                <span>Beli Sekarang</span>
+                <Zap size={14} className="shrink-0" />
+                <span className="truncate">Beli Sekarang</span>
               </button>
             </div>
 
