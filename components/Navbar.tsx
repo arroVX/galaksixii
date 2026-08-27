@@ -42,8 +42,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const navLinks = [
-    { name: "Beranda", path: "/" },
-    { name: "Kompetisi", path: "/kompetisi" },
     { name: "Merchandise", path: "/merchandise" },
     { name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true },
     { name: "Cek Pesanan", path: "/orders" }
@@ -101,8 +99,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <nav className="hidden lg:flex items-center gap-8">
             {activeView === "admin" ? (
               <>
-                <Link href="/" className={`font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 ${pathname === '/' ? 'text-primary border-b-2 border-primary pb-1 font-bold' : 'text-on-surface-variant hover:text-primary'}`}>Dashboard Admin</Link>
-                <button onClick={() => { setActiveView("shop"); router.push("/"); }} className="font-label-md text-label-md text-red-500 hover:text-red-700 transition-all duration-200 font-bold">Keluar Admin</button>
+                <Link href="/merchandise" className={`font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 ${pathname === '/merchandise' ? 'text-primary border-b-2 border-primary pb-1 font-bold' : 'text-on-surface-variant hover:text-primary'}`}>Dashboard Admin</Link>
+                <button onClick={() => { setActiveView("shop"); router.push("/merchandise"); }} className="font-label-md text-label-md text-red-500 hover:text-red-700 transition-all duration-200 font-bold">Keluar Admin</button>
               </>
             ) : (
               <>
@@ -121,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button 
                     onClick={() => {
                       setActiveView("admin");
-                      if (pathname !== "/") router.push("/");
+                      if (pathname !== "/merchandise") router.push("/merchandise");
                     }} 
                     className="font-label-md text-label-md transition-all duration-200 hover:-translate-y-0.5 text-red-600 hover:text-red-700 font-bold flex items-center gap-1"
                   >

@@ -23,8 +23,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   if (activeView === "admin") return null;
 
   const navTabs = [
-    { name: "Beranda", path: "/", icon: "home" },
-    { name: "Galeri", path: "/kompetisi", icon: "photo_library" },
     { name: "Toko", path: "/merchandise", icon: "storefront" },
     { name: "Tiket", path: "/tiket-alumni", icon: "verified_user" },
     { name: "Pesanan", path: "/orders", icon: "receipt_long" }
@@ -48,7 +46,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     }
     if (tabPath === "__admin__") {
       setActiveView("admin");
-      if (pathname !== "/") router.push("/");
+      if (pathname !== "/merchandise") router.push("/merchandise");
       return;
     }
     if (pathname !== tabPath) router.push(tabPath);

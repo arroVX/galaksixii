@@ -82,20 +82,15 @@ export default function AlumniTicketPage() {
 
       <main className="flex-grow pt-2 pb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 fade-in">
         <div className="mb-10 md:mb-16 mt-4 md:mt-8 border-b border-neutral-200 pb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[24px] text-amber-700">verified_user</span>
-            </div>
             <div>
               <h1 className="font-dot-matrix text-5xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-2 opacity-90">
-                TIKET PRE-ORDER
+                TIKET & BUNDLING MERCH
               </h1>
               <p className="text-xs sm:text-sm text-neutral-500 max-w-2xl leading-relaxed font-medium">
                 Tiket masuk puncak Dies Natalis - SMK NEGERI 3 Jepara
               </p>
             </div>
           </div>
-        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
           {ALUMNI_TICKET_BUNDLES.map((bundle) => (
