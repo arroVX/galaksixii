@@ -5,15 +5,13 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
-import { X, Minus, Plus, ShoppingBag, ArrowRight, Clock } from "lucide-react";
+import { X, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function KeranjangPage() {
   const router = useRouter();
   const { cart, removeFromCart, updateQuantity, subtotal, totalItemCount } = useCart();
   const { user, showAuthAlert } = useAuth();
-
-  const hasPOItems = cart.some((item) => item.stockType === "PRE_ORDER");
 
   return (
     <>
@@ -109,14 +107,6 @@ export default function KeranjangPage() {
                   </div>
                 ))}
               </div>
-
-              {/* PO Notice */}
-              {hasPOItems && (
-                <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-3 text-[11px] text-amber-700 flex items-start gap-2 mb-6">
-                  <Clock size={14} className="shrink-0 mt-0.5 text-amber-500" />
-                  <span>Beberapa item Pre-Order akan dikirim setelah produksi selesai.</span>
-                </div>
-              )}
 
               {/* Summary & Checkout */}
               <div className="bg-white rounded-2xl border border-neutral-100 p-5">
