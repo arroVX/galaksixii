@@ -37,7 +37,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           <button
             onClick={onExit}
-            className="px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+            className="px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
           >
             Keluar Admin
           </button>
@@ -49,7 +49,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex-1 px-4 py-3 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === tab.key
                   ? "bg-neutral-900 text-white shadow-sm"
                   : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"

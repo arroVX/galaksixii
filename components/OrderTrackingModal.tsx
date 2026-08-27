@@ -65,7 +65,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container transition"
+            className="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container transition"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -140,7 +140,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
                     href={`https://wa.me/6281234567890?text=Halo%20Admin,%20saya%20ingin%20menanyakan%20status%20pesanan%20dengan%20Kode:%20${selectedOrder.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3.5 py-1.5 bg-primary hover:bg-neutral-800 text-on-primary text-xs font-bold rounded-full flex items-center gap-1.5 transition shadow-sm"
+                    className="px-4 py-2.5 bg-primary hover:bg-neutral-800 text-on-primary text-xs font-bold rounded-full flex items-center gap-1.5 transition shadow-sm"
                   >
                     <span className="material-symbols-outlined text-[14px]">chat</span> Tanya Admin WA
                   </a>
@@ -172,7 +172,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
                           >
                             {isDone ? <span className="material-symbols-outlined text-[14px]">check</span> : idx + 1}
                           </div>
-                          <span className={`text-[10px] font-semibold mt-2 max-w-[65px] leading-tight ${
+                          <span className={`text-[11px] font-semibold mt-2 max-w-[80px] leading-tight ${
                             isCurrent ? "text-primary font-bold" : isDone ? "text-primary" : "text-on-surface-variant"
                           }`}>
                             {step}

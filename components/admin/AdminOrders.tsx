@@ -78,7 +78,52 @@ export const AdminOrders: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white border border-neutral-100 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-neutral-100 rounded-2xl overflow-hidden md:hidden">
+        <div className="divide-y divide-neutral-50">
+          {filteredOrders.length === 0 ? (
+            <p className="p-8 text-center text-neutral-400 text-xs">Tidak ada pesanan.</p>
+          ) : (
+            filteredOrders.map((ord) => (
+              <div key={ord.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-bold text-neutral-900 text-sm">{ord.id}</p>
+                    <p className="text-[10px] text-neutral-400">
+                      {new Date(ord.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-neutral-900">Rp {ord.totalPrice.toLocaleString("id-ID")}</span>
+                </div>
+                <div>
+                  <p className="font-bold text-neutral-900 text-xs">{ord.customerName}</p>
+                  <p className="text-[11px] text-neutral-400">{ord.phone}</p>
+                </div>
+                <div>
+                  {ord.items.map((item, idx) => (
+                    <p key={idx} className="text-[11px] text-neutral-600">• {item.name} ({item.selectedSize}) x{item.quantity}</p>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={ord.status} onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-2.5 text-sm font-semibold text-neutral-900 focus:outline-none flex-1">
+                    <option value="Menunggu Pembayaran">Menunggu</option>
+                    <option value="Diverifikasi">Diverifikasi</option>
+                    <option value="Sedang Diproduksi">Diproduksi</option>
+                    <option value="Siap Diambil/Dikirim">Siap Kirim</option>
+                    <option value="Selesai">Selesai</option>
+                  </select>
+                  {ord.paymentProofUrl ? (
+                    <button onClick={() => setViewProofUrl(ord.paymentProofUrl || null)} className="px-3 py-2 bg-neutral-100 text-neutral-700 rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-neutral-200 transition">
+                      <Eye size={12} /> Lihat Bukti
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white border border-neutral-100 rounded-2xl overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-neutral-700">
             <thead className="bg-neutral-50 text-[10px] text-neutral-400 border-b border-neutral-100">
@@ -121,7 +166,7 @@ export const AdminOrders: React.FC = () => {
                     <td className="p-3 font-bold text-neutral-900">Rp {ord.totalPrice.toLocaleString("id-ID")}</td>
                     <td className="p-3">
                       {ord.paymentProofUrl ? (
-                        <button onClick={() => setViewProofUrl(ord.paymentProofUrl || null)} className="px-2.5 py-1 bg-neutral-100 text-neutral-700 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-neutral-200 transition">
+                        <button onClick={() => setViewProofUrl(ord.paymentProofUrl || null)} className="px-3 py-2 bg-neutral-100 text-neutral-700 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-neutral-200 transition">
                           <Eye size={11} /> Lihat
                         </button>
                       ) : (
@@ -129,7 +174,7 @@ export const AdminOrders: React.FC = () => {
                       )}
                     </td>
                     <td className="p-3">
-                      <select value={ord.status} onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-neutral-900 focus:outline-none">
+                      <select value={ord.status} onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-2.5 text-sm font-semibold text-neutral-900 focus:outline-none">
                         <option value="Menunggu Pembayaran">Menunggu</option>
                         <option value="Diverifikasi">Diverifikasi</option>
                         <option value="Sedang Diproduksi">Diproduksi</option>
@@ -149,7 +194,7 @@ export const AdminOrders: React.FC = () => {
       {viewProofUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/50 backdrop-blur-sm">
           <div className="bg-white border border-neutral-100 rounded-2xl max-w-lg w-full p-6 relative">
-            <button onClick={() => setViewProofUrl(null)} className="absolute top-4 right-4 p-1.5 text-neutral-400 hover:text-neutral-900 rounded-lg bg-neutral-100">
+            <button onClick={() => setViewProofUrl(null)} className="absolute top-4 right-4 w-11 h-11 flex items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-900 bg-neutral-100">
               <X size={16} />
             </button>
             <h4 className="font-bold text-neutral-900 text-sm mb-4 flex items-center gap-2">

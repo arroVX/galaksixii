@@ -88,7 +88,7 @@ export default function MerchandisePage() {
         
         {/* Title & Description */}
         <div className="mb-10 md:mb-16 mt-4 md:mt-8 border-b border-neutral-200 pb-8">
-          <h1 className="font-dot-matrix text-5xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-4 opacity-90">
+          <h1 className="font-dot-matrix text-3xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-4 opacity-90">
             OFFICIAL MERCHANDISE
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-2xl leading-relaxed font-medium">
@@ -109,7 +109,7 @@ export default function MerchandisePage() {
               <button 
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
-                className={`whitespace-nowrap px-4 py-2 text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all border ${
+                className={`whitespace-nowrap px-4 py-2.5 text-[11px] sm:text-xs font-bold tracking-widest uppercase transition-all border ${
                   activeFilter === filter.id 
                     ? "bg-neutral-900 text-white border-neutral-900 shadow-md" 
                     : "bg-white text-neutral-500 border-neutral-200 hover:border-neutral-400 hover:text-neutral-900"
@@ -161,7 +161,7 @@ export default function MerchandisePage() {
                     <img src={product.images?.[0] || product.imageUrl || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518"} alt={product.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
                   </div>
 
-                  <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
+                  <span className="font-dot-matrix text-[11px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
                     {"//"} {getDisplayCategory(product)}
                   </span>
                   <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-4 leading-snug">
@@ -171,7 +171,7 @@ export default function MerchandisePage() {
 
                 <div className="flex items-end justify-between pt-4 border-t border-dashed border-neutral-200">
                   <div>
-                    <span className="text-[9px] font-bold tracking-widest uppercase text-neutral-400 block mb-1">HARGA</span>
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-neutral-400 block mb-1">HARGA</span>
                     <span className="font-dot-matrix text-lg md:text-xl font-bold text-neutral-900 tracking-wider">
                       Rp {product.price.toLocaleString("id-ID")}
                     </span>
@@ -179,7 +179,7 @@ export default function MerchandisePage() {
 
                   <button 
                     onClick={(e) => handleAddToCart(e, product)} 
-                    className="shrink-0 bg-neutral-900 text-white w-10 h-10 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
+                    className="shrink-0 bg-neutral-900 text-white w-11 h-11 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
                     style={{ borderRadius: '2px' }}
                     title="Tambah ke keranjang"
                   >

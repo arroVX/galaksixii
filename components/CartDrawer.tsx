@@ -28,7 +28,7 @@ export const CartDrawer: React.FC = () => {
             </div>
             <button
               onClick={() => setIsCartOpen(false)}
-              className="p-2 -mr-2 text-neutral-400 hover:text-neutral-900 rounded-full hover:bg-neutral-100 transition-colors"
+              className="w-11 h-11 flex items-center justify-center -mr-2 text-neutral-400 hover:text-neutral-900 rounded-full hover:bg-neutral-100 transition-colors"
             >
               <X size={20} />
             </button>
@@ -96,7 +96,7 @@ export const CartDrawer: React.FC = () => {
                         <div className="flex items-center border border-neutral-200 rounded-full">
                           <button
                             onClick={() => updateQuantity(item.id, -1)}
-                            className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
+                            className="w-11 h-11 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
                           >
                             <Minus size={12} />
                           </button>
@@ -105,7 +105,7 @@ export const CartDrawer: React.FC = () => {
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, 1)}
-                            className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
+                            className="w-11 h-11 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
                           >
                             <Plus size={12} />
                           </button>

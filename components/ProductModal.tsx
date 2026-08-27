@@ -86,7 +86,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               {/* Heart Button */}
               <button
                 onClick={() => setIsLiked(!isLiked)}
-                className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md hover:scale-110 transition-all text-slate-400"
+                className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md hover:scale-110 transition-all text-slate-400"
               >
                 <Heart size={18} className={isLiked ? "fill-red-500 text-red-500" : ""} />
               </button>
@@ -103,7 +103,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             
             {/* Category & Status Pills */}
             <div className="flex items-center gap-3 mb-5">
-              <span className="px-3 py-1 bg-slate-200/70 text-slate-700 font-black text-[10px] tracking-wider uppercase rounded-full">
+              <span className="px-3 py-1 bg-slate-200/70 text-slate-700 font-black text-[11px] tracking-wider uppercase rounded-full">
                 {product.category}
               </span>
               <span className={`px-3 py-1 font-black text-[10px] tracking-wider uppercase rounded-full ${isPO ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
@@ -112,7 +112,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
             </div>
 
             {/* Title */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-black font-serif-title text-slate-900 leading-[1.1] tracking-tight mb-5">
+            <h1 className="text-3xl sm:text-4xl lg:text-[52px] font-black font-serif-title text-slate-900 leading-[1.1] tracking-tight mb-5">
               {product.name}
             </h1>
 
@@ -206,14 +206,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               <div className="flex items-center gap-2.5 px-3 shrink-0">
                 <button 
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
                 >
                   <Minus size={14} />
                 </button>
                 <span className="text-white font-bold text-sm w-5 text-center">{quantity}</span>
                 <button 
                   onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
                 >
                   <Plus size={14} />
                 </button>

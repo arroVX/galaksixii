@@ -127,7 +127,7 @@ export default function OrdersPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/merchandise"
-              className="w-10 h-10 rounded-full bg-surface-container-lowest hover:bg-surface border border-outline-variant/30 text-on-surface-variant flex items-center justify-center transition"
+              className="w-11 h-11 rounded-full bg-surface-container-lowest hover:bg-surface border border-outline-variant/30 text-on-surface-variant flex items-center justify-center transition"
               title="Kembali ke Katalog"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -250,7 +250,7 @@ export default function OrdersPage() {
                       href={`https://wa.me/6281234567890?text=Halo%20Admin,%20saya%20ingin%20menanyakan%20status%20pesanan%20dengan%20Kode:%20${selectedOrder.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 bg-primary hover:bg-neutral-800 text-on-primary text-xs font-bold rounded-full flex items-center gap-2 transition shadow-sm"
+                      className="px-4 py-2.5 bg-primary hover:bg-neutral-800 text-on-primary text-xs font-bold rounded-full flex items-center gap-2 transition shadow-sm"
                     >
                       <span className="material-symbols-outlined text-[16px]">chat</span>
                       <span>Tanya Admin WA</span>
@@ -283,7 +283,7 @@ export default function OrdersPage() {
                             >
                               {isDone ? <span className="material-symbols-outlined text-[16px]">check</span> : idx + 1}
                             </div>
-                            <span className={`text-[10px] font-semibold mt-2.5 max-w-[70px] leading-tight ${
+                            <span className={`text-[11px] font-semibold mt-2.5 max-w-[80px] leading-tight ${
                               isCurrent ? "text-primary font-bold" : isDone ? "text-primary" : "text-on-surface-variant"
                             }`}>
                               {step}

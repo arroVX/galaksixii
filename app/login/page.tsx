@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { createPortal } from "react-dom";
+import { SuccessModal } from "@/components/ui/SuccessModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { isAdminEmail } from "@/lib/config";
-import { useMounted } from "@/lib/useMounted";
 import { Navbar } from "@/components/Navbar";
 
 export default function LoginPage() {
@@ -19,7 +18,6 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const mounted = useMounted();
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -168,7 +166,7 @@ export default function LoginPage() {
                         placeholder="Budi Santoso"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full bg-surface border border-outline-variant/50 rounded-xl py-2.5 pl-10 pr-4 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="w-full bg-surface border border-outline-variant/50 rounded-xl py-3 pl-10 pr-4 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
@@ -183,7 +181,7 @@ export default function LoginPage() {
                       placeholder="nama@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-surface border border-outline-variant/50 rounded-xl py-2.5 pl-10 pr-4 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      className="w-full bg-surface border border-outline-variant/50 rounded-xl py-3 pl-10 pr-4 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -198,7 +196,7 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-surface border border-outline-variant/50 rounded-xl py-2.5 pl-10 pr-4 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      className="w-full bg-surface border border-outline-variant/50 rounded-xl py-3 pl-10 pr-4 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -215,7 +213,7 @@ export default function LoginPage() {
               <div className="pt-2 text-center">
                 <button
                   onClick={() => setIsRegister(!isRegister)}
-                  className="text-xs font-bold text-on-surface-variant hover:text-primary transition"
+                  className="text-xs font-bold text-on-surface-variant hover:text-primary transition py-2"
                 >
                   {isRegister ? "Sudah punya akun? Masuk di sini" : "Belum punya akun? Daftar sekarang"}
                 </button>
@@ -225,28 +223,14 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Login Success Modal */}
-      {showSuccessModal && mounted && createPortal(
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSuccessModal(false)}></div>
-          <div className="relative w-full max-w-sm bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-2xl z-10 text-center animate-in zoom-in-95">
-            <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 border border-primary/20 shadow-sm">
-              <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-            </div>
-            <h3 className="font-bold text-xl text-primary mb-1 font-headline-md">Berhasil Masuk!</h3>
-            <p className="text-xs text-on-surface-variant opacity-80 mb-6 leading-relaxed">
-              Selamat datang kembali, <strong>{user?.displayName || "Pengguna Galaksi"}</strong>! Anda telah berhasil masuk.
-            </p>
-            <button 
-              onClick={continueToApp}
-              className="w-full bg-primary text-on-primary hover:bg-neutral-800 font-bold py-3 px-4 rounded-full text-xs transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
-            >
-              Lanjutkan <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Berhasil Masuk!"
+        message={`Selamat datang kembali, ${user?.displayName || "Pengguna Galaksi"}! Anda telah berhasil masuk.`}
+        buttonText="Lanjutkan"
+        onAction={continueToApp}
+      />
 
     </div>
   );

@@ -20,12 +20,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const { totalItemCount } = useCart();
   const [popKey, setPopKey] = useState(0);
 
-  if (activeView === "admin") return null;
-
   const navTabs = [
     { name: "Toko", path: "/merchandise", icon: "storefront" },
     { name: "Keranjang", path: "/keranjang", icon: "shopping_bag" },
-    { name: "Tiket", path: "/tiket-alumni", icon: "verified_user" },
+    { name: "Tiket", path: "/tiket-alumni", icon: "confirmation_number" },
     { name: "Pesanan", path: "/orders", icon: "receipt_long" }
   ];
 
@@ -99,7 +97,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                     </span>
                   )}
                 </span>
-                <span className="text-[10px] tracking-wider uppercase leading-none">{tab.name}</span>
               </button>
             );
           })}

@@ -53,7 +53,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
         <div className="mb-6 sm:mb-10">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-full text-slate-700 text-xs font-bold shadow-sm hover:bg-slate-50 hover:scale-105 transition-all"
+            className="flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-full text-slate-700 text-xs font-bold shadow-sm hover:bg-slate-50 hover:scale-105 transition-all"
           >
             <ArrowLeft size={16} />
             Kembali ke Tiket & Bundling
@@ -84,7 +84,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
                     alt={item.name}
                     className="w-full aspect-square object-cover rounded-xl bg-slate-50"
                   />
-                  <span className="text-[9px] font-bold text-slate-500 text-center leading-tight line-clamp-2">{item.name}</span>
+                  <span className="text-[11px] font-bold text-slate-500 text-center leading-tight line-clamp-2">{item.name}</span>
                 </div>
               ))}
             </div>
@@ -99,7 +99,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-black font-serif-title text-slate-900 leading-[1.1] tracking-tight mb-5">
+            <h1 className="text-3xl sm:text-4xl lg:text-[52px] font-black font-serif-title text-slate-900 leading-[1.1] tracking-tight mb-5">
               {bundle.name}
             </h1>
 

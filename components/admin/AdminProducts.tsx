@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Product } from "@/types/merch";
 import { Plus, Edit3, Trash2, Package } from "lucide-react";
 import { AdminProductModal } from "./AdminProductModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface AdminProductsProps {
   products: Product[];
@@ -13,6 +14,7 @@ interface AdminProductsProps {
 export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProducts }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -25,10 +27,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
   };
 
   const handleDelete = (productId: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus merchandise ini?")) return;
-    const newList = products.filter((p) => p.id !== productId);
-    setProducts(newList);
-    localStorage.setItem("gala_merch_products", JSON.stringify(newList));
+    setDeleteTarget(productId);
   };
 
   return (
@@ -39,7 +38,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
         </h3>
         <button
           onClick={openCreateModal}
-          className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-sm"
+          className="px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-sm"
         >
           <Plus size={14} /> Tambah
         </button>
@@ -72,11 +71,11 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
                 ))}
               </div>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => openEditModal(p)} className="p-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition" title="Edit">
-                  <Edit3 size={12} />
+                <button onClick={() => openEditModal(p)} className="p-2.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition" title="Edit">
+                  <Edit3 size={14} />
                 </button>
-                <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition" title="Hapus">
-                  <Trash2 size={12} />
+                <button onClick={() => handleDelete(p.id)} className="p-2.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition" title="Hapus">
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>
@@ -92,6 +91,23 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
           products={products}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) {
+            const newList = products.filter((p) => p.id !== deleteTarget);
+            setProducts(newList);
+            localStorage.setItem("gala_merch_products", JSON.stringify(newList));
+          }
+        }}
+        title="Hapus Merchandise"
+        message="Apakah Anda yakin ingin menghapus merchandise ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+        variant="danger"
+      />
     </div>
   );
 };

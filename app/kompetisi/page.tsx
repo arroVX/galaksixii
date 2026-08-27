@@ -115,7 +115,7 @@ export default function KompetisiPage() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+              className={`px-3.5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
                 cat === selectedCategory
                   ? "bg-primary text-on-primary shadow-sm"
                   : "bg-transparent border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container-low"
@@ -158,7 +158,7 @@ export default function KompetisiPage() {
                     <span className="material-symbols-outlined text-4xl text-outline group-hover:text-primary transition-colors">
                       {CATEGORY_ICONS[item.category] ?? "add_photo_alternate"}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60">
                       Menunggu Dokumentasi
                     </span>
                   </div>
@@ -170,7 +170,7 @@ export default function KompetisiPage() {
                   <p className="text-white/70 text-[9px] uppercase tracking-widest mt-0.5">{item.category}</p>
                 </div>
 
-                <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-neutral-900/80 backdrop-blur text-white text-[9px] font-bold rounded-full tracking-wider z-10">
+                <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-neutral-900/80 backdrop-blur text-white text-[11px] font-bold rounded-full tracking-wider z-10">
                   {item.category}
                 </span>
               </button>
@@ -210,7 +210,7 @@ export default function KompetisiPage() {
               <button
                 onClick={() => setLightbox(null)}
                 aria-label="Tutup"
-                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                className="absolute top-3 right-3 w-11 h-11 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>

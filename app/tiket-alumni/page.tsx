@@ -80,7 +80,7 @@ export default function AlumniTicketPage() {
       <main className="flex-grow pt-2 pb-16 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 fade-in">
         <div className="mb-10 md:mb-16 mt-4 md:mt-8 border-b border-neutral-200 pb-8">
             <div>
-              <h1 className="font-dot-matrix text-5xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-2 opacity-90">
+              <h1 className="font-dot-matrix text-3xl md:text-7xl lg:text-[80px] font-bold text-neutral-900 tracking-widest uppercase mb-2 opacity-90">
                 TIKET & BUNDLING MERCH
               </h1>
               <p className="text-xs sm:text-sm text-neutral-500 max-w-2xl leading-relaxed font-medium">
@@ -108,7 +108,7 @@ export default function AlumniTicketPage() {
                   <img src={bundle.imageUrl} alt={bundle.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
                 </div>
 
-                <span className="font-dot-matrix text-[10px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
+                <span className="font-dot-matrix text-[11px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
                   {"//"} TIKET BUNDLE
                 </span>
                 <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-4 leading-snug">
@@ -118,14 +118,14 @@ export default function AlumniTicketPage() {
 
               <div className="flex items-end justify-between pt-4 border-t border-dashed border-neutral-200">
                 <div>
-                  <span className="text-[9px] font-bold tracking-widest uppercase text-neutral-400 block mb-1">TOTAL</span>
+                  <span className="text-[11px] font-bold tracking-widest uppercase text-neutral-400 block mb-1">TOTAL</span>
                   <span className="font-dot-matrix text-lg md:text-xl font-bold text-neutral-900 tracking-wider">
                     Rp {bundle.totalPrice.toLocaleString("id-ID")}
                   </span>
                 </div>
 
                 <button
-                  className="shrink-0 bg-neutral-900 text-white w-10 h-10 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
+                  className="shrink-0 bg-neutral-900 text-white w-11 h-11 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
                   style={{ borderRadius: '2px' }}
                   title="Beli Tiket & Bundling"
                 >

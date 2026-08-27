@@ -88,18 +88,18 @@ export default function KeranjangPage() {
                         <div className="flex items-center border border-neutral-200 rounded-full">
                           <button
                             onClick={() => updateQuantity(item.id, -1)}
-                            className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
+                            className="w-11 h-11 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
                           >
-                            <Minus size={12} />
+                            <Minus size={14} />
                           </button>
-                          <span className="w-7 text-center text-xs font-bold text-neutral-900">
+                          <span className="w-8 text-center text-sm font-bold text-neutral-900">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, 1)}
-                            className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
+                            className="w-11 h-11 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
                           >
-                            <Plus size={12} />
+                            <Plus size={14} />
                           </button>
                         </div>
                       </div>

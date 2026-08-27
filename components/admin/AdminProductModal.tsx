@@ -94,13 +94,13 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
             <label className="block text-neutral-500 mb-1">Nama Produk *</label>
-            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-neutral-900 focus:border-neutral-900 outline-none" />
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900 focus:border-neutral-900 outline-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-neutral-500 mb-1">Kategori</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-neutral-900">
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900">
                 <option value="Perlengkapan">Perlengkapan</option>
                 <option value="Aksesoris & Stiker">Aksesoris & Stiker</option>
                 <option value="Topi & Tas">Topi & Tas</option>
@@ -108,13 +108,13 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
             </div>
             <div>
               <label className="block text-neutral-500 mb-1">Harga (IDR) *</label>
-              <input type="number" required value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-neutral-900" />
+              <input type="number" required value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
             </div>
           </div>
 
           <div>
             <label className="block text-neutral-500 mb-1">Deskripsi Produk</label>
-            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-neutral-900" />
+            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
           </div>
 
           <div>
@@ -146,12 +146,12 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <label className="block text-neutral-500 mb-1">{stockType === "PRE_ORDER" ? "Sisa Kuota PO" : "Stok Tersedia"}</label>
-                <input type="number" value={stockCount} onChange={(e) => setStockCount(Number(e.target.value))} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-neutral-900" />
+                <input type="number" value={stockCount} onChange={(e) => setStockCount(Number(e.target.value))} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
               </div>
               {stockType === "PRE_ORDER" && (
                 <div>
                   <label className="block text-neutral-500 mb-1">Estimasi Tgl Rilis</label>
-                  <input type="date" value={poReleaseDate} onChange={(e) => setPoReleaseDate(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-neutral-900" />
+                  <input type="date" value={poReleaseDate} onChange={(e) => setPoReleaseDate(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
                 </div>
               )}
             </div>
@@ -159,17 +159,17 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
           <div>
             <label className="block text-neutral-500 mb-1">Ukuran (pisah koma)</label>
-            <input type="text" value={sizesInput} onChange={(e) => setSizesInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-neutral-900" />
+            <input type="text" value={sizesInput} onChange={(e) => setSizesInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
           </div>
 
           <div>
             <label className="block text-neutral-500 mb-1">Warna (pisah koma)</label>
-            <input type="text" value={colorsInput} onChange={(e) => setColorsInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-neutral-900" />
+            <input type="text" value={colorsInput} onChange={(e) => setColorsInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
           </div>
 
           <div className="pt-3 border-t border-neutral-100 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
-            <button type="submit" className="px-5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
+            <button type="button" onClick={onClose} className="px-4 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
+            <button type="submit" className="px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
               <Save size={14} /> Simpan
             </button>
           </div>

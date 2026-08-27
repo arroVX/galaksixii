@@ -9,6 +9,7 @@ import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, Or
 import { syncOrderToFirebase, syncAlumniTicketToFirebase } from "@/lib/firebaseService";
 import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
 import { ALUMNI_TICKET_BUNDLES, GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
+import { AlertModal } from "@/components/ui/AlertModal";
 import Link from "next/link";
 
 interface CheckoutData {
@@ -59,6 +60,7 @@ export default function CheckoutAlumniPage() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [syncFailed, setSyncFailed] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [clipboardError, setClipboardError] = useState<string | null>(null);
   const [verificationType, setVerificationType] = useState<AlumniVerificationType>("KARTU_PELAJAR");
   const [verificationFileUrl, setVerificationFileUrl] = useState<string | null>(null);
   const [verificationFileName, setVerificationFileName] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export default function CheckoutAlumniPage() {
       setCopiedBank(true);
       setTimeout(() => setCopiedBank(false), 2000);
     } catch {
-      alert(`Gagal menyalin nomor rekening. Salin manual: ${accountNumber}`);
+      setClipboardError("Gagal menyalin nomor rekening. Salin manual: " + accountNumber);
     }
   };
 
@@ -310,7 +312,7 @@ export default function CheckoutAlumniPage() {
               <div>
                 <label className="block text-xs font-semibold text-on-surface-variant mb-1.5">No. WhatsApp *</label>
                 <input
-                  type="text"
+                  type="tel"
                   placeholder="081234567890"
                   value={phone}
                   onChange={(e) => { setPhone(e.target.value); clearError("phone"); }}
@@ -575,7 +577,7 @@ export default function CheckoutAlumniPage() {
                       </code>
                       <button
                         onClick={handleCopyAccount}
-                        className="p-1.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface-variant hover:text-primary transition flex items-center gap-1.5"
+                        className="p-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-on-surface-variant hover:text-primary transition flex items-center gap-1.5"
                       >
                         {copiedBank ? <span className="material-symbols-outlined text-[16px] text-emerald-500">check_circle</span> : <span className="material-symbols-outlined text-[16px]">content_copy</span>}
                         <span className="text-[10px] font-bold">{copiedBank ? "Tersalin" : "Salin"}</span>
@@ -591,7 +593,7 @@ export default function CheckoutAlumniPage() {
                       <div className={`rounded-xl overflow-hidden border ${errors.proofFile ? "border-red-500" : "border-outline-variant/30"}`}>
                         <img src={proofFile} alt="Bukti pembayaran" className="w-full max-h-48 object-contain bg-surface" />
                       </div>
-                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-[11px] font-bold text-on-surface-variant hover:bg-surface cursor-pointer transition">
+                      <label className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-[11px] font-bold text-on-surface-variant hover:bg-surface cursor-pointer transition">
                         <span className="material-symbols-outlined text-[14px]">edit</span>
                         Ganti Foto
                         <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
@@ -755,6 +757,16 @@ export default function CheckoutAlumniPage() {
         </div>,
         document.body
       )}
+
+      <AlertModal
+        isOpen={!!clipboardError}
+        onClose={() => setClipboardError(null)}
+        title="Gagal Menyalin"
+        message={clipboardError || ""}
+        icon="content_copy"
+        iconColor="amber"
+        buttonText="Tutup"
+      />
 
     </div>
   );

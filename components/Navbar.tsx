@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,6 +8,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useMounted } from "@/lib/useMounted";
 import { MobileNav } from "@/components/MobileNav";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { SuccessModal } from "@/components/ui/SuccessModal";
 
 interface NavbarProps {
   activeView?: "shop" | "admin";
@@ -47,13 +48,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center">
             {mounted ? (
               user ? (
-                <button type="button" onClick={() => setIsLogoutModalOpen(true)} aria-label="Keluar akun" className="flex items-center gap-2 pl-2 pr-3 py-2 bg-neutral-100 border border-neutral-200 rounded-full active:scale-95 transition-transform">
+                <button type="button" onClick={() => setIsLogoutModalOpen(true)} aria-label="Keluar akun" className="flex items-center gap-2 pl-2 pr-3 py-2.5 bg-neutral-100 border border-neutral-200 rounded-full active:scale-95 transition-transform">
                   <span className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center font-bold text-[11px]">{(user.displayName || "U").charAt(0).toUpperCase()}</span>
                   <span className="max-w-[100px] truncate font-bold text-[11px] uppercase tracking-wide text-neutral-900">{user.displayName || user.email?.split("@")[0]}</span>
                   <span className="material-symbols-outlined text-[16px] text-red-500">logout</span>
                 </button>
               ) : (
-                <Link href="/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white font-bold text-[11px] uppercase tracking-wider rounded-full active:scale-95 transition-transform shadow-sm">
+                <Link href="/login" className="inline-flex items-center gap-2 px-5 py-3 bg-black text-white font-bold text-[11px] uppercase tracking-wider rounded-full active:scale-95 transition-transform shadow-sm">
                   <span className="w-1.5 h-1.5 bg-white"></span>Masuk
                 </Link>
               )
@@ -212,44 +213,30 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Bottom Navigation (Mobile) */}
       <MobileNav activeView={activeView} setActiveView={setActiveView} />
 
-      {/* Logout Modal */}
-      {isLogoutModalOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLogoutModalOpen(false)}></div>
-          <div className="relative w-full max-w-sm bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-2xl z-10 text-center animate-in zoom-in-95">
-            <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 border border-red-200 shadow-sm">
-              <span className="material-symbols-outlined text-[28px]">logout</span>
-            </div>
-            <h3 className="font-bold text-xl text-primary mb-1 font-headline-md">Konfirmasi Keluar Akun</h3>
-            <p className="text-xs text-on-surface-variant opacity-80 mb-6 leading-relaxed">
-              Apakah Anda yakin ingin keluar dari akun <strong className="text-primary font-bold capitalize">{user?.displayName || user?.email?.split("@")[0]}</strong>?
-            </p>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setIsLogoutModalOpen(false)} className="flex-1 bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-on-surface font-bold py-2.5 px-4 rounded-full text-xs transition-colors">Batal</button>
-              <button onClick={async () => { setIsLogoutModalOpen(false); await logout(); setIsLogoutSuccessModalOpen(true); router.refresh(); router.push("/merchandise"); }} className="flex-1 bg-black text-white hover:bg-neutral-800 font-bold py-2.5 px-4 rounded-full text-xs transition-all shadow-md active:scale-95">Ya, Keluar</button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <ConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={async () => {
+          setIsLogoutModalOpen(false);
+          await logout();
+          setIsLogoutSuccessModalOpen(true);
+          router.refresh();
+          router.push("/merchandise");
+        }}
+        title="Konfirmasi Keluar Akun"
+        message={`Apakah Anda yakin ingin keluar dari akun ${user?.displayName || user?.email?.split("@")[0]}?`}
+        confirmText="Ya, Keluar"
+        cancelText="Batal"
+        variant="danger"
+      />
 
-      {/* Logout Success Modal */}
-      {isLogoutSuccessModalOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLogoutSuccessModalOpen(false)}></div>
-          <div className="relative w-full max-w-sm bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 shadow-2xl z-10 text-center animate-in zoom-in-95">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200 shadow-sm">
-              <span className="material-symbols-outlined text-[28px]">check_circle</span>
-            </div>
-            <h3 className="font-bold text-xl text-primary mb-1 font-headline-md">Berhasil Keluar</h3>
-            <p className="text-xs text-on-surface-variant opacity-80 mb-6 leading-relaxed">
-              Anda telah berhasil keluar dari akun. Terima kasih telah menggunakan aplikasi kami!
-            </p>
-            <button onClick={() => setIsLogoutSuccessModalOpen(false)} className="w-full bg-black text-white hover:bg-neutral-800 font-bold py-2.5 px-4 rounded-full text-xs transition-all shadow-md active:scale-95">Tutup</button>
-          </div>
-        </div>,
-        document.body
-      )}
+      <SuccessModal
+        isOpen={isLogoutSuccessModalOpen}
+        onClose={() => setIsLogoutSuccessModalOpen(false)}
+        title="Berhasil Keluar"
+        message="Anda telah berhasil keluar dari akun. Terima kasih telah menggunakan aplikasi kami!"
+        buttonText="Tutup"
+      />
     </>
   );
 };

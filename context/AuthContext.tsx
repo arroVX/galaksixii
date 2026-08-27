@@ -13,6 +13,7 @@ import {
   updateProfile as updateFirebaseProfile,
   type User,
 } from "firebase/auth";
+import { AlertModal } from "@/components/ui/AlertModal";
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -230,26 +231,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     >
       {children}
 
-      {/* Global Auth Alert Modal */}
-      {authAlertMsg && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-center text-slate-900 animate-in zoom-in-95">
-            <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 mx-auto mb-4 flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-[28px]">error</span>
-            </div>
-            <h3 className="text-xl font-bold font-serif-title text-slate-900 mb-2">Peringatan</h3>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              {authAlertMsg}
-            </p>
-            <button
-              onClick={() => setAuthAlertMsg(null)}
-              className="w-full py-3 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition active:scale-95"
-            >
-              Mengerti
-            </button>
-          </div>
-        </div>
-      )}
+      <AlertModal
+        isOpen={!!authAlertMsg}
+        onClose={() => setAuthAlertMsg(null)}
+        title="Peringatan"
+        message={authAlertMsg || ""}
+        icon="error"
+        iconColor="red"
+        buttonText="Mengerti"
+      />
     </AuthContext.Provider>
   );
 };
