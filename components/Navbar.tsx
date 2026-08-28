@@ -68,14 +68,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          Desktop Header — Minimalist Floating Bar
+          Desktop Header — Full-Width Sticky Bar
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="hidden lg:flex w-full justify-center sticky top-6 z-50 mb-6 px-6 xl:px-12">
+      <div className="hidden lg:flex w-full sticky top-0 z-50">
         <header
-          className={`w-full max-w-6xl backdrop-blur-xl border rounded-2xl px-6 py-3.5 shadow-sm flex items-center justify-between transition-all duration-500 ease-out ${
+          className={`w-full border-b px-6 py-3 flex items-center justify-between transition-all duration-500 ease-out ${
             isAdminMode
-              ? "bg-red-50/80 border-red-100 shadow-red-900/5"
-              : "bg-white/80 border-neutral-100 shadow-neutral-900/5"
+              ? "bg-red-50/80 border-red-100"
+              : "bg-white/90 backdrop-blur-md border-neutral-100"
           }`}
         >
           {/* ── Left: Logo ── */}
