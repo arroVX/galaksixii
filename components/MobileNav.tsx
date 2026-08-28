@@ -60,11 +60,11 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           {/* Indikator aktif yang meluncur mulus antar tab */}
           <div
             aria-hidden
-            className="absolute top-1.5 bottom-1.5 left-0 rounded-[18px] bg-neutral-900 will-change-transform transition-transform duration-550 ease-out"
+            className="absolute top-1.5 bottom-1.5 left-0 rounded-[18px] bg-neutral-900 will-change-transform"
             style={{
               width: indicatorWidth,
               transform: indicatorTransform,
-              transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)"
+              transition: "transform 550ms cubic-bezier(0.34, 1.56, 0.64, 1)"
             }}
           />
           {tabs.map((tab) => {
