@@ -34,7 +34,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const tabs = [...navTabs, ...extraTabs];
 
   const navMatch = navTabs.findIndex((t) => t.path === pathname);
-  const activeIndex = navMatch >= 0 ? navMatch : -1;
+  const isAdminActive = activeView === "admin" && isAdmin;
+  const activeIndex = isAdminActive ? tabs.length - 1 : (navMatch >= 0 ? navMatch : -1);
 
   const handleTabPress = (tabPath: string) => {
     setPopKey((k) => k + 1);
@@ -67,7 +68,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
             }}
           />
           {tabs.map((tab) => {
-            const isActive = tab.path === pathname;
+            const isActive = tab.path === "__admin__" ? isAdminActive : tab.path === pathname;
             return (
               <button
                 key={tab.name}
