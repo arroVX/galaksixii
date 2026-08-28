@@ -21,7 +21,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const [popKey, setPopKey] = useState(0);
 
   const navTabs = [
-    { name: "Toko", path: "/merchandise", icon: "storefront" },
+    { name: "Toko", path: "/merchandise", icon: "store" },
     { name: "Keranjang", path: "/keranjang", icon: "shopping_bag" },
     { name: "Tiket", path: "/tiket-alumni", icon: "confirmation_number" },
     { name: "Pesanan", path: "/orders", icon: "receipt_long" }
