@@ -252,7 +252,7 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Order Footer */}
-                <div className="flex items-center justify-between px-5 py-3.5 bg-neutral-50 border-t border-neutral-100">
+                <div className="flex items-center justify-between px-5 py-3.5 bg-white border-t border-neutral-100">
                   <div className="text-[13px] text-neutral-500">
                     Total: <span className="font-semibold text-neutral-900">Rp {ord.totalPrice.toLocaleString("id-ID")}</span>
                     <span className="text-neutral-400 ml-1">· {ord.items.length} item</span>
