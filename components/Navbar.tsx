@@ -41,26 +41,26 @@ export const Navbar: React.FC<NavbarProps> = ({
     <>
       {/* Mobile Top App-Bar */}
       <div className="lg:hidden w-full flex justify-center sticky top-0 z-50 px-4 pb-2">
-        <header className="w-full max-w-md bg-white/95 backdrop-blur-md border border-neutral-200 rounded-b-[26px] pl-4 pr-2 py-3 shadow-sm flex justify-between items-center">
+        <header className="w-full max-w-md bg-white/90 backdrop-blur-md border border-neutral-100 rounded-b-2xl pl-4 pr-2 py-3 shadow-sm flex justify-between items-center">
           <Link href="/merchandise" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
             <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} priority className="h-8 w-auto max-w-[140px] object-contain" />
           </Link>
           <div className="flex items-center">
             {mounted ? (
               user ? (
-                <button type="button" onClick={() => setIsLogoutModalOpen(true)} aria-label="Keluar akun" className="flex items-center gap-2 pl-2 pr-3 py-2.5 bg-neutral-100 border border-neutral-200 rounded-full active:scale-95 transition-transform">
-                  <span className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center font-bold text-[11px]">{(user.displayName || "U").charAt(0).toUpperCase()}</span>
-                  <span className="max-w-[100px] truncate font-bold text-[11px] uppercase tracking-wide text-neutral-900">{user.displayName || user.email?.split("@")[0]}</span>
-                  <span className="material-symbols-outlined text-[16px] text-red-500">logout</span>
+                <button type="button" onClick={() => setIsLogoutModalOpen(true)} aria-label="Keluar akun" className="flex items-center gap-2 pl-2 pr-3 py-2.5 bg-neutral-50 border border-neutral-100 rounded-xl active:scale-95 transition-transform">
+                  <span className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-medium text-[11px]">{(user.displayName || "U").charAt(0).toUpperCase()}</span>
+                  <span className="max-w-[100px] truncate font-medium text-[11px] tracking-wide text-neutral-700">{user.displayName || user.email?.split("@")[0]}</span>
+                  <span className="material-symbols-outlined text-[16px] text-red-400">logout</span>
                 </button>
               ) : (
-                <Link href="/login" className="inline-flex items-center gap-2 px-5 py-3 bg-black text-white font-bold text-[11px] uppercase tracking-wider rounded-full active:scale-95 transition-transform shadow-sm">
-                  <span className="w-1.5 h-1.5 bg-white"></span>Masuk
+                <Link href="/login" className="inline-flex items-center gap-2 px-5 py-3 bg-neutral-900 text-white font-medium text-[12px] tracking-wide rounded-xl active:scale-95 transition-transform">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>Masuk
                 </Link>
               )
             ) : (
-              <div className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center">
-                <span className="animate-spin inline-block w-4 h-4 border-2 border-neutral-300 border-t-transparent rounded-full" />
+              <div className="w-10 h-10 rounded-xl border border-neutral-100 flex items-center justify-center">
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-neutral-200 border-t-transparent rounded-full" />
               </div>
             )}
           </div>
@@ -68,14 +68,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          Desktop Header — Floating Pill, 3-Section Layout
+          Desktop Header — Minimalist Floating Bar
           ═══════════════════════════════════════════════════════════════ */}
       <div className="hidden lg:flex w-full justify-center sticky top-6 z-50 mb-6 px-6 xl:px-12">
         <header
-          className={`w-full max-w-6xl backdrop-blur-xl border rounded-full px-5 py-3 shadow-lg flex items-center justify-between transition-all duration-500 ease-out ${
+          className={`w-full max-w-6xl backdrop-blur-xl border rounded-2xl px-6 py-3.5 shadow-sm flex items-center justify-between transition-all duration-500 ease-out ${
             isAdminMode
-              ? "bg-red-50/80 border-red-200/60 shadow-red-900/5"
-              : "bg-white/90 border-neutral-200/60 shadow-neutral-900/5"
+              ? "bg-red-50/80 border-red-100 shadow-red-900/5"
+              : "bg-white/80 border-neutral-100 shadow-neutral-900/5"
           }`}
         >
           {/* ── Left: Logo ── */}
@@ -94,22 +94,22 @@ export const Navbar: React.FC<NavbarProps> = ({
           </Link>
 
           {/* ── Center: Navigation Links ── */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1.5">
             {isAdminMode ? (
               <>
                 <Link
                   href="/merchandise"
-                  className={`px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide transition-all duration-200 ${
                     pathname === "/merchandise"
-                      ? "bg-red-600 text-white shadow-md shadow-red-600/20"
-                      : "text-red-600 hover:bg-red-100"
+                      ? "bg-red-600 text-white"
+                      : "text-red-600 hover:bg-red-50"
                   }`}
                 >
                   Dashboard Admin
                 </Link>
                 <button
                   onClick={() => { setActiveView("shop"); router.push("/merchandise"); }}
-                  className="px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-all duration-200"
+                  className="px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 transition-all duration-200"
                 >
                   Keluar Admin
                 </button>
@@ -121,10 +121,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Link
                     key={link.name}
                     href={link.path}
-                    className={`relative px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
+                    className={`relative px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide transition-all duration-200 ${
                       isActive
-                        ? "bg-neutral-900 text-white shadow-md shadow-neutral-900/15"
-                        : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                        ? "bg-neutral-900 text-white"
+                        : "text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700"
                     }`}
                   >
                     {link.name}
@@ -141,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setActiveView("admin");
                   if (pathname !== "/merchandise") router.push("/merchandise");
                 }}
-                className="px-4 py-2 rounded-full text-[11px] font-semibold tracking-[0.12em] uppercase text-red-500 hover:bg-red-50 transition-all duration-200 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-200 flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[15px]">admin_panel_settings</span>
                 Admin
@@ -152,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* ── Right: Actions ── */}
           <div className="flex items-center gap-2">
             {isAdminMode ? (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-full text-[11px] font-bold tracking-wider uppercase">
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl text-[12px] font-medium tracking-wide">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
@@ -165,11 +165,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Link
                   href="/keranjang"
                   aria-label="Keranjang"
-                  className="relative flex items-center justify-center w-10 h-10 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-neutral-900 transition-all duration-200 active:scale-90"
+                  className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-100 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700 transition-all duration-200 active:scale-95"
                 >
                   <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
                   {totalItemCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-[#e45b45] text-white text-[9px] font-bold min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+                    <span className="absolute -top-1 -right-1 bg-[#e45b45] text-white text-[9px] font-semibold min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
                       {totalItemCount}
                     </span>
                   )}
@@ -181,27 +181,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsLogoutModalOpen(true)}
-                      className="flex items-center gap-2.5 pl-2 pr-4 py-1.5 bg-neutral-900 text-white rounded-full hover:bg-neutral-800 transition-all duration-200 active:scale-95"
+                      className="flex items-center gap-2.5 pl-2 pr-4 py-1.5 bg-neutral-900 text-white rounded-xl hover:bg-neutral-800 transition-all duration-200 active:scale-95"
                     >
-                      <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center text-[11px] font-bold">
+                      <span className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center text-[11px] font-medium">
                         {(user.displayName || "U").charAt(0).toUpperCase()}
                       </span>
-                      <span className="max-w-[100px] truncate text-[11px] font-semibold tracking-wide">
+                      <span className="max-w-[100px] truncate text-[12px] font-medium tracking-wide">
                         {user.displayName || user.email?.split("@")[0]}
                       </span>
                     </button>
                   ) : (
                     <Link
                       href="/login"
-                      className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-full hover:bg-[#e45b45] transition-all duration-200 text-[11px] font-bold tracking-wider uppercase active:scale-95"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white rounded-xl hover:bg-[#e45b45] transition-all duration-200 text-[12px] font-medium tracking-wide active:scale-95"
                     >
                       <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                       Masuk
                     </Link>
                   )
                 ) : (
-                  <div className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center">
-                    <span className="animate-spin inline-block w-4 h-4 border-2 border-neutral-300 border-t-transparent rounded-full" />
+                  <div className="w-10 h-10 rounded-xl border border-neutral-100 flex items-center justify-center">
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-neutral-200 border-t-transparent rounded-full" />
                   </div>
                 )}
               </>

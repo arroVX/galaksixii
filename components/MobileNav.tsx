@@ -55,12 +55,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       aria-label="Navigasi utama"
       className="lg:hidden fixed bottom-0 inset-x-0 z-[80] px-3 pb-safe pt-2 pointer-events-none"
     >
-      <div className="nav-bar-enter mx-auto max-w-md bg-white/95 backdrop-blur-md border border-neutral-200 rounded-[26px] shadow-lg shadow-neutral-900/10 pointer-events-auto overflow-hidden">
+      <div className="nav-bar-enter mx-auto max-w-md bg-white/90 backdrop-blur-md border border-neutral-100 rounded-2xl shadow-sm pointer-events-auto overflow-hidden">
         <div className="flex items-stretch relative">
           {/* Indikator aktif yang meluncur mulus antar tab */}
           <div
             aria-hidden
-            className="absolute top-1.5 bottom-1.5 left-0 rounded-[18px] bg-neutral-900 will-change-transform"
+            className="absolute top-1.5 bottom-1.5 left-0 rounded-xl bg-neutral-900 will-change-transform"
             style={{
               width: indicatorWidth,
               transform: indicatorTransform,
@@ -77,7 +77,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 aria-current={isActive ? "page" : undefined}
                 aria-label={tab.name}
                 className={`relative z-10 flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[60px] select-none touch-manipulation transition-transform duration-150 ease-out active:scale-90 ${
-                  isActive ? "text-white font-bold" : "text-neutral-400 font-medium hover:text-neutral-900"
+                  isActive ? "text-white font-semibold" : "text-neutral-300 font-medium hover:text-neutral-500"
                 }`}
               >
                 <span key={`${tab.name}-${isActive ? popKey : "idle"}`} className={`relative ${isActive ? "tab-pop" : ""}`}>
@@ -87,7 +87,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                   {tab.name === "Keranjang" && totalItemCount > 0 && (
                     <span
                       key={totalItemCount}
-                      className="badge-pop absolute -top-1 -right-1.5 min-w-[20px] h-[20px] px-1.5 bg-[#e45b45] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white"
+                      className="badge-pop absolute -top-1 -right-1.5 min-w-[20px] h-[20px] px-1.5 bg-[#e45b45] text-white text-[10px] font-semibold flex items-center justify-center rounded-full border-2 border-white"
                     >
                       {totalItemCount}
                     </span>
