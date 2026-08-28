@@ -165,6 +165,7 @@ export default function CheckoutPage() {
     };
 
     try {
+      // 1. Sync order ke Firebase (parallel RTDB + Firestore)
       const result = await syncOrderToFirebase(newOrder);
       setSyncFailed(!result.rtdbOk && !result.firestoreOk);
     } catch (err) {
@@ -172,6 +173,12 @@ export default function CheckoutPage() {
       setSyncFailed(true);
     }
 
+    // 2. Simpan ke localStorage (instant)
+    const existingOrdersStr = localStorage.getItem("gala_merch_orders");
+    const existingOrders: Order[] = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
+    localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
+
+    // 3. Update stok produk localStorage (instant)
     try {
       const saved = localStorage.getItem("gala_merch_products");
       if (saved) {
@@ -185,25 +192,42 @@ export default function CheckoutPage() {
           }
           updated.soldCount = (updated.soldCount ?? 0) + item.quantity;
           products[idx] = updated;
-          const r = await syncProductToFirebase(updated);
-          if (!r.rtdbOk && !r.firestoreOk) {
-            console.warn(`Stok produk ${updated.id} gagal disinkronkan ke Firebase`);
-          }
         }
         localStorage.setItem("gala_merch_products", JSON.stringify(products));
       }
     } catch (e) {
-      console.error("Gagal memperbarui stok produk:", e);
+      console.error("Gagal memperbarui stok produk lokal:", e);
     }
 
-    const existingOrdersStr = localStorage.getItem("gala_merch_orders");
-    const existingOrders: Order[] = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
-    localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
-
+    // 4. Clear cart & show invoice (UI responsive)
     clearCart();
     setLastOrder(newOrder);
     setIsSubmitting(false);
     setShowInvoiceModal(true);
+
+    // 5. Sync stok produk ke Firebase di BACKGROUND (fire-and-forget, non-blocking)
+    try {
+      const saved = localStorage.getItem("gala_merch_products");
+      if (saved) {
+        const products: Product[] = JSON.parse(saved);
+        const stockPromises = cart.map((item) => {
+          const idx = products.findIndex((p) => p.id === item.productId);
+          if (idx === -1) return Promise.resolve();
+          const updated: Product = { ...products[idx] };
+          if (updated.stockType === "READY") {
+            updated.stockCount = Math.max(0, (updated.stockCount || 0) - item.quantity);
+          }
+          updated.soldCount = (updated.soldCount ?? 0) + item.quantity;
+          return syncProductToFirebase(updated).catch((err) => {
+            console.warn(`Stok produk ${updated.id} gagal disinkronkan ke Firebase:`, err);
+          });
+        });
+        // Jalankan semua sync stok paralel di background
+        Promise.all(stockPromises).catch(console.warn);
+      }
+    } catch (e) {
+      console.error("Background stok sync error:", e);
+    }
   };
 
   if (cart.length === 0 && !isSubmitting && !showInvoiceModal) return null;
@@ -495,20 +519,35 @@ export default function CheckoutPage() {
               </p>
             </div>
 
-            <button
-              onClick={handleSubmitOrder}
-              disabled={isSubmitting}
-              className="w-full sm:w-auto px-10 py-4 rounded-full bg-primary hover:bg-neutral-800 text-on-primary font-extrabold text-sm shadow-sm flex items-center justify-center gap-2 transition transform active:scale-95 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <span>Memproses Pesanan...</span>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <span>Konfirmasi & Buat Pesanan</span>
-                </>
+            {/* Submit Button + Loading Overlay */}
+            <div className="relative w-full sm:w-auto">
+              <button
+                onClick={handleSubmitOrder}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-10 py-4 rounded-full bg-primary hover:bg-neutral-800 text-on-primary font-extrabold text-sm shadow-sm flex items-center justify-center gap-2 transition transform active:scale-95 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Memproses Pesanan...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                    <span>Konfirmasi & Buat Pesanan</span>
+                  </>
+                )}
+              </button>
+              {isSubmitting && (
+                <div className="absolute inset-0 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center z-10">
+                  <div className="bg-white rounded-2xl px-6 py-4 shadow-xl text-center max-w-xs">
+                    <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="font-semibold text-neutral-900">Menyimpan pesanan ke server...</p>
+                    <p className="text-[12px] text-neutral-500 mt-1">Mohon tunggu sebentar</p>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           </div>
 
         </div>

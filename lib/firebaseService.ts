@@ -18,7 +18,7 @@ export interface SyncResult {
 }
 
 /** Jalankan operasi tulis dengan beberapa percobaan + jeda antar percobaan. */
-async function withRetry(operation: () => Promise<void>, attempts = 3): Promise<boolean> {
+async function withRetry(operation: () => Promise<void>, attempts = 2): Promise<boolean> {
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       await operation();
@@ -26,7 +26,7 @@ async function withRetry(operation: () => Promise<void>, attempts = 3): Promise<
     } catch (err) {
       console.warn(`Percobaan tulis ke Firebase ${attempt}/${attempts} gagal:`, err);
       if (attempt < attempts) {
-        await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
       }
     }
   }
@@ -42,19 +42,19 @@ async function withRetry(operation: () => Promise<void>, attempts = 3): Promise<
 export async function syncOrderToFirebase(order: Order): Promise<SyncResult> {
   const cleanOrder = stripUndefined(order);
 
-  // 1. Simpan ke Firebase Realtime Database (RTDB)
-  const rtdbOk = await withRetry(async () => {
-    const orderRef = ref(rtdb, `orders/${cleanOrder.id}`);
-    await set(orderRef, cleanOrder);
-    console.log(`✓ Order ${cleanOrder.id} berhasil terkirim ke Realtime Database`);
-  });
-
-  // 2. Simpan ke Cloud Firestore Database
-  const firestoreOk = await withRetry(async () => {
-    const docRef = doc(db, "orders", cleanOrder.id);
-    await setDoc(docRef, cleanOrder);
-    console.log(`✓ Order ${cleanOrder.id} berhasil terkirim ke Cloud Firestore`);
-  });
+  // Tulis ke RTDB dan Firestore secara PARALEL
+  const [rtdbOk, firestoreOk] = await Promise.all([
+    withRetry(async () => {
+      const orderRef = ref(rtdb, `orders/${cleanOrder.id}`);
+      await set(orderRef, cleanOrder);
+      console.log(`✓ Order ${cleanOrder.id} berhasil terkirim ke Realtime Database`);
+    }),
+    withRetry(async () => {
+      const docRef = doc(db, "orders", cleanOrder.id);
+      await setDoc(docRef, cleanOrder);
+      console.log(`✓ Order ${cleanOrder.id} berhasil terkirim ke Cloud Firestore`);
+    })
+  ]);
 
   if (!rtdbOk || !firestoreOk) {
     console.error(
@@ -72,19 +72,19 @@ export async function syncOrderToFirebase(order: Order): Promise<SyncResult> {
 export async function syncProductToFirebase(product: Product): Promise<SyncResult> {
   const cleanProduct = stripUndefined(product);
 
-  // 1. Simpan ke Realtime Database
-  const rtdbOk = await withRetry(async () => {
-    const prodRef = ref(rtdb, `products/${cleanProduct.id}`);
-    await set(prodRef, cleanProduct);
-    console.log(`✓ Produk ${cleanProduct.id} terkirim ke Realtime Database`);
-  });
-
-  // 2. Simpan ke Firestore
-  const firestoreOk = await withRetry(async () => {
-    const docRef = doc(db, "products", cleanProduct.id);
-    await setDoc(docRef, cleanProduct);
-    console.log(`✓ Produk ${cleanProduct.id} terkirim ke Cloud Firestore`);
-  });
+  // Tulis ke RTDB dan Firestore secara PARALEL
+  const [rtdbOk, firestoreOk] = await Promise.all([
+    withRetry(async () => {
+      const prodRef = ref(rtdb, `products/${cleanProduct.id}`);
+      await set(prodRef, cleanProduct);
+      console.log(`✓ Produk ${cleanProduct.id} terkirim ke Realtime Database`);
+    }),
+    withRetry(async () => {
+      const docRef = doc(db, "products", cleanProduct.id);
+      await setDoc(docRef, cleanProduct);
+      console.log(`✓ Produk ${cleanProduct.id} terkirim ke Cloud Firestore`);
+    })
+  ]);
 
   return { rtdbOk, firestoreOk };
 }
@@ -283,17 +283,19 @@ export async function fetchGalleryFromFirebase(): Promise<GalleryItem[]> {
 export async function syncAlumniTicketToFirebase(ticket: AlumniTicket): Promise<SyncResult> {
   const cleanTicket = stripUndefined(ticket);
 
-  const rtdbOk = await withRetry(async () => {
-    const ticketRef = ref(rtdb, `alumniTickets/${cleanTicket.id}`);
-    await set(ticketRef, cleanTicket);
-    console.log(`✓ AlumniTicket ${cleanTicket.id} berhasil terkirim ke Realtime Database`);
-  });
-
-  const firestoreOk = await withRetry(async () => {
-    const docRef = doc(db, "alumniTickets", cleanTicket.id);
-    await setDoc(docRef, cleanTicket);
-    console.log(`✓ AlumniTicket ${cleanTicket.id} berhasil terkirim ke Cloud Firestore`);
-  });
+  // Tulis ke RTDB dan Firestore secara PARALEL
+  const [rtdbOk, firestoreOk] = await Promise.all([
+    withRetry(async () => {
+      const ticketRef = ref(rtdb, `alumniTickets/${cleanTicket.id}`);
+      await set(ticketRef, cleanTicket);
+      console.log(`✓ AlumniTicket ${cleanTicket.id} berhasil terkirim ke Realtime Database`);
+    }),
+    withRetry(async () => {
+      const docRef = doc(db, "alumniTickets", cleanTicket.id);
+      await setDoc(docRef, cleanTicket);
+      console.log(`✓ AlumniTicket ${cleanTicket.id} berhasil terkirim ke Cloud Firestore`);
+    })
+  ]);
 
   if (!rtdbOk || !firestoreOk) {
     console.error(
