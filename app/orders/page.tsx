@@ -12,7 +12,7 @@ const STATUS_FILTERS: { label: string; value: OrderStatus | "all" }[] = [
   { label: "Diproses", value: "Menunggu Pembayaran" },
   { label: "Diverifikasi", value: "Diverifikasi" },
   { label: "Diproduksi", value: "Sedang Diproduksi" },
-  { label: "Dikirim", value: "Siap Diambil/Dikirim" },
+  { label: "Siap Diambil", value: "Siap Diambil/Dikirim" },
   { label: "Selesai", value: "Selesai" },
   { label: "Dibatalkan", value: "Dibatalkan" }
 ];
