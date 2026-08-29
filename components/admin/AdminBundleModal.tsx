@@ -45,7 +45,10 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
     e.preventDefault();
 
     const validItems = items.filter((item) => item.name.trim());
-    if (validItems.length === 0 || !name.trim()) return;
+    if (validItems.length === 0 || !name.trim()) {
+      alert("Silakan lengkapi data bundling termasuk nama itemnya.");
+      return;
+    }
 
     const bundleData: AlumniTicketBundle = {
       id: bundle?.id || "ticket-alumni-bundle-" + Date.now(),
@@ -119,6 +122,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                 <div className="flex gap-2 items-center">
                   <input
                     type="text"
+                    required
                     placeholder="Nama item (misal: Keychain Ball & Dice)"
                     value={item.name}
                     onChange={(e) => updateItem(idx, "name", e.target.value)}
