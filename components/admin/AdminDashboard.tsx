@@ -6,6 +6,7 @@ import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
+import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 
 interface AdminDashboardProps {
@@ -20,14 +21,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onExit
 }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders">("overview");
-  const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
+  const [bundles, setBundles] = useState<AlumniTicketBundle[]>(ALUMNI_TICKET_BUNDLES);
 
-  // Load bundles dari localStorage, lalu sync dari Firebase
+  // Load bundles dari localStorage, lalu sync dari Firebase.
+  // Fallback default = ALUMNI_TICKET_BUNDLES agar admin melihat data seed
+  // yang sama dengan halaman /tiket-alumni sebelum ada data di Firebase.
   useEffect(() => {
+    let initial: AlumniTicketBundle[] = ALUMNI_TICKET_BUNDLES;
+
     const saved = localStorage.getItem("gala_merch_bundles");
     if (saved) {
-      try { setBundles(JSON.parse(saved)); } catch { /* ignore */ }
+      try {
+        const parsed = JSON.parse(saved) as AlumniTicketBundle[];
+        if (parsed.length > 0) initial = parsed;
+      } catch { /* ignore */ }
     }
+    if (initial.length > 0) setBundles(initial);
+
     fetchAlumniTicketBundlesFromFirebase()
       .then((fbBundles) => {
         if (fbBundles.length > 0) {
