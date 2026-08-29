@@ -1,0 +1,179 @@
+"use client";
+
+import React, { useState } from "react";
+import { Product, ProductBundle } from "@/types/merch";
+import { syncBundleToFirebase } from "@/lib/firebaseService";
+import { Save, X, Plus, Trash2 } from "lucide-react";
+
+interface AdminBundleModalProps {
+  bundle: ProductBundle | null;
+  products: Product[];
+  onClose: () => void;
+  onSave: (list: ProductBundle[]) => void;
+  bundles: ProductBundle[];
+}
+
+export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, products, onClose, onSave, bundles }) => {
+  const [name, setName] = useState(bundle?.name || "");
+  const [description, setDescription] = useState(bundle?.description || "");
+  const [imageUrl, setImageUrl] = useState(bundle?.imageUrl || "");
+  const [bundlePrice, setBundlePrice] = useState<number>(bundle?.bundlePrice || 0);
+  const [isActive, setIsActive] = useState(bundle?.isActive ?? true);
+  const [items, setItems] = useState<{ productId: string; quantity: number }[]>(
+    bundle?.items || [{ productId: products[0]?.id || "", quantity: 1 }]
+  );
+
+  const originalPrice = items.reduce((acc, item) => {
+    const product = products.find((p) => p.id === item.productId);
+    return acc + (product?.price || 0) * item.quantity;
+  }, 0);
+
+  const addItem = () => {
+    setItems([...items, { productId: products[0]?.id || "", quantity: 1 }]);
+  };
+
+  const removeItem = (index: number) => {
+    if (items.length <= 1) return;
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, field: "productId" | "quantity", value: string | number) => {
+    const newItems = [...items];
+    if (field === "productId") {
+      newItems[index].productId = value as string;
+    } else {
+      newItems[index].quantity = Math.max(1, Number(value));
+    }
+    setItems(newItems);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validItems = items.filter((item) => item.productId);
+    if (validItems.length === 0 || !name.trim()) return;
+
+    const bundleData: ProductBundle = {
+      id: bundle?.id || "bundle-" + Date.now(),
+      name: name.trim(),
+      description: description.trim(),
+      imageUrl,
+      items: validItems,
+      originalPrice,
+      bundlePrice: Number(bundlePrice),
+      isActive,
+      createdAt: bundle?.createdAt || new Date().toISOString()
+    };
+
+    const newList = bundle
+      ? bundles.map((b) => (b.id === bundle.id ? bundleData : b))
+      : [bundleData, ...bundles];
+
+    onSave(newList);
+    localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
+    syncBundleToFirebase(bundleData).catch((err) => console.warn(err));
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-neutral-900/50 backdrop-blur-sm">
+      <div className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full shadow-xl relative flex flex-col sm:max-h-[85vh]" style={{ maxHeight: 'min(calc(100dvh - 80px), 600px)' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-100 shrink-0">
+          <h3 className="font-bold text-neutral-900 text-sm">
+            {bundle ? "Edit Bundling" : "Tambah Bundling Baru"}
+          </h3>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-900 p-1">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable form */}
+        <form id="bundle-form" onSubmit={handleSubmit} className="overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 text-xs flex-1 overscroll-contain min-h-0">
+          <div>
+            <label className="block text-neutral-500 mb-1">Nama Bundling *</label>
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900 focus:border-neutral-900 outline-none" />
+          </div>
+
+          <div>
+            <label className="block text-neutral-500 mb-1">Deskripsi</label>
+            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
+          </div>
+
+          <div>
+            <label className="block text-neutral-500 mb-1">Foto Bundling *</label>
+            <div className="flex gap-3 items-center">
+              {imageUrl && <img src={imageUrl} alt="Preview" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />}
+              <input type="file" accept="image/*" onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => setImageUrl(reader.result as string);
+                  reader.readAsDataURL(e.target.files[0]);
+                }
+              }} className="w-full text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 cursor-pointer" />
+            </div>
+          </div>
+
+          {/* Items */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-neutral-700">Produk dalam Bundling *</label>
+              <button type="button" onClick={addItem} className="text-neutral-900 hover:text-neutral-600 flex items-center gap-1 text-[11px] font-semibold">
+                <Plus size={12} /> Tambah
+              </button>
+            </div>
+            {items.map((item, idx) => {
+              const product = products.find((p) => p.id === item.productId);
+              return (
+                <div key={idx} className="flex gap-2 items-center">
+                  <select
+                    value={item.productId}
+                    onChange={(e) => updateItem(idx, "productId", e.target.value)}
+                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-neutral-900"
+                  >
+                    <option value="">Pilih Produk</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name} — Rp {p.price.toLocaleString("id-ID")}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    onChange={(e) => updateItem(idx, "quantity", e.target.value)}
+                    className="w-16 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-center text-neutral-900"
+                  />
+                  <button type="button" onClick={() => removeItem(idx)} disabled={items.length <= 1} className="p-2 text-neutral-400 hover:text-red-500 disabled:opacity-30">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+            <p className="text-[11px] text-neutral-400">Harga normal: Rp {originalPrice.toLocaleString("id-ID")}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-neutral-500 mb-1">Harga Bundling (IDR) *</label>
+              <input type="number" required value={bundlePrice} onChange={(e) => setBundlePrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2 cursor-pointer text-neutral-700">
+                <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-neutral-900 w-4 h-4" />
+                Aktif
+              </label>
+            </div>
+          </div>
+        </form>
+
+        {/* Footer */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-neutral-100 flex justify-end gap-2 shrink-0" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          <button type="button" onClick={onClose} className="px-4 py-2.5 sm:py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
+          <button type="submit" form="bundle-form" className="px-5 py-2.5 sm:py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
+            <Save size={14} /> Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

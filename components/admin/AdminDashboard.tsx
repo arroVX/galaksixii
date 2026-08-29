@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { Product } from "@/types/merch";
+import React, { useState, useEffect } from "react";
+import { Product, ProductBundle } from "@/types/merch";
 import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
+import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
+import { fetchBundlesFromFirebase } from "@/lib/firebaseService";
 
 interface AdminDashboardProps {
   products: Product[];
@@ -17,11 +19,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   setProducts,
   onExit
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders">("overview");
+  const [bundles, setBundles] = useState<ProductBundle[]>([]);
+
+  // Load bundles dari localStorage, lalu sync dari Firebase
+  useEffect(() => {
+    const saved = localStorage.getItem("gala_merch_bundles");
+    if (saved) {
+      try { setBundles(JSON.parse(saved)); } catch { /* ignore */ }
+    }
+    fetchBundlesFromFirebase()
+      .then((fbBundles) => {
+        if (fbBundles.length > 0) {
+          setBundles(fbBundles);
+          localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const tabs = [
     { key: "overview" as const, label: "Ringkasan" },
     { key: "products" as const, label: "Produk" },
+    { key: "bundling" as const, label: "Bundling" },
     { key: "orders" as const, label: "Pesanan" }
   ];
 
@@ -66,6 +86,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
         {activeTab === "products" && (
           <AdminProducts products={products} setProducts={setProducts} />
+        )}
+        {activeTab === "bundling" && (
+          <AdminBundling products={products} bundles={bundles} setBundles={setBundles} />
         )}
         {activeTab === "orders" && (
           <AdminOrders />
