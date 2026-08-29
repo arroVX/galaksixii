@@ -81,9 +81,9 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-neutral-900/50 backdrop-blur-sm">
-      <div className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full max-h-[90vh] sm:max-h-[85vh] shadow-xl relative flex flex-col">
+      <div className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full max-h-[65vh] sm:max-h-[85vh] shadow-xl relative flex flex-col">
         {/* Header - fixed */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-100 shrink-0">
           <h3 className="font-bold text-neutral-900 text-sm">
             {product ? "Edit Merchandise" : "Tambah Merchandise Baru"}
           </h3>
@@ -93,16 +93,16 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
         </div>
 
         {/* Scrollable form */}
-        <form id="product-form" onSubmit={handleSubmit} className="overflow-y-auto px-6 py-4 space-y-4 text-xs flex-1 overscroll-contain">
+        <form id="product-form" onSubmit={handleSubmit} className="overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 text-xs flex-1 overscroll-contain min-h-0">
           <div>
             <label className="block text-neutral-500 mb-1">Nama Produk *</label>
-            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900 focus:border-neutral-900 outline-none" />
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900 focus:border-neutral-900 outline-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-neutral-500 mb-1">Kategori</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900">
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900">
                 <option value="Perlengkapan">Perlengkapan</option>
                 <option value="Aksesoris & Stiker">Aksesoris & Stiker</option>
                 <option value="Topi & Tas">Topi & Tas</option>
@@ -110,19 +110,19 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
             </div>
             <div>
               <label className="block text-neutral-500 mb-1">Harga (IDR) *</label>
-              <input type="number" required value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
+              <input type="number" required value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
             </div>
           </div>
 
           <div>
             <label className="block text-neutral-500 mb-1">Deskripsi Produk</label>
-            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
+            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
           </div>
 
           <div>
             <label className="block text-neutral-500 mb-1">Foto Produk *</label>
             <div className="flex gap-3 items-center">
-              {imageUrl && <img src={imageUrl} alt="Preview" className="w-12 h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />}
+              {imageUrl && <img src={imageUrl} alt="Preview" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />}
               <input type="file" accept="image/*" onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
                   const reader = new FileReader();
@@ -148,12 +148,12 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <label className="block text-neutral-500 mb-1">{stockType === "PRE_ORDER" ? "Sisa Kuota PO" : "Stok Tersedia"}</label>
-                <input type="number" value={stockCount} onChange={(e) => setStockCount(Number(e.target.value))} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
+                <input type="number" value={stockCount} onChange={(e) => setStockCount(Number(e.target.value))} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
               </div>
               {stockType === "PRE_ORDER" && (
                 <div>
                   <label className="block text-neutral-500 mb-1">Estimasi Tgl Rilis</label>
-                  <input type="date" value={poReleaseDate} onChange={(e) => setPoReleaseDate(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
+                  <input type="date" value={poReleaseDate} onChange={(e) => setPoReleaseDate(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
                 </div>
               )}
             </div>
@@ -161,19 +161,19 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
           <div>
             <label className="block text-neutral-500 mb-1">Ukuran (pisah koma)</label>
-            <input type="text" value={sizesInput} onChange={(e) => setSizesInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
+            <input type="text" value={sizesInput} onChange={(e) => setSizesInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
           </div>
 
           <div>
             <label className="block text-neutral-500 mb-1">Warna (pisah koma)</label>
-            <input type="text" value={colorsInput} onChange={(e) => setColorsInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
+            <input type="text" value={colorsInput} onChange={(e) => setColorsInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
           </div>
         </form>
 
         {/* Footer - fixed */}
-        <div className="px-6 py-4 border-t border-neutral-100 flex justify-end gap-2 shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <button type="button" onClick={onClose} className="px-4 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
-          <button type="submit" form="product-form" className="px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-neutral-100 flex justify-end gap-2 shrink-0" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          <button type="button" onClick={onClose} className="px-4 py-2.5 sm:py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
+          <button type="submit" form="product-form" className="px-5 py-2.5 sm:py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
             <Save size={14} /> Simpan
           </button>
         </div>
