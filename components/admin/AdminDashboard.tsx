@@ -35,16 +35,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         if (parsed.length > 0) initial = parsed;
       } catch { /* ignore */ }
     }
-    setBundles(initial.length > 0 ? initial : ALUMNI_TICKET_BUNDLES);
+    setBundles(initial);
 
     (async () => {
-      await seedAlumniTicketBundlesToFirebase();
       const fbBundles = await fetchAlumniTicketBundlesFromFirebase();
-      if (fbBundles.length > 0) {
-        setBundles(fbBundles);
-        localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
-      }
-    })().catch((err) => console.warn("Gagal seed/fetch bundle:", err));
+      setBundles(fbBundles);
+      localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+    })().catch((err) => console.warn("Gagal fetch bundle:", err));
   }, []);
 
   const tabs = [

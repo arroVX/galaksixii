@@ -101,10 +101,6 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
             const newList = products.filter((p) => p.id !== deleteTarget);
             setProducts(newList);
             localStorage.setItem("gala_merch_products", JSON.stringify(newList));
-            // Track ID produk yang dihapus agar tidak muncul lagi saat fetch dari Firebase
-            const deleted = JSON.parse(localStorage.getItem("gala_deleted_product_ids") || "[]") as string[];
-            deleted.push(deleteTarget);
-            localStorage.setItem("gala_deleted_product_ids", JSON.stringify(deleted));
             deleteProductFromFirebase(deleteTarget).catch((err) => console.warn(err));
           }
         }}

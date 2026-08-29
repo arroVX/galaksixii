@@ -5,7 +5,7 @@ import { AlumniTicketBundle } from "@/types/merch";
 import { Plus, Edit3, Trash2, PackageOpen } from "lucide-react";
 import { AdminBundleModal } from "./AdminBundleModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { deleteAlumniTicketBundleFromFirebase, syncAllAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
+import { syncAllAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
 
 interface AdminBundlingProps {
   bundles: AlumniTicketBundle[];
@@ -117,7 +117,6 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
           if (deleteTarget) {
             const newList = bundles.filter((b) => b.id !== deleteTarget);
             handleSave(newList);
-            deleteAlumniTicketBundleFromFirebase(deleteTarget).catch((err) => console.warn(err));
           }
         }}
         title="Hapus Bundling"

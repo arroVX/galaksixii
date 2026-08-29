@@ -297,7 +297,25 @@ export async function syncAlumniTicketBundleToFirebase(bundle: AlumniTicketBundl
  */
 export async function syncAllAlumniTicketBundlesToFirebase(bundles: AlumniTicketBundle[]): Promise<SyncResult> {
   if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
-  if (bundles.length === 0) return { rtdbOk: true, firestoreOk: true };
+  
+  if (bundles.length === 0) {
+    const [rtdbOk, firestoreOk] = await Promise.all([
+      withRetry(async () => {
+        if (!rtdb) throw new Error("RTDB not configured");
+        await remove(ref(rtdb, "alumniTicketBundles"));
+        console.log(`✓ Semua bundle tiket alumni dihapus dari RTDB`);
+      }),
+      withRetry(async () => {
+        if (!db) throw new Error("Firestore not configured");
+        const snapshot = await getDocs(collection(db, "alumniTicketBundles"));
+        const batch = [];
+        snapshot.forEach((docSnap) => batch.push(deleteDoc(doc(db, "alumniTicketBundles", docSnap.id))));
+        await Promise.all(batch);
+        console.log(`✓ Semua bundle tiket alumni dihapus dari Firestore`);
+      })
+    ]);
+    return { rtdbOk, firestoreOk };
+  }
 
   const cleanList = stripUndefined(bundles);
 

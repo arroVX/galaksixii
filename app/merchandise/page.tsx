@@ -13,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 
 const loadInitialProducts = (): Product[] => {
-  if (typeof window === "undefined") return INITIAL_PRODUCTS;
+  if (typeof window === "undefined") return [];
   const saved = localStorage.getItem("gala_merch_products");
   if (saved) {
     try {
@@ -21,8 +21,7 @@ const loadInitialProducts = (): Product[] => {
       if (parsed.length > 0) return parsed;
     } catch { /* ignore */ }
   }
-  localStorage.setItem("gala_merch_products", JSON.stringify(INITIAL_PRODUCTS));
-  return INITIAL_PRODUCTS;
+  return [];
 };
 
 export default function MerchandisePage() {
@@ -36,19 +35,14 @@ export default function MerchandisePage() {
 
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
-  // Sync dari Firebase setelah mount — update localStorage juga
+  // Sync dari Firebase setelah mount
   useEffect(() => {
     fetchProductsFromFirebase()
       .then((firebaseProducts) => {
-        if (firebaseProducts.length > 0) {
-          // Filter produk yang sudah dihapus secara lokal
-          const deleted = JSON.parse(localStorage.getItem("gala_deleted_product_ids") || "[]") as string[];
-          const filtered = firebaseProducts.filter((p) => !deleted.includes(p.id));
-          setProducts(filtered);
-          localStorage.setItem("gala_merch_products", JSON.stringify(filtered));
-        }
+        setProducts(firebaseProducts);
+        localStorage.setItem("gala_merch_products", JSON.stringify(firebaseProducts));
       })
-      .catch((err) => console.warn("Gagal fetch produk dari Firebase, menggunakan data lokal:", err));
+      .catch((err) => console.warn("Gagal fetch produk dari Firebase:", err));
   }, []);
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
