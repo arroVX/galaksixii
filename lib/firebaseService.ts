@@ -233,6 +233,25 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
 }
 
 /**
+ * Menghapus satu produk dari Firebase Realtime Database DAN Cloud Firestore.
+ */
+export async function deleteProductFromFirebase(id: string): Promise<SyncResult> {
+  const [rtdbOk, firestoreOk] = await Promise.all([
+    withRetry(async () => {
+      const prodRef = ref(rtdb, `products/${id}`);
+      await set(prodRef, null);
+      console.log(`✓ Produk ${id} dihapus dari Realtime Database`);
+    }),
+    withRetry(async () => {
+      await deleteDoc(doc(db, "products", id));
+      console.log(`✓ Produk ${id} dihapus dari Cloud Firestore`);
+    })
+  ]);
+
+  return { rtdbOk, firestoreOk };
+}
+
+/**
  * Menyimpan / memperbarui satu item galeri dokumentasi di Cloud Firestore.
  */
 export async function syncGalleryItemToFirebase(item: GalleryItem) {

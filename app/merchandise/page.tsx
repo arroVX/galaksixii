@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { ProductModal } from "@/components/ProductModal";
 import { AdminDashboard } from "@/components/admin";
 import { Product } from "@/types/merch";
 import { INITIAL_PRODUCTS } from "@/data/mockProducts";
+import { fetchProductsFromFirebase } from "@/lib/firebaseService";
 
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
@@ -34,6 +35,18 @@ export default function MerchandisePage() {
   const [activeFilter, setActiveFilter] = useState("all");
 
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
+
+  // Sync dari Firebase setelah mount — update localStorage juga
+  useEffect(() => {
+    fetchProductsFromFirebase()
+      .then((firebaseProducts) => {
+        if (firebaseProducts.length > 0) {
+          setProducts(firebaseProducts);
+          localStorage.setItem("gala_merch_products", JSON.stringify(firebaseProducts));
+        }
+      })
+      .catch((err) => console.warn("Gagal fetch produk dari Firebase, menggunakan data lokal:", err));
+  }, []);
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();

@@ -5,6 +5,7 @@ import { Product } from "@/types/merch";
 import { Plus, Edit3, Trash2, Package } from "lucide-react";
 import { AdminProductModal } from "./AdminProductModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { deleteProductFromFirebase } from "@/lib/firebaseService";
 
 interface AdminProductsProps {
   products: Product[];
@@ -100,6 +101,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
             const newList = products.filter((p) => p.id !== deleteTarget);
             setProducts(newList);
             localStorage.setItem("gala_merch_products", JSON.stringify(newList));
+            deleteProductFromFirebase(deleteTarget).catch((err) => console.warn(err));
           }
         }}
         title="Hapus Merchandise"

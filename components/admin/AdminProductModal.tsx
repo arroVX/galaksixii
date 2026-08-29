@@ -32,10 +32,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
     const colors = colorsInput.split(",").map((c) => c.trim()).filter(Boolean);
 
     if (product) {
-      const updatedList = products.map((p) =>
-        p.id === product.id
-          ? {
-              ...p,
+      const updatedProduct = {
+              ...product,
               name,
               category,
               price: Number(price),
@@ -47,11 +45,13 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
               poReleaseDate: stockType === "PRE_ORDER" ? poReleaseDate : undefined,
               poQuotaTotal: stockType === "PRE_ORDER" ? Number(poQuotaTotal) : undefined,
               variants: { sizes, colors }
-            }
-          : p
+            };
+      const updatedList = products.map((p) =>
+        p.id === product.id ? updatedProduct : p
       );
       onSave(updatedList);
       localStorage.setItem("gala_merch_products", JSON.stringify(updatedList));
+      syncProductToFirebase(updatedProduct).catch((err) => console.warn(err));
     } else {
       const newProd: Product = {
         id: "prod-" + Date.now(),
