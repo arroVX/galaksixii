@@ -34,6 +34,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
     const checkoutData = {
       bundleId: bundle.id,
       bundleName: bundle.name,
+      bundleImageUrl: bundle.imageUrl,
       ticketPrice: bundle.ticketPrice,
       totalPrice: bundle.totalPrice,
       bundleItems: bundle.items

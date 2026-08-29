@@ -15,6 +15,7 @@ import Link from "next/link";
 interface CheckoutData {
   bundleId: string;
   bundleName: string;
+  bundleImageUrl: string;
   ticketPrice: number;
   totalPrice: number;
   bundleItems: AlumniTicketBundleItem[];
@@ -84,10 +85,7 @@ export default function CheckoutAlumniPage() {
     proofFile: false
   });
 
-  const bundle = useMemo(
-    () => ALUMNI_TICKET_BUNDLES.find((b) => b.id === checkoutData?.bundleId) ?? null,
-    [checkoutData]
-  );
+  // Menggunakan data bundle langsung dari checkoutData
 
   const clearError = (field: keyof typeof errors) => {
     setErrors((prev) => ({ ...prev, [field]: false }));
@@ -172,7 +170,7 @@ export default function CheckoutAlumniPage() {
         selectedSize: "-",
         selectedColor: "-",
         quantity: 1,
-        imageUrl: bundle?.imageUrl || "",
+        imageUrl: checkoutData.bundleImageUrl || "",
         stockType: "READY"
       }
     ];
@@ -248,7 +246,7 @@ export default function CheckoutAlumniPage() {
     setShowInvoiceModal(true);
   };
 
-  if (!checkoutData || !bundle) return null;
+  if (!checkoutData) return null;
 
   const inputClass = (hasError: boolean) =>
     `w-full bg-surface border rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 transition ${
@@ -416,9 +414,9 @@ export default function CheckoutAlumniPage() {
 
             <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-5 space-y-3">
               <div className="flex items-center gap-3">
-                <img src={bundle.imageUrl} alt={bundle.name} className="w-16 h-16 rounded-xl object-cover bg-white border border-outline-variant/30" />
+                <img src={checkoutData.bundleImageUrl} alt={checkoutData.bundleName} className="w-16 h-16 rounded-xl object-cover bg-white border border-outline-variant/30" />
                 <div className="flex-1">
-                  <p className="font-bold text-primary text-sm font-headline-md">{bundle.name}</p>
+                  <p className="font-bold text-primary text-sm font-headline-md">{checkoutData.bundleName}</p>
                   <p className="text-xs text-on-surface-variant mt-1">
                     Tahun Lulus: {graduationYear} • Verifikasi: {verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"}
                   </p>
