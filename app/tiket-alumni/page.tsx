@@ -12,19 +12,16 @@ import Link from "next/link";
 export default function AlumniTicketPage() {
   const { user, loading } = useAuth();
   const [selectedBundle, setSelectedBundle] = useState<AlumniTicketBundle | null>(null);
-  const [bundles, setBundles] = useState<AlumniTicketBundle[]>(ALUMNI_TICKET_BUNDLES);
+  const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
   // Seed bundle default ke Firebase bila belum lengkap, lalu baca dari
   // Firebase sebagai sumber kebenaran. Fallback ke localStorage / hardcoded
   // bila Firebase tidak tersedia.
   useEffect(() => {
     (async () => {
-      await seedAlumniTicketBundlesToFirebase();
       const fbBundles = await fetchAlumniTicketBundlesFromFirebase();
-      if (fbBundles.length > 0) {
-        setBundles(fbBundles);
-        localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
-      }
+      setBundles(fbBundles);
+      localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
     })().catch(() => {
       // Fallback ke data dari localStorage atau hardcoded
       const saved = localStorage.getItem("gala_merch_bundles");
