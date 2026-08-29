@@ -2,6 +2,7 @@ import { db, rtdb } from "./firebase";
 import { doc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { ref, set, remove, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
 import { Order, Product, AlumniTicketBundle, GalleryItem, AlumniTicket } from "@/types/merch";
+import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 
 /**
  * Firestore & Realtime Database sama-sama MENOLAK properti bernilai undefined
@@ -329,6 +330,45 @@ export async function fetchAlumniTicketBundlesFromFirebase(): Promise<AlumniTick
   }
 
   return Array.from(bundlesMap.values());
+}
+
+/**
+ * Menyinkronkan bundle seed default (ALUMNI_TICKET_BUNDLES) ke Firebase
+ * agar data lengkap tersedia di kedua sumber. Hanya menulis bundle yang
+ * belum ada di Firebase (berdasarkan id), tanpa menimpa data yang sudah
+ * diedit admin.
+ */
+export async function seedAlumniTicketBundlesToFirebase(): Promise<number> {
+  if (!db && !rtdb) return 0;
+
+  let existing = new Set<string>();
+  try {
+    if (db) {
+      const querySnapshot = await getDocs(collection(db, "alumniTicketBundles"));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data && data.id) existing.add(data.id);
+      });
+    }
+    if (rtdb) {
+      const snapshot = await get(child(ref(rtdb), "alumniTicketBundles"));
+      if (snapshot.exists()) {
+        Object.keys(snapshot.val() || {}).forEach((id) => existing.add(id));
+      }
+    }
+  } catch (err) {
+    console.warn("Gagal membaca bundle yang sudah ada saat seed:", err);
+  }
+
+  const missing = ALUMNI_TICKET_BUNDLES.filter((b) => !existing.has(b.id));
+  if (missing.length === 0) return 0;
+
+  const results = await Promise.all(
+    missing.map((bundle) => syncAlumniTicketBundleToFirebase(bundle))
+  );
+  const seeded = results.filter((r) => r.rtdbOk || r.firestoreOk).length;
+  if (seeded > 0) console.log(`✓ Seed ${seeded} bundle default ke Firebase`);
+  return seeded;
 }
 
 /**

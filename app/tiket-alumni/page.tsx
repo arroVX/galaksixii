@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { AlumniTicketSelector } from "@/components/AlumniTicketSelector";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 import { AlumniTicketBundle } from "@/types/merch";
-import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
+import { fetchAlumniTicketBundlesFromFirebase, seedAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
@@ -14,25 +14,27 @@ export default function AlumniTicketPage() {
   const [selectedBundle, setSelectedBundle] = useState<AlumniTicketBundle | null>(null);
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>(ALUMNI_TICKET_BUNDLES);
 
-  // Load dari Firebase, fallback ke hardcoded
+  // Seed bundle default ke Firebase bila belum lengkap, lalu baca dari
+  // Firebase sebagai sumber kebenaran. Fallback ke localStorage / hardcoded
+  // bila Firebase tidak tersedia.
   useEffect(() => {
-    fetchAlumniTicketBundlesFromFirebase()
-      .then((fbBundles) => {
-        if (fbBundles.length > 0) {
-          setBundles(fbBundles);
-          localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
-        }
-      })
-      .catch(() => {
-        // Fallback ke data dari localStorage atau hardcoded
-        const saved = localStorage.getItem("gala_merch_bundles");
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as AlumniTicketBundle[];
-            if (parsed.length > 0) setBundles(parsed);
-          } catch { /* ignore */ }
-        }
-      });
+    (async () => {
+      await seedAlumniTicketBundlesToFirebase();
+      const fbBundles = await fetchAlumniTicketBundlesFromFirebase();
+      if (fbBundles.length > 0) {
+        setBundles(fbBundles);
+        localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      }
+    })().catch(() => {
+      // Fallback ke data dari localStorage atau hardcoded
+      const saved = localStorage.getItem("gala_merch_bundles");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as AlumniTicketBundle[];
+          if (parsed.length > 0) setBundles(parsed);
+        } catch { /* ignore */ }
+      }
+    });
   }, []);
 
   if (loading) {

@@ -7,7 +7,7 @@ import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
-import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
+import { fetchAlumniTicketBundlesFromFirebase, seedAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
 
 interface AdminDashboardProps {
   products: Product[];
@@ -23,12 +23,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders">("overview");
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>(ALUMNI_TICKET_BUNDLES);
 
-  // Load bundles dari localStorage, lalu sync dari Firebase.
-  // Fallback default = ALUMNI_TICKET_BUNDLES agar admin melihat data seed
-  // yang sama dengan halaman /tiket-alumni sebelum ada data di Firebase.
+  // Load bundles: seed bundle default ke Firebase bila belum lengkap, lalu
+  // baca data terbaru dari Firebase sebagai sumber kebenaran (agar admin dan
+  // halaman /tiket-alumni selalu sinkron). Fallback = localStorage / seed.
   useEffect(() => {
     let initial: AlumniTicketBundle[] = ALUMNI_TICKET_BUNDLES;
-
     const saved = localStorage.getItem("gala_merch_bundles");
     if (saved) {
       try {
@@ -36,16 +35,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         if (parsed.length > 0) initial = parsed;
       } catch { /* ignore */ }
     }
-    if (initial.length > 0) setBundles(initial);
+    setBundles(initial);
 
-    fetchAlumniTicketBundlesFromFirebase()
-      .then((fbBundles) => {
-        if (fbBundles.length > 0) {
-          setBundles(fbBundles);
-          localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
-        }
-      })
-      .catch(() => {});
+    (async () => {
+      await seedAlumniTicketBundlesToFirebase();
+      const fbBundles = await fetchAlumniTicketBundlesFromFirebase();
+      if (fbBundles.length > 0) {
+        setBundles(fbBundles);
+        localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      }
+    })().catch((err) => console.warn("Gagal seed/fetch bundle:", err));
   }, []);
 
   const tabs = [
