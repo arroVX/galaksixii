@@ -308,7 +308,7 @@ export async function syncAllAlumniTicketBundlesToFirebase(bundles: AlumniTicket
       withRetry(async () => {
         if (!db) throw new Error("Firestore not configured");
         const snapshot = await getDocs(collection(db, "alumniTicketBundles"));
-        const batch = [];
+        const batch: Promise<void>[] = [];
         snapshot.forEach((docSnap) => batch.push(deleteDoc(doc(db, "alumniTicketBundles", docSnap.id))));
         await Promise.all(batch);
         console.log(`✓ Semua bundle tiket alumni dihapus dari Firestore`);
@@ -333,7 +333,7 @@ export async function syncAllAlumniTicketBundlesToFirebase(bundles: AlumniTicket
     }),
     withRetry(async () => {
       if (!db) throw new Error("Firestore not configured");
-      const batch = [];
+      const batch: Promise<void>[] = [];
       for (const bundle of cleanList) {
         batch.push(setDoc(doc(db, "alumniTicketBundles", bundle.id), bundle));
       }
