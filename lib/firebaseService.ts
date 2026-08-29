@@ -70,6 +70,7 @@ export async function syncOrderToFirebase(order: Order): Promise<SyncResult> {
  * Mengembalikan status sinkronisasi untuk umpan balik admin.
  */
 export async function syncProductToFirebase(product: Product): Promise<SyncResult> {
+  if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
   const cleanProduct = stripUndefined(product);
 
   // Tulis ke RTDB dan Firestore secara PARALEL
@@ -199,31 +200,38 @@ export async function fetchOrdersForUser(
 export async function fetchProductsFromFirebase(): Promise<Product[]> {
   const productsMap = new Map<string, Product>();
 
+  // Guard: skip jika Firebase tidak ter-configure
+  if (!db && !rtdb) return [];
+
   // 1. Ambil dari Firestore
   try {
-    const querySnapshot = await getDocs(collection(db, "products"));
-    querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data() as Product;
-      if (data && data.id) {
-        productsMap.set(data.id, data);
-      }
-    });
+    if (db) {
+      const querySnapshot = await getDocs(collection(db, "products"));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data() as Product;
+        if (data && data.id) {
+          productsMap.set(data.id, data);
+        }
+      });
+    }
   } catch (err) {
     console.warn("Firestore fetch products error:", err);
   }
 
   // 2. Ambil dari Realtime Database
   try {
-    const dbRef = ref(rtdb);
-    const snapshot = await get(child(dbRef, "products"));
-    if (snapshot.exists()) {
-      const rtdbProducts = snapshot.val();
-      Object.keys(rtdbProducts).forEach((id) => {
-        const item = rtdbProducts[id] as Product;
-        if (item && item.id && !productsMap.has(item.id)) {
-          productsMap.set(item.id, item);
-        }
-      });
+    if (rtdb) {
+      const dbRef = ref(rtdb);
+      const snapshot = await get(child(dbRef, "products"));
+      if (snapshot.exists()) {
+        const rtdbProducts = snapshot.val();
+        Object.keys(rtdbProducts).forEach((id) => {
+          const item = rtdbProducts[id] as Product;
+          if (item && item.id && !productsMap.has(item.id)) {
+            productsMap.set(item.id, item);
+          }
+        });
+      }
     }
   } catch (err) {
     console.warn("RTDB fetch products error:", err);
@@ -236,13 +244,17 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
  * Menghapus satu produk dari Firebase Realtime Database DAN Cloud Firestore.
  */
 export async function deleteProductFromFirebase(id: string): Promise<SyncResult> {
+  if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
+
   const [rtdbOk, firestoreOk] = await Promise.all([
     withRetry(async () => {
+      if (!rtdb) throw new Error("RTDB not configured");
       const prodRef = ref(rtdb, `products/${id}`);
       await set(prodRef, null);
       console.log(`✓ Produk ${id} dihapus dari Realtime Database`);
     }),
     withRetry(async () => {
+      if (!db) throw new Error("Firestore not configured");
       await deleteDoc(doc(db, "products", id));
       console.log(`✓ Produk ${id} dihapus dari Cloud Firestore`);
     })
