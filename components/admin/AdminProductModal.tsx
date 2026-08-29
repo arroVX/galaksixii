@@ -81,7 +81,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
   return (
     <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-neutral-900/50 backdrop-blur-sm">
-      <div className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full shadow-xl relative flex flex-col sm:max-h-[85vh] mb-14 sm:mb-0" style={{ maxHeight: 'min(60dvh, 440px)' }}>
+      <div className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full shadow-xl relative flex flex-col sm:max-h-[85vh]" style={{ maxHeight: 'min(calc(100dvh - 80px), 600px)' }}>
         {/* Header - fixed */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-100 shrink-0">
           <h3 className="font-bold text-neutral-900 text-sm">
