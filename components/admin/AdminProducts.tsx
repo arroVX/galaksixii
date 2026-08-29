@@ -67,7 +67,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
 
             <div className="pt-2 border-t border-neutral-50 flex items-center justify-between">
               <div className="flex gap-1">
-                {p.variants.sizes.map((s) => (
+                {(p.variants?.sizes || []).map((s) => (
                   <span key={s} className="px-1.5 py-0.5 bg-neutral-100 text-[9px] font-bold text-neutral-500 rounded-full">{s}</span>
                 ))}
               </div>
