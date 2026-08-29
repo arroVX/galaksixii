@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { AlumniTicketBundle } from "@/types/merch";
-import { Plus, Edit3, Trash2, PackageOpen } from "lucide-react";
+import { Plus, Edit3, Trash2, PackageOpen, AlertTriangle, X } from "lucide-react";
 import { AdminBundleModal } from "./AdminBundleModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { syncAllAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
@@ -17,17 +17,25 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
   const [editingBundle, setEditingBundle] = useState<AlumniTicketBundle | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Sentralisasi penyimpanan: update state + localStorage + sync SEMUA bundle ke Firebase
   const handleSave = (newList: AlumniTicketBundle[]) => {
+    setSyncError(null);
     setBundles(newList);
     localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
     setSaving(true);
     syncAllAlumniTicketBundlesToFirebase(newList)
       .then((r) => {
-        if (!r.rtdbOk && !r.firestoreOk) console.warn("Gagal sync seluruh bundle ke Firebase");
+        if (!r.rtdbOk && !r.firestoreOk) {
+          setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin (email: admin@galamerch.com).");
+        } else if (!r.rtdbOk || !r.firestoreOk) {
+          setSyncError("Sinkronisasi sebagian berhasil. Coba refresh halaman.");
+        }
       })
-      .catch((err) => console.warn(err))
+      .catch((err) => {
+        console.error("Sync error:", err);
+        setSyncError("Gagal menyimpan ke Firebase. Pastikan koneksi stabil dan Anda login sebagai admin.");
+      })
       .finally(() => setSaving(false));
   };
 
@@ -43,6 +51,23 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
 
   return (
     <div className="space-y-4">
+      {syncError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3 text-xs">
+          <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
+          <p className="text-red-700 flex-1">{syncError}</p>
+          <button onClick={() => setSyncError(null)} className="text-red-400 hover:text-red-600 shrink-0">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {saving && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-[11px] text-amber-700 flex items-center gap-2">
+          <span className="material-symbols-outlined animate-spin text-[14px]">sync</span>
+          Menyimpan ke Firebase...
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
           <PackageOpen size={16} /> Bundling Tiket & Merch ({bundles.length})

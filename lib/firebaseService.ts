@@ -290,65 +290,50 @@ export async function syncAlumniTicketBundleToFirebase(bundle: AlumniTicketBundl
 }
 
 /**
- * Menyinkronkan SELURUH daftar bundle tiket alumni ke Firebase (RTDB + Firestore).
- * Dipakai setelah admin membuat/mengedit/menghapus agar semua perubahan admin
- * benar-benar tersimpan di Firebase — bukan hanya bundle yang baru diubah —
- * sehingga data tidak revert setelah reload.
+ * Menyinkronkan SELURUH daftar bundle tiket alumni ke Firebase.
+ * Menulis satu per satu (bukan batch) supaya satu bundle gagal tidak
+ * membatalkan bundle lain. RTDB ditulis via set() di root (replace-all)
+ * supaya bundle yang dihapus juga ikut hilang. Firestore ditulis per-dok.
  */
 export async function syncAllAlumniTicketBundlesToFirebase(bundles: AlumniTicketBundle[]): Promise<SyncResult> {
   if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
-  
-  if (bundles.length === 0) {
-    const [rtdbOk, firestoreOk] = await Promise.all([
-      withRetry(async () => {
-        if (!rtdb) throw new Error("RTDB not configured");
-        await remove(ref(rtdb, "alumniTicketBundles"));
-        console.log(`✓ Semua bundle tiket alumni dihapus dari RTDB`);
-      }),
-      withRetry(async () => {
-        if (!db) throw new Error("Firestore not configured");
-        const snapshot = await getDocs(collection(db, "alumniTicketBundles"));
-        const batch: Promise<void>[] = [];
-        snapshot.forEach((docSnap) => batch.push(deleteDoc(doc(db, "alumniTicketBundles", docSnap.id))));
-        await Promise.all(batch);
-        console.log(`✓ Semua bundle tiket alumni dihapus dari Firestore`);
-      })
-    ]);
-    return { rtdbOk, firestoreOk };
-  }
 
   const cleanList = stripUndefined(bundles);
 
-  const [rtdbOk, firestoreOk] = await Promise.all([
-    withRetry(async () => {
-      if (!rtdb) throw new Error("RTDB not configured");
-      const listRef = ref(rtdb, "alumniTicketBundles");
-      // Tulis ulang seluruh objek agar bundle yang dihapus juga ikut hilang
-      const data: Record<string, AlumniTicketBundle> = {};
-      cleanList.forEach((b) => {
-        data[b.id] = b;
-      });
-      await set(listRef, data);
-      console.log(`✓ ${cleanList.length} bundle terkirim ke Realtime Database`);
-    }),
-    withRetry(async () => {
-      if (!db) throw new Error("Firestore not configured");
-      const batch: Promise<void>[] = [];
-      for (const bundle of cleanList) {
-        batch.push(setDoc(doc(db, "alumniTicketBundles", bundle.id), bundle));
-      }
-      // Hapus dokumen Firestore yang tidak ada lagi di list (untuk konsistensi)
-      const snapshot = await getDocs(collection(db, "alumniTicketBundles"));
-      snapshot.forEach((docSnap) => {
-        if (!cleanList.some((b) => b.id === docSnap.id)) {
-          batch.push(deleteDoc(doc(db, "alumniTicketBundles", docSnap.id)));
-        }
-      });
-      await Promise.all(batch);
-      console.log(`✓ ${cleanList.length} bundle terkirim ke Cloud Firestore`);
-    })
-  ]);
+  // --- RTDB: replace-all (tulis seluruh objek sekaligus) ---
+  const rtdbOk = await withRetry(async () => {
+    if (!rtdb) throw new Error("RTDB not configured");
+    const data: Record<string, AlumniTicketBundle> = {};
+    cleanList.forEach((b) => { data[b.id] = b; });
+    await set(ref(rtdb, "alumniTicketBundles"), data);
+    console.log(`✓ RTDB: ${cleanList.length} bundle terkirim`);
+  });
 
+  // --- Firestore: tulis satu per satu ---
+  let firestoreOk = true;
+  if (db) {
+    for (const bundle of cleanList) {
+      const ok = await withRetry(async () => {
+        if (!db) throw new Error("Firestore not configured");
+        await setDoc(doc(db, "alumniTicketBundles", bundle.id), bundle);
+      });
+      if (!ok) {
+        console.error(`✗ Firestore gagal tulis bundle ${bundle.id}`);
+        firestoreOk = false;
+      }
+    }
+    // Hapus dokumen Firestore yang tidak ada di list baru
+    try {
+      const snapshot = await getDocs(collection(db, "alumniTicketBundles"));
+      for (const docSnap of snapshot.docs) {
+        if (!cleanList.some((b) => b.id === docSnap.id)) {
+          await deleteDoc(doc(db, "alumniTicketBundles", docSnap.id)).catch(() => {});
+        }
+      }
+    } catch { /* skip cleanup errors */ }
+  }
+
+  console.log(`✓ syncAll: RTDB=${rtdbOk ? "ok" : "fail"}, Firestore=${firestoreOk ? "ok" : "fail"}`);
   return { rtdbOk, firestoreOk };
 }
 
