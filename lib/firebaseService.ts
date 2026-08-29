@@ -361,7 +361,11 @@ export async function seedAlumniTicketBundlesToFirebase(): Promise<number> {
   }
 
   const missing = ALUMNI_TICKET_BUNDLES.filter((b) => !existing.has(b.id));
-  if (missing.length === 0) return 0;
+  
+  // Jika database sudah memiliki data bundle (existing.size > 0),
+  // berarti admin mungkin sudah menghapus/mengedit bundle bawaan.
+  // Jangan kembalikan bundle yang dihapus. Hanya lakukan seed jika kosong.
+  if (existing.size > 0 || missing.length === 0) return 0;
 
   const results = await Promise.all(
     missing.map((bundle) => syncAlumniTicketBundleToFirebase(bundle))
