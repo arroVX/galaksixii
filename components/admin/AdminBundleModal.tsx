@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { AlumniTicketBundle, AlumniTicketBundleItem } from "@/types/merch";
-import { syncAlumniTicketBundleToFirebase } from "@/lib/firebaseService";
 import { Save, X, Plus, Trash2 } from "lucide-react";
 
 interface AdminBundleModalProps {
@@ -21,9 +20,11 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
   const [items, setItems] = useState<AlumniTicketBundleItem[]>(
     bundle?.items || [{ name: "", quantity: 1, imageUrl: "" }]
   );
+  const [error, setError] = useState<string | null>(null);
 
   const addItem = () => {
     setItems([...items, { name: "", quantity: 1, imageUrl: "" }]);
+    setError(null);
   };
 
   const removeItem = (index: number) => {
@@ -44,9 +45,17 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!name.trim()) {
+      setError("Nama bundling wajib diisi.");
+      return;
+    }
     const validItems = items.filter((item) => item.name.trim());
-    if (validItems.length === 0 || !name.trim()) {
-      alert("Silakan lengkapi data bundling termasuk nama itemnya.");
+    if (validItems.length === 0) {
+      setError("Minimal satu item dengan nama wajib diisi.");
+      return;
+    }
+    if (!Number(totalPrice) || Number(totalPrice) <= 0) {
+      setError("Harga total bundle wajib lebih dari 0.");
       return;
     }
 
@@ -54,10 +63,14 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
       id: bundle?.id || "ticket-alumni-bundle-" + Date.now(),
       name: name.trim(),
       description: description.trim(),
-      ticketPrice: Number(ticketPrice),
+      ticketPrice: Number(ticketPrice) || 0,
       totalPrice: Number(totalPrice),
-      items: validItems,
-      imageUrl: imageUrl || validItems[0]?.imageUrl || ""
+      items: validItems.map((item) => ({
+        name: item.name.trim(),
+        quantity: item.quantity,
+        imageUrl: item.imageUrl?.trim() || ""
+      })),
+      imageUrl: (imageUrl && imageUrl.trim()) || validItems[0]?.imageUrl?.trim() || ""
     };
 
     const newList = bundle
@@ -65,29 +78,35 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
       : [bundleData, ...bundles];
 
     onSave(newList);
-    localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
-    syncAlumniTicketBundleToFirebase(bundleData).catch((err) => console.warn(err));
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-neutral-900/50 backdrop-blur-sm">
-      <div className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full shadow-xl relative flex flex-col sm:max-h-[85vh]" style={{ maxHeight: 'min(calc(100dvh - 80px), 600px)' }}>
+      {/* Form membungkus SELURUH modal (header + body + footer) sehingga tombol
+          submit menjadi anak langsung dari <form> → submit 100% reliable. */}
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full shadow-xl relative flex flex-col sm:max-h-[85vh]" style={{ maxHeight: 'min(calc(100dvh - 80px), 600px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-100 shrink-0">
           <h3 className="font-bold text-neutral-900 text-sm">
             {bundle ? "Edit Bundling" : "Tambah Bundling Baru"}
           </h3>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-900 p-1">
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-900 p-1">
             <X size={18} />
           </button>
         </div>
 
-        {/* Scrollable form */}
-        <form id="bundle-form" onSubmit={handleSubmit} className="overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 text-xs flex-1 overscroll-contain min-h-0">
+        {/* Scrollable body */}
+        <div className="overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 text-xs flex-1 overscroll-contain min-h-0">
           <div>
             <label className="block text-neutral-500 mb-1">Nama Bundling *</label>
-            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900 focus:border-neutral-900 outline-none" />
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError(null); }}
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900 focus:border-neutral-900 outline-none"
+            />
           </div>
 
           <div>
@@ -122,8 +141,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                 <div className="flex gap-2 items-center">
                   <input
                     type="text"
-                    required
-                    placeholder="Nama item (misal: Keychain Ball & Dice)"
+                    placeholder="Nama item (misal: Keychain Ball & Dice) *"
                     value={item.name}
                     onChange={(e) => updateItem(idx, "name", e.target.value)}
                     className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-neutral-900"
@@ -134,13 +152,14 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                     value={item.quantity}
                     onChange={(e) => updateItem(idx, "quantity", e.target.value)}
                     className="w-16 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-center text-neutral-900"
+                    title="Jumlah"
                   />
-                  <button type="button" onClick={() => removeItem(idx)} disabled={items.length <= 1} className="p-1.5 text-neutral-400 hover:text-red-500 disabled:opacity-30">
+                  <button type="button" onClick={() => removeItem(idx)} disabled={items.length <= 1} className="p-1.5 text-neutral-400 hover:text-red-500 disabled:opacity-30" title="Hapus item">
                     <Trash2 size={14} />
                   </button>
                 </div>
                 <input
-                  type="url"
+                  type="text"
                   placeholder="URL gambar item (opsional)"
                   value={item.imageUrl || ""}
                   onChange={(e) => updateItem(idx, "imageUrl", e.target.value)}
@@ -153,23 +172,42 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-neutral-500 mb-1">Harga Tiket (IDR) *</label>
-              <input type="number" required value={ticketPrice} onChange={(e) => setTicketPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
+              <input
+                type="number"
+                required
+                value={ticketPrice}
+                onChange={(e) => setTicketPrice(Number(e.target.value))}
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900"
+              />
             </div>
             <div>
               <label className="block text-neutral-500 mb-1">Harga Total Bundle (IDR) *</label>
-              <input type="number" required value={totalPrice} onChange={(e) => setTotalPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
+              <input
+                type="number"
+                required
+                value={totalPrice}
+                onChange={(e) => { setTotalPrice(Number(e.target.value)); setError(null); }}
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900"
+              />
             </div>
           </div>
-        </form>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mx-4 sm:mx-6 mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-600 text-[11px] rounded-lg shrink-0">
+            {error}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-neutral-100 flex justify-end gap-2 shrink-0" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
           <button type="button" onClick={onClose} className="px-4 py-2.5 sm:py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
-          <button type="submit" form="bundle-form" className="px-5 py-2.5 sm:py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
+          <button type="submit" className="px-5 py-2.5 sm:py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5 active:scale-95 transition">
             <Save size={14} /> Simpan
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

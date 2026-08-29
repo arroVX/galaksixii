@@ -290,6 +290,51 @@ export async function syncAlumniTicketBundleToFirebase(bundle: AlumniTicketBundl
 }
 
 /**
+ * Menyinkronkan SELURUH daftar bundle tiket alumni ke Firebase (RTDB + Firestore).
+ * Dipakai setelah admin membuat/mengedit/menghapus agar semua perubahan admin
+ * benar-benar tersimpan di Firebase — bukan hanya bundle yang baru diubah —
+ * sehingga data tidak revert setelah reload.
+ */
+export async function syncAllAlumniTicketBundlesToFirebase(bundles: AlumniTicketBundle[]): Promise<SyncResult> {
+  if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
+  if (bundles.length === 0) return { rtdbOk: true, firestoreOk: true };
+
+  const cleanList = stripUndefined(bundles);
+
+  const [rtdbOk, firestoreOk] = await Promise.all([
+    withRetry(async () => {
+      if (!rtdb) throw new Error("RTDB not configured");
+      const listRef = ref(rtdb, "alumniTicketBundles");
+      // Tulis ulang seluruh objek agar bundle yang dihapus juga ikut hilang
+      const data: Record<string, AlumniTicketBundle> = {};
+      cleanList.forEach((b) => {
+        data[b.id] = b;
+      });
+      await set(listRef, data);
+      console.log(`✓ ${cleanList.length} bundle terkirim ke Realtime Database`);
+    }),
+    withRetry(async () => {
+      if (!db) throw new Error("Firestore not configured");
+      const batch = [];
+      for (const bundle of cleanList) {
+        batch.push(setDoc(doc(db, "alumniTicketBundles", bundle.id), bundle));
+      }
+      // Hapus dokumen Firestore yang tidak ada lagi di list (untuk konsistensi)
+      const snapshot = await getDocs(collection(db, "alumniTicketBundles"));
+      snapshot.forEach((docSnap) => {
+        if (!cleanList.some((b) => b.id === docSnap.id)) {
+          batch.push(deleteDoc(doc(db, "alumniTicketBundles", docSnap.id)));
+        }
+      });
+      await Promise.all(batch);
+      console.log(`✓ ${cleanList.length} bundle terkirim ke Cloud Firestore`);
+    })
+  ]);
+
+  return { rtdbOk, firestoreOk };
+}
+
+/**
  * Mengambil seluruh data bundle tiket alumni dari Cloud Firestore & Realtime Database.
  */
 export async function fetchAlumniTicketBundlesFromFirebase(): Promise<AlumniTicketBundle[]> {

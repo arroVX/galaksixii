@@ -5,7 +5,7 @@ import { AlumniTicketBundle } from "@/types/merch";
 import { Plus, Edit3, Trash2, PackageOpen } from "lucide-react";
 import { AdminBundleModal } from "./AdminBundleModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { deleteAlumniTicketBundleFromFirebase } from "@/lib/firebaseService";
+import { deleteAlumniTicketBundleFromFirebase, syncAllAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
 
 interface AdminBundlingProps {
   bundles: AlumniTicketBundle[];
@@ -16,6 +16,20 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBundle, setEditingBundle] = useState<AlumniTicketBundle | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Sentralisasi penyimpanan: update state + localStorage + sync SEMUA bundle ke Firebase
+  const handleSave = (newList: AlumniTicketBundle[]) => {
+    setBundles(newList);
+    localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
+    setSaving(true);
+    syncAllAlumniTicketBundlesToFirebase(newList)
+      .then((r) => {
+        if (!r.rtdbOk && !r.firestoreOk) console.warn("Gagal sync seluruh bundle ke Firebase");
+      })
+      .catch((err) => console.warn(err))
+      .finally(() => setSaving(false));
+  };
 
   const openCreateModal = () => {
     setEditingBundle(null);
@@ -91,7 +105,7 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
         <AdminBundleModal
           bundle={editingBundle}
           onClose={() => setIsModalOpen(false)}
-          onSave={(updatedList) => setBundles(updatedList)}
+          onSave={handleSave}
           bundles={bundles}
         />
       )}
@@ -102,8 +116,7 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
         onConfirm={() => {
           if (deleteTarget) {
             const newList = bundles.filter((b) => b.id !== deleteTarget);
-            setBundles(newList);
-            localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
+            handleSave(newList);
             deleteAlumniTicketBundleFromFirebase(deleteTarget).catch((err) => console.warn(err));
           }
         }}

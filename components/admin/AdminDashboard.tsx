@@ -23,9 +23,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders">("overview");
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
-  // Load bundles: seed bundle default ke Firebase bila belum lengkap, lalu
-  // baca data terbaru dari Firebase sebagai sumber kebenaran (agar admin dan
-  // halaman /tiket-alumni selalu sinkron). Fallback = localStorage / seed.
+  // Load bundles: panggil seed bila database masih kosong (first-time), lalu
+  // baca data terbaru dari Firebase sebagai sumber kebenaran. Fallback awal
+  // = localStorage (persistensi lokal) / ALUMNI_TICKET_BUNDLES.
   useEffect(() => {
     let initial: AlumniTicketBundle[] = [];
     const saved = localStorage.getItem("gala_merch_bundles");
@@ -35,13 +35,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         if (parsed.length > 0) initial = parsed;
       } catch { /* ignore */ }
     }
-    setBundles(initial);
+    setBundles(initial.length > 0 ? initial : ALUMNI_TICKET_BUNDLES);
 
     (async () => {
+      await seedAlumniTicketBundlesToFirebase();
       const fbBundles = await fetchAlumniTicketBundlesFromFirebase();
-      setBundles(fbBundles);
-      localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
-    })().catch((err) => console.warn("Gagal fetch bundle:", err));
+      if (fbBundles.length > 0) {
+        setBundles(fbBundles);
+        localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      }
+    })().catch((err) => console.warn("Gagal seed/fetch bundle:", err));
   }, []);
 
   const tabs = [
