@@ -8,6 +8,11 @@
       ".write": "auth != null && auth.token.email === 'admin@galamerch.com'"
     },
 
+    "alumniTicketBundles": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'admin@galamerch.com'"
+    },
+
     "orders": {
       ".indexOn": ["userId", "userEmail"],
 

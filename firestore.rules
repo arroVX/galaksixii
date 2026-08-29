@@ -15,6 +15,11 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /alumniTicketBundles/{bundleId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     match /gallery/{itemId} {
       // Galeri dokumentasi publik dibaca siapa pun; pengelolaan hanya oleh admin.
       allow read: if true;
