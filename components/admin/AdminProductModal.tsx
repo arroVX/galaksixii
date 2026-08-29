@@ -80,18 +80,20 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/50 backdrop-blur-sm">
-      <div className="bg-white border border-neutral-100 rounded-2xl max-w-xl w-full p-6 shadow-xl relative my-8">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-neutral-900/50 backdrop-blur-sm">
+      <div className="bg-white border border-neutral-100 rounded-t-2xl sm:rounded-2xl max-w-xl w-full max-h-[90vh] sm:max-h-[85vh] shadow-xl relative flex flex-col">
+        {/* Header - fixed */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
           <h3 className="font-bold text-neutral-900 text-sm">
             {product ? "Edit Merchandise" : "Tambah Merchandise Baru"}
           </h3>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-900">
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-900 p-1">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        {/* Scrollable form */}
+        <form id="product-form" onSubmit={handleSubmit} className="overflow-y-auto px-6 py-4 space-y-4 text-xs flex-1 overscroll-contain">
           <div>
             <label className="block text-neutral-500 mb-1">Nama Produk *</label>
             <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900 focus:border-neutral-900 outline-none" />
@@ -166,14 +168,15 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
             <label className="block text-neutral-500 mb-1">Warna (pisah koma)</label>
             <input type="text" value={colorsInput} onChange={(e) => setColorsInput(e.target.value)} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-3 text-neutral-900" />
           </div>
-
-          <div className="pt-3 border-t border-neutral-100 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
-            <button type="submit" className="px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
-              <Save size={14} /> Simpan
-            </button>
-          </div>
         </form>
+
+        {/* Footer - fixed */}
+        <div className="px-6 py-4 border-t border-neutral-100 flex justify-end gap-2 shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <button type="button" onClick={onClose} className="px-4 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
+          <button type="submit" form="product-form" className="px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
+            <Save size={14} /> Simpan
+          </button>
+        </div>
       </div>
     </div>
   );
