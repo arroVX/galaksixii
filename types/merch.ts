@@ -35,23 +35,6 @@ export interface Product {
   soldCount?: number;
 }
 
-export interface BundleItem {
-  productId: string;
-  quantity: number;
-}
-
-export interface ProductBundle {
-  id: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-  items: BundleItem[];
-  originalPrice: number;
-  bundlePrice: number;
-  isActive: boolean;
-  createdAt?: string;
-}
-
 export interface CartItem {
   id: string;
   productId: string;

@@ -1,7 +1,7 @@
 import { db, rtdb } from "./firebase";
 import { doc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
-import { ref, set, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
-import { Order, Product, ProductBundle, GalleryItem, AlumniTicket } from "@/types/merch";
+import { ref, set, remove, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
+import { Order, Product, AlumniTicketBundle, GalleryItem, AlumniTicket } from "@/types/merch";
 
 /**
  * Firestore & Realtime Database sama-sama MENOLAK properti bernilai undefined
@@ -250,7 +250,7 @@ export async function deleteProductFromFirebase(id: string): Promise<SyncResult>
     withRetry(async () => {
       if (!rtdb) throw new Error("RTDB not configured");
       const prodRef = ref(rtdb, `products/${id}`);
-      await set(prodRef, null);
+      await remove(prodRef);
       console.log(`✓ Produk ${id} dihapus dari Realtime Database`);
     }),
     withRetry(async () => {
@@ -264,22 +264,22 @@ export async function deleteProductFromFirebase(id: string): Promise<SyncResult>
 }
 
 /**
- * Menyimpan / Menyinkronkan bundle merchandise ke Firebase.
+ * Menyimpan / Menyinkronkan bundle tiket alumni ke Firebase.
  */
-export async function syncBundleToFirebase(bundle: ProductBundle): Promise<SyncResult> {
+export async function syncAlumniTicketBundleToFirebase(bundle: AlumniTicketBundle): Promise<SyncResult> {
   if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
   const cleanBundle = stripUndefined(bundle);
 
   const [rtdbOk, firestoreOk] = await Promise.all([
     withRetry(async () => {
       if (!rtdb) throw new Error("RTDB not configured");
-      const bundleRef = ref(rtdb, `bundles/${cleanBundle.id}`);
+      const bundleRef = ref(rtdb, `alumniTicketBundles/${cleanBundle.id}`);
       await set(bundleRef, cleanBundle);
       console.log(`✓ Bundle ${cleanBundle.id} terkirim ke Realtime Database`);
     }),
     withRetry(async () => {
       if (!db) throw new Error("Firestore not configured");
-      const docRef = doc(db, "bundles", cleanBundle.id);
+      const docRef = doc(db, "alumniTicketBundles", cleanBundle.id);
       await setDoc(docRef, cleanBundle);
       console.log(`✓ Bundle ${cleanBundle.id} terkirim ke Cloud Firestore`);
     })
@@ -289,35 +289,35 @@ export async function syncBundleToFirebase(bundle: ProductBundle): Promise<SyncR
 }
 
 /**
- * Mengambil seluruh data bundle dari Cloud Firestore & Realtime Database.
+ * Mengambil seluruh data bundle tiket alumni dari Cloud Firestore & Realtime Database.
  */
-export async function fetchBundlesFromFirebase(): Promise<ProductBundle[]> {
-  const bundlesMap = new Map<string, ProductBundle>();
+export async function fetchAlumniTicketBundlesFromFirebase(): Promise<AlumniTicketBundle[]> {
+  const bundlesMap = new Map<string, AlumniTicketBundle>();
 
   if (!db && !rtdb) return [];
 
   try {
     if (db) {
-      const querySnapshot = await getDocs(collection(db, "bundles"));
+      const querySnapshot = await getDocs(collection(db, "alumniTicketBundles"));
       querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data() as ProductBundle;
+        const data = docSnap.data() as AlumniTicketBundle;
         if (data && data.id) {
           bundlesMap.set(data.id, data);
         }
       });
     }
   } catch (err) {
-    console.warn("Firestore fetch bundles error:", err);
+    console.warn("Firestore fetch alumniTicketBundles error:", err);
   }
 
   try {
     if (rtdb) {
       const dbRef = ref(rtdb);
-      const snapshot = await get(child(dbRef, "bundles"));
+      const snapshot = await get(child(dbRef, "alumniTicketBundles"));
       if (snapshot.exists()) {
         const rtdbBundles = snapshot.val();
         Object.keys(rtdbBundles).forEach((id) => {
-          const item = rtdbBundles[id] as ProductBundle;
+          const item = rtdbBundles[id] as AlumniTicketBundle;
           if (item && item.id && !bundlesMap.has(item.id)) {
             bundlesMap.set(item.id, item);
           }
@@ -325,28 +325,28 @@ export async function fetchBundlesFromFirebase(): Promise<ProductBundle[]> {
       }
     }
   } catch (err) {
-    console.warn("RTDB fetch bundles error:", err);
+    console.warn("RTDB fetch alumniTicketBundles error:", err);
   }
 
   return Array.from(bundlesMap.values());
 }
 
 /**
- * Menghapus satu bundle dari Firebase Realtime Database DAN Cloud Firestore.
+ * Menghapus satu bundle tiket alumni dari Firebase Realtime Database DAN Cloud Firestore.
  */
-export async function deleteBundleFromFirebase(id: string): Promise<SyncResult> {
+export async function deleteAlumniTicketBundleFromFirebase(id: string): Promise<SyncResult> {
   if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
 
   const [rtdbOk, firestoreOk] = await Promise.all([
     withRetry(async () => {
       if (!rtdb) throw new Error("RTDB not configured");
-      const bundleRef = ref(rtdb, `bundles/${id}`);
-      await set(bundleRef, null);
+      const bundleRef = ref(rtdb, `alumniTicketBundles/${id}`);
+      await remove(bundleRef);
       console.log(`✓ Bundle ${id} dihapus dari Realtime Database`);
     }),
     withRetry(async () => {
       if (!db) throw new Error("Firestore not configured");
-      await deleteDoc(doc(db, "bundles", id));
+      await deleteDoc(doc(db, "alumniTicketBundles", id));
       console.log(`✓ Bundle ${id} dihapus dari Cloud Firestore`);
     })
   ]);

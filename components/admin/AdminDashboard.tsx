@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Product, ProductBundle } from "@/types/merch";
+import { Product, AlumniTicketBundle } from "@/types/merch";
 import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
-import { fetchBundlesFromFirebase } from "@/lib/firebaseService";
+import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 
 interface AdminDashboardProps {
   products: Product[];
@@ -20,7 +20,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onExit
 }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders">("overview");
-  const [bundles, setBundles] = useState<ProductBundle[]>([]);
+  const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
   // Load bundles dari localStorage, lalu sync dari Firebase
   useEffect(() => {
@@ -28,7 +28,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (saved) {
       try { setBundles(JSON.parse(saved)); } catch { /* ignore */ }
     }
-    fetchBundlesFromFirebase()
+    fetchAlumniTicketBundlesFromFirebase()
       .then((fbBundles) => {
         if (fbBundles.length > 0) {
           setBundles(fbBundles);
@@ -88,7 +88,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <AdminProducts products={products} setProducts={setProducts} />
         )}
         {activeTab === "bundling" && (
-          <AdminBundling products={products} bundles={bundles} setBundles={setBundles} />
+          <AdminBundling bundles={bundles} setBundles={setBundles} />
         )}
         {activeTab === "orders" && (
           <AdminOrders />

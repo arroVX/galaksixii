@@ -1,15 +1,39 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { AlumniTicketSelector } from "@/components/AlumniTicketSelector";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
+import { AlumniTicketBundle } from "@/types/merch";
+import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
 export default function AlumniTicketPage() {
   const { user, loading } = useAuth();
-  const [selectedBundle, setSelectedBundle] = useState<typeof ALUMNI_TICKET_BUNDLES[0] | null>(null);
+  const [selectedBundle, setSelectedBundle] = useState<AlumniTicketBundle | null>(null);
+  const [bundles, setBundles] = useState<AlumniTicketBundle[]>(ALUMNI_TICKET_BUNDLES);
+
+  // Load dari Firebase, fallback ke hardcoded
+  useEffect(() => {
+    fetchAlumniTicketBundlesFromFirebase()
+      .then((fbBundles) => {
+        if (fbBundles.length > 0) {
+          setBundles(fbBundles);
+          localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+        }
+      })
+      .catch(() => {
+        // Fallback ke data dari localStorage atau hardcoded
+        const saved = localStorage.getItem("gala_merch_bundles");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved) as AlumniTicketBundle[];
+            if (parsed.length > 0) setBundles(parsed);
+          } catch { /* ignore */ }
+        }
+      });
+  }, []);
 
   if (loading) {
     return (
@@ -65,7 +89,7 @@ export default function AlumniTicketPage() {
     );
   }
 
-  const handleOpenSelector = (bundle: typeof ALUMNI_TICKET_BUNDLES[0]) => {
+  const handleOpenSelector = (bundle: AlumniTicketBundle) => {
     setSelectedBundle(bundle);
   };
 
@@ -90,7 +114,7 @@ export default function AlumniTicketPage() {
           </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
-          {ALUMNI_TICKET_BUNDLES.map((bundle) => (
+          {bundles.map((bundle) => (
             <div
               key={bundle.id}
               onClick={() => handleOpenSelector(bundle)}

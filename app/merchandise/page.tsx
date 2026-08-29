@@ -41,8 +41,11 @@ export default function MerchandisePage() {
     fetchProductsFromFirebase()
       .then((firebaseProducts) => {
         if (firebaseProducts.length > 0) {
-          setProducts(firebaseProducts);
-          localStorage.setItem("gala_merch_products", JSON.stringify(firebaseProducts));
+          // Filter produk yang sudah dihapus secara lokal
+          const deleted = JSON.parse(localStorage.getItem("gala_deleted_product_ids") || "[]") as string[];
+          const filtered = firebaseProducts.filter((p) => !deleted.includes(p.id));
+          setProducts(filtered);
+          localStorage.setItem("gala_merch_products", JSON.stringify(filtered));
         }
       })
       .catch((err) => console.warn("Gagal fetch produk dari Firebase, menggunakan data lokal:", err));

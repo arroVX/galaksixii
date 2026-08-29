@@ -1,21 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Product, ProductBundle } from "@/types/merch";
+import { AlumniTicketBundle } from "@/types/merch";
 import { Plus, Edit3, Trash2, PackageOpen } from "lucide-react";
 import { AdminBundleModal } from "./AdminBundleModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { deleteBundleFromFirebase } from "@/lib/firebaseService";
+import { deleteAlumniTicketBundleFromFirebase } from "@/lib/firebaseService";
 
 interface AdminBundlingProps {
-  products: Product[];
-  bundles: ProductBundle[];
-  setBundles: React.Dispatch<React.SetStateAction<ProductBundle[]>>;
+  bundles: AlumniTicketBundle[];
+  setBundles: React.Dispatch<React.SetStateAction<AlumniTicketBundle[]>>;
 }
 
-export const AdminBundling: React.FC<AdminBundlingProps> = ({ products, bundles, setBundles }) => {
+export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundles }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingBundle, setEditingBundle] = useState<ProductBundle | null>(null);
+  const [editingBundle, setEditingBundle] = useState<AlumniTicketBundle | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const openCreateModal = () => {
@@ -23,20 +22,16 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ products, bundles,
     setIsModalOpen(true);
   };
 
-  const openEditModal = (b: ProductBundle) => {
+  const openEditModal = (b: AlumniTicketBundle) => {
     setEditingBundle(b);
     setIsModalOpen(true);
-  };
-
-  const getProductName = (productId: string) => {
-    return products.find((p) => p.id === productId)?.name || "Produk tidak ditemukan";
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <PackageOpen size={16} /> Bundling ({bundles.length})
+          <PackageOpen size={16} /> Bundling Tiket & Merch ({bundles.length})
         </h3>
         <button
           onClick={openCreateModal}
@@ -56,13 +51,8 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ products, bundles,
           {bundles.map((b) => (
             <div key={b.id} className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col justify-between gap-3">
               <div className="flex gap-3">
-                <img src={b.imageUrl} alt={b.name} className="w-16 h-16 rounded-xl object-cover bg-neutral-100 shrink-0" />
+                <img src={b.imageUrl || "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"} alt={b.name} className="w-16 h-16 rounded-xl object-cover bg-neutral-100 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${b.isActive ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
-                      {b.isActive ? "Aktif" : "Nonaktif"}
-                    </span>
-                  </div>
                   <h4 className="font-bold text-neutral-900 text-xs truncate">{b.name}</h4>
                   <p className="text-[11px] text-neutral-400 mt-0.5 line-clamp-2">{b.description || "Tanpa deskripsi"}</p>
                 </div>
@@ -72,7 +62,7 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ products, bundles,
               <div className="flex flex-wrap gap-1">
                 {b.items.map((item, idx) => (
                   <span key={idx} className="px-1.5 py-0.5 bg-neutral-100 text-[9px] font-bold text-neutral-500 rounded-full">
-                    {getProductName(item.productId)} x{item.quantity}
+                    {item.name} x{item.quantity}
                   </span>
                 ))}
               </div>
@@ -80,8 +70,8 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ products, bundles,
               {/* Price */}
               <div className="flex items-center justify-between pt-2 border-t border-neutral-50">
                 <div>
-                  <span className="text-[10px] text-neutral-400 line-through">Rp {b.originalPrice.toLocaleString("id-ID")}</span>
-                  <span className="text-xs font-bold text-neutral-900 ml-1.5">Rp {b.bundlePrice.toLocaleString("id-ID")}</span>
+                  <span className="text-[10px] text-neutral-400">Tiket: Rp {b.ticketPrice.toLocaleString("id-ID")}</span>
+                  <span className="text-xs font-bold text-neutral-900 ml-1.5">Rp {b.totalPrice.toLocaleString("id-ID")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => openEditModal(b)} className="p-2.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition" title="Edit">
@@ -100,7 +90,6 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ products, bundles,
       {isModalOpen && (
         <AdminBundleModal
           bundle={editingBundle}
-          products={products}
           onClose={() => setIsModalOpen(false)}
           onSave={(updatedList) => setBundles(updatedList)}
           bundles={bundles}
@@ -115,7 +104,7 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ products, bundles,
             const newList = bundles.filter((b) => b.id !== deleteTarget);
             setBundles(newList);
             localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
-            deleteBundleFromFirebase(deleteTarget).catch((err) => console.warn(err));
+            deleteAlumniTicketBundleFromFirebase(deleteTarget).catch((err) => console.warn(err));
           }
         }}
         title="Hapus Bundling"

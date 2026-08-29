@@ -1,35 +1,29 @@
 "use client";
 
 import React, { useState } from "react";
-import { Product, ProductBundle } from "@/types/merch";
-import { syncBundleToFirebase } from "@/lib/firebaseService";
+import { AlumniTicketBundle, AlumniTicketBundleItem } from "@/types/merch";
+import { syncAlumniTicketBundleToFirebase } from "@/lib/firebaseService";
 import { Save, X, Plus, Trash2 } from "lucide-react";
 
 interface AdminBundleModalProps {
-  bundle: ProductBundle | null;
-  products: Product[];
+  bundle: AlumniTicketBundle | null;
   onClose: () => void;
-  onSave: (list: ProductBundle[]) => void;
-  bundles: ProductBundle[];
+  onSave: (list: AlumniTicketBundle[]) => void;
+  bundles: AlumniTicketBundle[];
 }
 
-export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, products, onClose, onSave, bundles }) => {
+export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onClose, onSave, bundles }) => {
   const [name, setName] = useState(bundle?.name || "");
   const [description, setDescription] = useState(bundle?.description || "");
   const [imageUrl, setImageUrl] = useState(bundle?.imageUrl || "");
-  const [bundlePrice, setBundlePrice] = useState<number>(bundle?.bundlePrice || 0);
-  const [isActive, setIsActive] = useState(bundle?.isActive ?? true);
-  const [items, setItems] = useState<{ productId: string; quantity: number }[]>(
-    bundle?.items || [{ productId: products[0]?.id || "", quantity: 1 }]
+  const [ticketPrice, setTicketPrice] = useState<number>(bundle?.ticketPrice || 150000);
+  const [totalPrice, setTotalPrice] = useState<number>(bundle?.totalPrice || 0);
+  const [items, setItems] = useState<AlumniTicketBundleItem[]>(
+    bundle?.items || [{ name: "", quantity: 1, imageUrl: "" }]
   );
 
-  const originalPrice = items.reduce((acc, item) => {
-    const product = products.find((p) => p.id === item.productId);
-    return acc + (product?.price || 0) * item.quantity;
-  }, 0);
-
   const addItem = () => {
-    setItems([...items, { productId: products[0]?.id || "", quantity: 1 }]);
+    setItems([...items, { name: "", quantity: 1, imageUrl: "" }]);
   };
 
   const removeItem = (index: number) => {
@@ -37,12 +31,12 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, prod
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: "productId" | "quantity", value: string | number) => {
+  const updateItem = (index: number, field: keyof AlumniTicketBundleItem, value: string | number) => {
     const newItems = [...items];
-    if (field === "productId") {
-      newItems[index].productId = value as string;
+    if (field === "quantity") {
+      newItems[index] = { ...newItems[index], [field]: Math.max(1, Number(value)) };
     } else {
-      newItems[index].quantity = Math.max(1, Number(value));
+      newItems[index] = { ...newItems[index], [field]: value as string };
     }
     setItems(newItems);
   };
@@ -50,19 +44,17 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, prod
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validItems = items.filter((item) => item.productId);
+    const validItems = items.filter((item) => item.name.trim());
     if (validItems.length === 0 || !name.trim()) return;
 
-    const bundleData: ProductBundle = {
-      id: bundle?.id || "bundle-" + Date.now(),
+    const bundleData: AlumniTicketBundle = {
+      id: bundle?.id || "ticket-alumni-bundle-" + Date.now(),
       name: name.trim(),
       description: description.trim(),
-      imageUrl,
+      ticketPrice: Number(ticketPrice),
+      totalPrice: Number(totalPrice),
       items: validItems,
-      originalPrice,
-      bundlePrice: Number(bundlePrice),
-      isActive,
-      createdAt: bundle?.createdAt || new Date().toISOString()
+      imageUrl: imageUrl || validItems[0]?.imageUrl || ""
     };
 
     const newList = bundle
@@ -71,7 +63,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, prod
 
     onSave(newList);
     localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
-    syncBundleToFirebase(bundleData).catch((err) => console.warn(err));
+    syncAlumniTicketBundleToFirebase(bundleData).catch((err) => console.warn(err));
     onClose();
   };
 
@@ -101,7 +93,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, prod
           </div>
 
           <div>
-            <label className="block text-neutral-500 mb-1">Foto Bundling *</label>
+            <label className="block text-neutral-500 mb-1">Foto Bundling</label>
             <div className="flex gap-3 items-center">
               {imageUrl && <img src={imageUrl} alt="Preview" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />}
               <input type="file" accept="image/*" onChange={(e) => {
@@ -117,51 +109,51 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, prod
           {/* Items */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-neutral-700">Produk dalam Bundling *</label>
+              <label className="text-xs font-bold text-neutral-700">Item dalam Bundling *</label>
               <button type="button" onClick={addItem} className="text-neutral-900 hover:text-neutral-600 flex items-center gap-1 text-[11px] font-semibold">
-                <Plus size={12} /> Tambah
+                <Plus size={12} /> Tambah Item
               </button>
             </div>
-            {items.map((item, idx) => {
-              const product = products.find((p) => p.id === item.productId);
-              return (
-                <div key={idx} className="flex gap-2 items-center">
-                  <select
-                    value={item.productId}
-                    onChange={(e) => updateItem(idx, "productId", e.target.value)}
-                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-neutral-900"
-                  >
-                    <option value="">Pilih Produk</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} — Rp {p.price.toLocaleString("id-ID")}</option>
-                    ))}
-                  </select>
+            {items.map((item, idx) => (
+              <div key={idx} className="space-y-1.5 p-2.5 bg-neutral-50 rounded-xl border border-neutral-200">
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="Nama item (misal: Keychain Ball & Dice)"
+                    value={item.name}
+                    onChange={(e) => updateItem(idx, "name", e.target.value)}
+                    className="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-neutral-900"
+                  />
                   <input
                     type="number"
                     min={1}
                     value={item.quantity}
                     onChange={(e) => updateItem(idx, "quantity", e.target.value)}
-                    className="w-16 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-center text-neutral-900"
+                    className="w-16 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-center text-neutral-900"
                   />
-                  <button type="button" onClick={() => removeItem(idx)} disabled={items.length <= 1} className="p-2 text-neutral-400 hover:text-red-500 disabled:opacity-30">
+                  <button type="button" onClick={() => removeItem(idx)} disabled={items.length <= 1} className="p-1.5 text-neutral-400 hover:text-red-500 disabled:opacity-30">
                     <Trash2 size={14} />
                   </button>
                 </div>
-              );
-            })}
-            <p className="text-[11px] text-neutral-400">Harga normal: Rp {originalPrice.toLocaleString("id-ID")}</p>
+                <input
+                  type="url"
+                  placeholder="URL gambar item (opsional)"
+                  value={item.imageUrl || ""}
+                  onChange={(e) => updateItem(idx, "imageUrl", e.target.value)}
+                  className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-1.5 text-[11px] text-neutral-500"
+                />
+              </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-neutral-500 mb-1">Harga Bundling (IDR) *</label>
-              <input type="number" required value={bundlePrice} onChange={(e) => setBundlePrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
+              <label className="block text-neutral-500 mb-1">Harga Tiket (IDR) *</label>
+              <input type="number" required value={ticketPrice} onChange={(e) => setTicketPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
             </div>
-            <div className="flex items-end pb-1">
-              <label className="flex items-center gap-2 cursor-pointer text-neutral-700">
-                <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-neutral-900 w-4 h-4" />
-                Aktif
-              </label>
+            <div>
+              <label className="block text-neutral-500 mb-1">Harga Total Bundle (IDR) *</label>
+              <input type="number" required value={totalPrice} onChange={(e) => setTotalPrice(Number(e.target.value))} className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 sm:py-3 text-neutral-900" />
             </div>
           </div>
         </form>
