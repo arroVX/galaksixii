@@ -121,10 +121,32 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
             <div className="flex gap-3 items-center">
               {imageUrl && <img src={imageUrl} alt="Preview" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />}
               <input type="file" accept="image/*" onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
+                const file = e.target.files?.[0];
+                if (file) {
                   const reader = new FileReader();
-                  reader.onloadend = () => setImageUrl(reader.result as string);
-                  reader.readAsDataURL(e.target.files[0]);
+                  reader.onloadend = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement("canvas");
+                      let width = img.width;
+                      let height = img.height;
+                      const MAX_SIZE = 800;
+                      if (width > height && width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                      } else if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                      }
+                      canvas.width = width;
+                      canvas.height = height;
+                      const ctx = canvas.getContext("2d");
+                      ctx?.drawImage(img, 0, 0, width, height);
+                      setImageUrl(canvas.toDataURL("image/webp", 0.7));
+                    };
+                    img.src = reader.result as string;
+                  };
+                  reader.readAsDataURL(file);
                 }
               }} className="w-full text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 cursor-pointer" />
             </div>
