@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import { Product } from "@/types/merch";
-import { Plus, Edit3, Trash2, Package } from "lucide-react";
+import { Plus, Edit3, Trash2, Package, AlertTriangle, X } from "lucide-react";
 import { AdminProductModal } from "./AdminProductModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { deleteProductFromFirebase } from "@/lib/firebaseService";
+import { syncAllProductsToFirebase, deleteProductFromFirebase } from "@/lib/firebaseService";
 
 interface AdminProductsProps {
   products: Product[];
@@ -17,6 +17,27 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = (newList: Product[]) => {
+    setSyncError(null);
+    setProducts(newList);
+    localStorage.setItem("gala_merch_products", JSON.stringify(newList));
+    setSaving(true);
+    syncAllProductsToFirebase(newList)
+      .then((r) => {
+        if (!r.rtdbOk && !r.firestoreOk) {
+          setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin.");
+        } else if (!r.rtdbOk || !r.firestoreOk) {
+          setSyncError("Sinkronisasi sebagian berhasil. Coba refresh halaman.");
+        }
+      })
+      .catch((err) => {
+        console.error("Sync error:", err);
+        setSyncError("Gagal menyimpan ke Firebase. Pastikan koneksi stabil dan Anda login sebagai admin.");
+      })
+      .finally(() => setSaving(false));
+  };
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -36,9 +57,11 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
     <div className="space-y-4">
       {syncError && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3 text-xs">
-          <span className="text-red-500 shrink-0 mt-0.5">⚠</span>
+          <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
           <p className="text-red-700 flex-1">{syncError}</p>
-          <button onClick={() => setSyncError(null)} className="text-red-400 hover:text-red-600 shrink-0 text-sm font-bold">×</button>
+          <button onClick={() => setSyncError(null)} className="text-red-400 hover:text-red-600 shrink-0">
+            <X size={14} />
+          </button>
         </div>
       )}
 
@@ -97,7 +120,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
         <AdminProductModal
           product={editingProduct}
           onClose={() => setIsModalOpen(false)}
-          onSave={(updatedList) => setProducts(updatedList)}
+          onSave={handleSave}
           products={products}
         />
       )}
@@ -105,21 +128,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
       <ConfirmModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={async () => {
+        onConfirm={() => {
           if (deleteTarget) {
-            try {
-              const result = await deleteProductFromFirebase(deleteTarget);
-              if (!result.rtdbOk && !result.firestoreOk) {
-                setSyncError("Gagal menghapus dari database. Pastikan Anda login sebagai admin.");
-                return;
-              }
-              const newList = products.filter((p) => p.id !== deleteTarget);
-              setProducts(newList);
-              localStorage.setItem("gala_merch_products", JSON.stringify(newList));
-            } catch (err) {
-              console.error("Delete product error:", err);
-              setSyncError("Gagal menghapus dari database. Periksa koneksi internet.");
-            }
+            const newList = products.filter((p) => p.id !== deleteTarget);
+            handleSave(newList);
           }
         }}
         title="Hapus Merchandise"

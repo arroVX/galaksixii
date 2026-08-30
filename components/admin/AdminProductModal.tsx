@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Product, StockType } from "@/types/merch";
-import { syncProductToFirebase } from "@/lib/firebaseService";
 import { Save, X } from "lucide-react";
 
 interface AdminProductModalProps {
@@ -24,13 +23,9 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
   const [poQuotaTotal, setPoQuotaTotal] = useState<number>(product?.poQuotaTotal || 50);
   const [sizesInput, setSizesInput] = useState(product?.variants?.sizes?.join(", ") || "Standard");
   const [colorsInput, setColorsInput] = useState(product?.variants?.colors?.join(", ") || "White, Black");
-  const [saving, setSaving] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setSyncError(null);
 
     const sizes = sizesInput.split(",").map((s) => s.trim()).filter(Boolean);
     const colors = colorsInput.split(",").map((c) => c.trim()).filter(Boolean);
@@ -77,23 +72,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
       newList = [productData, ...products];
     }
 
-    try {
-      const result = await syncProductToFirebase(productData);
-      if (!result.rtdbOk && !result.firestoreOk) {
-        setSyncError("Gagal menyimpan ke database Firebase. Pastikan Anda login sebagai admin (email: admin@galamerch.com) dan koneksi internet stabil.");
-        setSaving(false);
-        return;
-      }
-      // Sync berhasil — update state & localStorage
-      onSave(newList);
-      localStorage.setItem("gala_merch_products", JSON.stringify(newList));
-      onClose();
-    } catch (err) {
-      console.error("Sync product error:", err);
-      setSyncError("Gagal menyimpan ke database. Periksa koneksi internet dan pastikan Anda login sebagai admin.");
-    } finally {
-      setSaving(false);
-    }
+    onSave(newList);
+    onClose();
   };
 
   return (
@@ -187,22 +167,11 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
           </div>
         </form>
 
-        {/* Sync error */}
-        {syncError && (
-          <div className="mx-4 sm:mx-6 mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-600 text-[11px] rounded-lg shrink-0">
-            {syncError}
-          </div>
-        )}
-
         {/* Footer - fixed */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-neutral-100 flex justify-end gap-2 shrink-0" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-          <button type="button" onClick={onClose} disabled={saving} className="px-4 py-2.5 sm:py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold disabled:opacity-50">Batal</button>
-          <button type="submit" form="product-form" disabled={saving} className="px-5 py-2.5 sm:py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5 disabled:opacity-50">
-            {saving ? (
-              <><span className="material-symbols-outlined animate-spin text-[14px]">sync</span> Menyimpan...</>
-            ) : (
-              <><Save size={14} /> Simpan</>
-            )}
+          <button type="button" onClick={onClose} className="px-4 py-2.5 sm:py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-xl font-semibold">Batal</button>
+          <button type="submit" form="product-form" className="px-5 py-2.5 sm:py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-semibold flex items-center gap-1.5">
+            <Save size={14} /> Simpan
           </button>
         </div>
       </div>

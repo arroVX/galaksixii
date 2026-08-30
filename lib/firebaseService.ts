@@ -92,6 +92,52 @@ export async function syncProductToFirebase(product: Product): Promise<SyncResul
 }
 
 /**
+ * Menyinkronkan SELURUH daftar produk ke Firebase.
+ * Digunakan untuk bulk replace/sync setelah operasi CRUD produk.
+ */
+export async function syncAllProductsToFirebase(products: Product[]): Promise<SyncResult> {
+  if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
+
+  const cleanList = stripUndefined(products);
+
+  // --- RTDB: replace-all ---
+  const rtdbOk = await withRetry(async () => {
+    if (!rtdb) throw new Error("RTDB not configured");
+    const data: Record<string, Product> = {};
+    cleanList.forEach((p) => { data[p.id] = p; });
+    await set(ref(rtdb, "products"), data);
+    console.log(`✓ RTDB: ${cleanList.length} produk terkirim`);
+  });
+
+  // --- Firestore: tulis satu per satu ---
+  let firestoreOk = true;
+  if (db) {
+    for (const product of cleanList) {
+      const ok = await withRetry(async () => {
+        if (!db) throw new Error("Firestore not configured");
+        await setDoc(doc(db, "products", product.id), product);
+      });
+      if (!ok) {
+        console.error(`✗ Firestore gagal tulis produk ${product.id}`);
+        firestoreOk = false;
+      }
+    }
+    // Hapus dokumen Firestore yang tidak ada di list baru
+    try {
+      const snapshot = await getDocs(collection(db, "products"));
+      for (const docSnap of snapshot.docs) {
+        if (!cleanList.some((p) => p.id === docSnap.id)) {
+          await deleteDoc(doc(db, "products", docSnap.id)).catch(() => {});
+        }
+      }
+    } catch { /* skip cleanup errors */ }
+  }
+
+  console.log(`✓ syncAllProducts: RTDB=${rtdbOk ? "ok" : "fail"}, Firestore=${firestoreOk ? "ok" : "fail"}`);
+  return { rtdbOk, firestoreOk };
+}
+
+/**
  * Mengambil seluruh data transaksi pesanan dari Cloud Firestore & Realtime Database
  */
 export async function fetchOrdersFromFirebase(): Promise<Order[]> {
