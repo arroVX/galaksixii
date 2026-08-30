@@ -6,8 +6,7 @@ import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
-import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
-import { fetchAlumniTicketBundlesFromFirebase, seedAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
+import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 
 interface AdminDashboardProps {
   products: Product[];

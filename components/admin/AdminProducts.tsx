@@ -16,6 +16,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -33,6 +34,14 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
 
   return (
     <div className="space-y-4">
+      {syncError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3 text-xs">
+          <span className="text-red-500 shrink-0 mt-0.5">⚠</span>
+          <p className="text-red-700 flex-1">{syncError}</p>
+          <button onClick={() => setSyncError(null)} className="text-red-400 hover:text-red-600 shrink-0 text-sm font-bold">×</button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
           <Package size={16} /> Katalog Merchandise ({products.length})
@@ -96,12 +105,21 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
       <ConfirmModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deleteTarget) {
-            const newList = products.filter((p) => p.id !== deleteTarget);
-            setProducts(newList);
-            localStorage.setItem("gala_merch_products", JSON.stringify(newList));
-            deleteProductFromFirebase(deleteTarget).catch((err) => console.warn(err));
+            try {
+              const result = await deleteProductFromFirebase(deleteTarget);
+              if (!result.rtdbOk && !result.firestoreOk) {
+                setSyncError("Gagal menghapus dari database. Pastikan Anda login sebagai admin.");
+                return;
+              }
+              const newList = products.filter((p) => p.id !== deleteTarget);
+              setProducts(newList);
+              localStorage.setItem("gala_merch_products", JSON.stringify(newList));
+            } catch (err) {
+              console.error("Delete product error:", err);
+              setSyncError("Gagal menghapus dari database. Periksa koneksi internet.");
+            }
           }
         }}
         title="Hapus Merchandise"

@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { AlumniTicketSelector } from "@/components/AlumniTicketSelector";
-import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 import { AlumniTicketBundle } from "@/types/merch";
-import { fetchAlumniTicketBundlesFromFirebase, seedAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
+import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 

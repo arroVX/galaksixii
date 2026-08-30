@@ -6,29 +6,16 @@ import { Navbar } from "@/components/Navbar";
 import { ProductModal } from "@/components/ProductModal";
 import { AdminDashboard } from "@/components/admin";
 import { Product } from "@/types/merch";
-import { INITIAL_PRODUCTS } from "@/data/mockProducts";
 import { fetchProductsFromFirebase } from "@/lib/firebaseService";
 
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 
-const loadInitialProducts = (): Product[] => {
-  if (typeof window === "undefined") return [];
-  const saved = localStorage.getItem("gala_merch_products");
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved) as Product[];
-      if (parsed.length > 0) return parsed;
-    } catch { /* ignore */ }
-  }
-  return [];
-};
-
 export default function MerchandisePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToCart } = useCart();
-  const [products, setProducts] = useState<Product[]>(loadInitialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [activeView, setActiveView] = useState<"shop" | "admin">("shop");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
