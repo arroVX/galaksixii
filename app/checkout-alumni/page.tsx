@@ -19,6 +19,7 @@ interface CheckoutData {
   ticketPrice: number;
   totalPrice: number;
   bundleItems: AlumniTicketBundleItem[];
+  isAlumniOnly?: boolean;
   verificationType: AlumniVerificationType;
   verificationFileUrl: string;
   verificationFileName: string;
@@ -340,11 +341,6 @@ export default function CheckoutAlumniPage() {
             </div>
           </div>
 
-          {/* 2. VERIFIKASI ALUMNI */}
-          <div className="space-y-4 pt-4 border-t border-outline-variant/30">
-            <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">verified_user</span> Verifikasi Identitas (Wajib)
-            </h4>
           {/* 2. ALUMNI VERIFICATION */}
           {checkoutData.isAlumniOnly !== false && (
             <div className="space-y-4 pt-4 border-t border-outline-variant/30">
@@ -378,7 +374,7 @@ export default function CheckoutAlumniPage() {
                 </div>
 
                 <AlumniVerificationUpload
-                  onUploadComplete={(url, name) => {
+                  onFileChange={(url, name) => {
                     setVerificationFileUrl(url);
                     setVerificationFileName(name);
                     clearError("verificationFile");
