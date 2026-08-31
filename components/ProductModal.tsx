@@ -28,6 +28,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
       ? Math.max(1, product.stockCount || 1)
       : 99;
 
+  // Tentukan seluruh gambar yang ada
+  const allImages = Array.from(new Set([product?.imageUrl, ...(product?.images || [])])).filter(Boolean) as string[];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   // Reset pilihan saat produk berganti — pola "adjust state during render", bukan effect.
   const [prevProductId, setPrevProductId] = useState<string | null>(null);
   if (product && product.id !== prevProductId) {
@@ -35,9 +39,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     setQuantity(1);
     setSelectedSize(product.variants?.sizes?.[0] ?? "Standard");
     setSelectedColor(product.variants?.colors?.[0] ?? "Standard");
+    setCurrentImageIndex(0);
   }
 
   if (!product) return null;
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
 
   const isPO = product.stockType === "PRE_ORDER";
   
@@ -79,16 +92,53 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
           <div className="w-full lg:w-1/2 shrink-0">
             <div className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group">
               <img
-                src={product.imageUrl}
+                src={allImages[currentImageIndex] || product.imageUrl}
                 alt={product.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               
+              {allImages.length > 1 && (
+                <>
+                  <button onClick={handlePrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-colors opacity-0 group-hover:opacity-100 z-10">
+                    <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                  </button>
+                  <button onClick={handleNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-colors opacity-0 group-hover:opacity-100 z-10">
+                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                  </button>
+                  
+                  {/* Dots */}
+                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                    {allImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentImageIndex(idx)}
+                        className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
               {/* Price Tag Capsule */}
-              <div className="absolute bottom-5 right-5 bg-[#111] text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-xl">
+              <div className="absolute bottom-5 right-5 bg-[#111] text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-xl z-10">
                 {formattedPrice}
               </div>
             </div>
+
+            {/* Thumbnails below image */}
+            {allImages.length > 1 && (
+              <div className="flex gap-3 mt-4 overflow-x-auto hide-scrollbar pb-2 px-1">
+                {allImages.map((img, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${idx === currentImageIndex ? 'border-slate-800 opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  >
+                    <img src={img} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: Product Details */}

@@ -16,7 +16,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
   const [category, setCategory] = useState(product?.category || "Perlengkapan");
   const [price, setPrice] = useState<number>(product?.price || 35000);
   const [description, setDescription] = useState(product?.description || "");
-  const [imageUrl, setImageUrl] = useState(product?.imageUrl || "");
+  const [images, setImages] = useState<string[]>(product?.images && product.images.length > 0 ? product.images : (product?.imageUrl ? [product.imageUrl] : []));
   const [stockType, setStockType] = useState<StockType>(product?.stockType || "READY");
   const [stockCount, setStockCount] = useState<number>(product?.stockCount || 50);
   const [poReleaseDate, setPoReleaseDate] = useState(product?.poReleaseDate || "2026-08-30");
@@ -40,8 +40,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
               category,
               price: Number(price),
               description,
-              imageUrl,
-              images: [imageUrl],
+              imageUrl: images[0] || "",
+              images,
               stockType,
               stockCount: Number(stockCount),
               poReleaseDate: stockType === "PRE_ORDER" ? poReleaseDate : undefined,
@@ -58,8 +58,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
         category,
         price: Number(price),
         description,
-        imageUrl,
-        images: [imageUrl],
+        imageUrl: images[0] || "",
+        images,
         stockType,
         stockCount: Number(stockCount),
         poReleaseDate: stockType === "PRE_ORDER" ? poReleaseDate : undefined,
@@ -74,6 +74,10 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
     onSave(newList);
     onClose();
+  };
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
   };
 
   return (
@@ -103,6 +107,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
                 <option value="Perlengkapan">Perlengkapan</option>
                 <option value="Aksesoris & Stiker">Aksesoris & Stiker</option>
                 <option value="Topi & Tas">Topi & Tas</option>
+                <option value="Apparel">Apparel</option>
               </select>
             </div>
             <div>
@@ -118,11 +123,20 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
           <div>
             <label className="block text-neutral-500 mb-1">Foto Produk *</label>
-            <div className="flex gap-3 items-center">
-              {imageUrl && <img src={imageUrl} alt="Preview" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />}
-              <input type="file" accept="image/*" onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2 flex-wrap">
+                {images.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img src={img} alt={`Preview ${idx + 1}`} className="w-12 h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />
+                    <button type="button" onClick={() => removeImage(idx)} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <input type="file" accept="image/*" multiple onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                files.forEach((file) => {
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     const img = new Image();
@@ -142,12 +156,12 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
                       canvas.height = height;
                       const ctx = canvas.getContext("2d");
                       ctx?.drawImage(img, 0, 0, width, height);
-                      setImageUrl(canvas.toDataURL("image/webp", 0.7));
+                      setImages(prev => [...prev, canvas.toDataURL("image/webp", 0.7)]);
                     };
                     img.src = reader.result as string;
                   };
                   reader.readAsDataURL(file);
-                }
+                });
               }} className="w-full text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 cursor-pointer" />
             </div>
           </div>
