@@ -5,6 +5,7 @@ import { Product } from "@/types/merch";
 import { Plus, Edit3, Trash2, Package, AlertTriangle, X } from "lucide-react";
 import { AdminProductModal } from "./AdminProductModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AlertModal } from "@/components/ui/AlertModal";
 import { syncAllProductsToFirebase, deleteProductFromFirebase } from "@/lib/firebaseService";
 
 interface AdminProductsProps {
@@ -19,6 +20,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
   const [syncError, setSyncError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
   const handleSave = (newList: Product[]) => {
     setSyncError(null);
     setProducts(newList);
@@ -30,6 +33,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
           setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin.");
         } else if (!r.rtdbOk || !r.firestoreOk) {
           setSyncError("Sinkronisasi sebagian berhasil. Coba refresh halaman.");
+        } else {
+          setSaveSuccess(true);
         }
       })
       .catch((err) => {
@@ -172,6 +177,16 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
         confirmText="Ya, Hapus"
         cancelText="Batal"
         variant="danger"
+      />
+
+      <AlertModal
+        isOpen={saveSuccess}
+        onClose={() => setSaveSuccess(false)}
+        title="Berhasil Disimpan"
+        message="Katalog produk berhasil disimpan ke database Firebase."
+        icon="check_circle"
+        iconColor="emerald"
+        buttonText="Tutup"
       />
     </div>
   );

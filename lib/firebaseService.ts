@@ -1,5 +1,5 @@
 import { db, rtdb } from "./firebase";
-import { doc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, collection, getDocs, query, where, writeBatch } from "firebase/firestore";
 import { ref, set, remove, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
 import { Order, Product, AlumniTicketBundle, GalleryItem, AlumniTicket } from "@/types/merch";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
@@ -109,28 +109,28 @@ export async function syncAllProductsToFirebase(products: Product[]): Promise<Sy
     console.log(`✓ RTDB: ${cleanList.length} produk terkirim`);
   });
 
-  // --- Firestore: tulis satu per satu ---
+  // --- Firestore: tulis dengan batch untuk mempercepat ---
   let firestoreOk = true;
   if (db) {
-    for (const product of cleanList) {
-      const ok = await withRetry(async () => {
-        if (!db) throw new Error("Firestore not configured");
-        await setDoc(doc(db, "products", product.id), product);
-      });
-      if (!ok) {
-        console.error(`✗ Firestore gagal tulis produk ${product.id}`);
-        firestoreOk = false;
-      }
-    }
-    // Hapus dokumen Firestore yang tidak ada di list baru
     try {
+      const batch = writeBatch(db);
+      for (const product of cleanList) {
+        batch.set(doc(db, "products", product.id), product);
+      }
+      
       const snapshot = await getDocs(collection(db, "products"));
       for (const docSnap of snapshot.docs) {
         if (!cleanList.some((p) => p.id === docSnap.id)) {
-          await deleteDoc(doc(db, "products", docSnap.id)).catch(() => {});
+          batch.delete(doc(db, "products", docSnap.id));
         }
       }
-    } catch { /* skip cleanup errors */ }
+      
+      await batch.commit();
+      console.log(`✓ Firestore: batch syncAllProducts berhasil`);
+    } catch (e) {
+      console.error(`✗ Firestore batch gagal:`, e);
+      firestoreOk = false;
+    }
   }
 
   console.log(`✓ syncAllProducts: RTDB=${rtdbOk ? "ok" : "fail"}, Firestore=${firestoreOk ? "ok" : "fail"}`);
@@ -357,28 +357,28 @@ export async function syncAllAlumniTicketBundlesToFirebase(bundles: AlumniTicket
     console.log(`✓ RTDB: ${cleanList.length} bundle terkirim`);
   });
 
-  // --- Firestore: tulis satu per satu ---
+  // --- Firestore: tulis dengan batch ---
   let firestoreOk = true;
   if (db) {
-    for (const bundle of cleanList) {
-      const ok = await withRetry(async () => {
-        if (!db) throw new Error("Firestore not configured");
-        await setDoc(doc(db, "alumniTicketBundles", bundle.id), bundle);
-      });
-      if (!ok) {
-        console.error(`✗ Firestore gagal tulis bundle ${bundle.id}`);
-        firestoreOk = false;
-      }
-    }
-    // Hapus dokumen Firestore yang tidak ada di list baru
     try {
+      const batch = writeBatch(db);
+      for (const bundle of cleanList) {
+        batch.set(doc(db, "alumniTicketBundles", bundle.id), bundle);
+      }
+      
       const snapshot = await getDocs(collection(db, "alumniTicketBundles"));
       for (const docSnap of snapshot.docs) {
         if (!cleanList.some((b) => b.id === docSnap.id)) {
-          await deleteDoc(doc(db, "alumniTicketBundles", docSnap.id)).catch(() => {});
+          batch.delete(doc(db, "alumniTicketBundles", docSnap.id));
         }
       }
-    } catch { /* skip cleanup errors */ }
+      
+      await batch.commit();
+      console.log(`✓ Firestore: batch syncAllAlumniTicketBundles berhasil`);
+    } catch (e) {
+      console.error(`✗ Firestore batch gagal:`, e);
+      firestoreOk = false;
+    }
   }
 
   console.log(`✓ syncAll: RTDB=${rtdbOk ? "ok" : "fail"}, Firestore=${firestoreOk ? "ok" : "fail"}`);

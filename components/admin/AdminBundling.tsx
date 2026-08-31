@@ -5,6 +5,7 @@ import { AlumniTicketBundle } from "@/types/merch";
 import { Plus, Edit3, Trash2, PackageOpen, AlertTriangle, X } from "lucide-react";
 import { AdminBundleModal } from "./AdminBundleModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AlertModal } from "@/components/ui/AlertModal";
 import { syncAllAlumniTicketBundlesToFirebase } from "@/lib/firebaseService";
 
 interface AdminBundlingProps {
@@ -19,6 +20,8 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
   const [saving, setSaving] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
   const handleSave = (newList: AlumniTicketBundle[]) => {
     setSyncError(null);
     setBundles(newList);
@@ -30,6 +33,8 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
           setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin (email: admin@galamerch.com).");
         } else if (!r.rtdbOk || !r.firestoreOk) {
           setSyncError("Sinkronisasi sebagian berhasil. Coba refresh halaman.");
+        } else {
+          setSaveSuccess(true);
         }
       })
       .catch((err) => {
@@ -182,6 +187,16 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
         confirmText="Ya, Hapus"
         cancelText="Batal"
         variant="danger"
+      />
+
+      <AlertModal
+        isOpen={saveSuccess}
+        onClose={() => setSaveSuccess(false)}
+        title="Berhasil Disimpan"
+        message="Bundling tiket dan merchandise berhasil disimpan ke database Firebase."
+        icon="check_circle"
+        iconColor="emerald"
+        buttonText="Tutup"
       />
     </div>
   );
