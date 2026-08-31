@@ -23,10 +23,10 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSave = (newList: AlumniTicketBundle[]) => {
-    // Pastikan orderIndex selalu diupdate berdasarkan urutan array saat ini
     const indexedList = newList.map((item, index) => ({
       ...item,
-      orderIndex: index
+      orderIndex: index,
+      updatedAt: Date.now()
     }));
     
     setSyncError(null);

@@ -274,8 +274,11 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
         const rtdbProducts = snapshot.val();
         Object.keys(rtdbProducts).forEach((id) => {
           const item = rtdbProducts[id] as Product;
-          if (item && item.id && !productsMap.has(item.id)) {
-            productsMap.set(item.id, item);
+          if (item && item.id) {
+            const existing = productsMap.get(item.id);
+            if (!existing || (item.updatedAt || 0) > (existing.updatedAt || 0)) {
+              productsMap.set(item.id, item);
+            }
           }
         });
       }
@@ -415,8 +418,11 @@ export async function fetchAlumniTicketBundlesFromFirebase(): Promise<AlumniTick
         const rtdbBundles = snapshot.val();
         Object.keys(rtdbBundles).forEach((id) => {
           const item = rtdbBundles[id] as AlumniTicketBundle;
-          if (item && item.id && !bundlesMap.has(item.id)) {
-            bundlesMap.set(item.id, item);
+          if (item && item.id) {
+            const existing = bundlesMap.get(item.id);
+            if (!existing || (item.updatedAt || 0) > (existing.updatedAt || 0)) {
+              bundlesMap.set(item.id, item);
+            }
           }
         });
       }

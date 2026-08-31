@@ -23,10 +23,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSave = (newList: Product[]) => {
-    // Pastikan orderIndex selalu diupdate berdasarkan urutan array saat ini
     const indexedList = newList.map((item, index) => ({
       ...item,
-      orderIndex: index
+      orderIndex: index,
+      updatedAt: Date.now()
     }));
     
     setSyncError(null);

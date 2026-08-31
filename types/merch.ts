@@ -33,7 +33,9 @@ export interface Product {
   createdAt?: string;
   rating?: number;
   soldCount?: number;
+  status?: "ACTIVE" | "INACTIVE";
   orderIndex?: number;
+  updatedAt?: number;
 }
 
 export interface PageSetting {
@@ -154,6 +156,7 @@ export interface AlumniTicketBundle {
   imageUrl?: string;
   orderIndex?: number;
   isAlumniOnly?: boolean;
+  updatedAt?: number;
 }
 
 export interface PageSetting {
