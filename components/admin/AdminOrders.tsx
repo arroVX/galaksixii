@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Order, OrderStatus } from "@/types/merch";
-import { syncOrderToFirebase, fetchOrdersFromFirebase } from "@/lib/firebaseService";
-import { Eye, Filter, TrendingUp, X, ImageIcon } from "lucide-react";
+import { Order, OrderStatus, AlumniTicket } from "@/types/merch";
+import { syncOrderToFirebase, fetchOrdersFromFirebase, fetchAllAlumniTicketsFromFirebase } from "@/lib/firebaseService";
+import { Eye, Filter, TrendingUp, X, ImageIcon, GraduationCap } from "lucide-react";
 
 const loadInitialOrders = (): Order[] => {
   if (typeof window === "undefined") return [];
@@ -16,8 +16,9 @@ const loadInitialOrders = (): Order[] => {
 
 export const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>(loadInitialOrders);
+  const [tickets, setTickets] = useState<Record<string, AlumniTicket>>({});
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [viewProofUrl, setViewProofUrl] = useState<string | null>(null);
+  const [viewProofUrl, setViewProofUrl] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     const loadFirebase = async () => {
@@ -35,6 +36,11 @@ export const AdminOrders: React.FC = () => {
             return combined;
           });
         }
+        
+        const fbTickets = await fetchAllAlumniTicketsFromFirebase();
+        const ticketsMap: Record<string, AlumniTicket> = {};
+        fbTickets.forEach(t => { ticketsMap[t.orderId] = t; });
+        setTickets(ticketsMap);
       } catch { /* ignore */ }
     };
     loadFirebase();
@@ -112,8 +118,13 @@ export const AdminOrders: React.FC = () => {
                     <option value="Selesai">Selesai</option>
                   </select>
                   {ord.paymentProofUrl ? (
-                    <button onClick={() => setViewProofUrl(ord.paymentProofUrl || null)} className="px-3 py-2 bg-neutral-100 text-neutral-700 rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-neutral-200 transition">
-                      <Eye size={12} /> Lihat Bukti
+                    <button onClick={() => setViewProofUrl({ url: ord.paymentProofUrl!, title: "Bukti Transfer" })} className="px-3 py-2 bg-neutral-100 text-neutral-700 rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-neutral-200 transition">
+                      <Eye size={12} /> Bukti TF
+                    </button>
+                  ) : null}
+                  {tickets[ord.id] && tickets[ord.id].verificationFileUrl && tickets[ord.id].verificationFileUrl !== "-" ? (
+                    <button onClick={() => setViewProofUrl({ url: tickets[ord.id].verificationFileUrl, title: tickets[ord.id].verificationType === "SKL" ? "Bukti SKL" : "Kartu Pelajar" })} className="px-3 py-2 bg-primary-container/20 text-primary rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-primary-container/40 transition">
+                      <GraduationCap size={12} /> {tickets[ord.id].verificationType === "SKL" ? "SKL" : "Kartu Pelajar"}
                     </button>
                   ) : null}
                 </div>
@@ -165,13 +176,20 @@ export const AdminOrders: React.FC = () => {
                     </td>
                     <td className="p-3 font-bold text-neutral-900">Rp {ord.totalPrice.toLocaleString("id-ID")}</td>
                     <td className="p-3">
-                      {ord.paymentProofUrl ? (
-                        <button onClick={() => setViewProofUrl(ord.paymentProofUrl || null)} className="px-3 py-2 bg-neutral-100 text-neutral-700 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-neutral-200 transition">
-                          <Eye size={11} /> Lihat
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-neutral-400">WA Direct</span>
-                      )}
+                      <div className="flex flex-col gap-1.5">
+                        {ord.paymentProofUrl ? (
+                          <button onClick={() => setViewProofUrl({ url: ord.paymentProofUrl!, title: "Bukti Transfer" })} className="px-3 py-1.5 bg-neutral-100 text-neutral-700 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-neutral-200 transition w-full">
+                            <Eye size={11} /> TF
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-neutral-400 text-center block">WA Direct</span>
+                        )}
+                        {tickets[ord.id] && tickets[ord.id].verificationFileUrl && tickets[ord.id].verificationFileUrl !== "-" ? (
+                          <button onClick={() => setViewProofUrl({ url: tickets[ord.id].verificationFileUrl, title: tickets[ord.id].verificationType === "SKL" ? "Bukti SKL" : "Kartu Pelajar" })} className="px-3 py-1.5 bg-primary-container/20 text-primary rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-primary-container/40 transition w-full">
+                            <GraduationCap size={11} /> {tickets[ord.id].verificationType === "SKL" ? "SKL" : "Pelajar"}
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="p-3">
                       <select value={ord.status} onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-2.5 text-sm font-semibold text-neutral-900 focus:outline-none">
@@ -198,11 +216,11 @@ export const AdminOrders: React.FC = () => {
               <X size={16} />
             </button>
             <h4 className="font-bold text-neutral-900 text-sm mb-4 flex items-center gap-2">
-              <ImageIcon size={16} /> Bukti Transfer
+              <ImageIcon size={16} /> {viewProofUrl.title}
             </h4>
             <div className="aspect-square rounded-xl overflow-hidden bg-neutral-100 flex items-center justify-center">
-              {(viewProofUrl.startsWith("data:") || viewProofUrl.startsWith("http")) ? (
-                <img src={viewProofUrl} alt="Bukti Transfer" className="w-full h-full object-contain" />
+              {(viewProofUrl.url.startsWith("data:") || viewProofUrl.url.startsWith("http")) ? (
+                <img src={viewProofUrl.url} alt={viewProofUrl.title} className="w-full h-full object-contain" />
               ) : (
                 <p className="text-xs text-neutral-400 text-center p-6">Bukti tidak dapat ditampilkan.</p>
               )}

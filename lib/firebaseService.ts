@@ -636,6 +636,46 @@ export async function fetchAlumniTicketsForUser(
 }
 
 /**
+ * Mengambil SELURUH tiket alumni (untuk Admin).
+ */
+export async function fetchAllAlumniTicketsFromFirebase(): Promise<AlumniTicket[]> {
+  const ticketsMap = new Map<string, AlumniTicket>();
+
+  if (!db && !rtdb) return [];
+
+  try {
+    if (db) {
+      const snap = await getDocs(collection(db, "alumniTickets"));
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() as AlumniTicket;
+        if (data && data.id) ticketsMap.set(data.id, data);
+      });
+    }
+  } catch (err) {
+    console.warn("Firestore fetch all alumni tickets error:", err);
+  }
+
+  try {
+    if (rtdb) {
+      const snap = await get(ref(rtdb, "alumniTickets"));
+      if (snap.exists()) {
+        const val = snap.val();
+        Object.keys(val).forEach((k) => {
+          const item = val[k] as AlumniTicket;
+          if (item && item.id && !ticketsMap.has(item.id)) ticketsMap.set(item.id, item);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("RTDB fetch all alumni tickets error:", err);
+  }
+
+  const result = Array.from(ticketsMap.values());
+  result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  return result;
+}
+
+/**
  * Settings
  */
 import { SiteSettings } from "@/types/merch";
