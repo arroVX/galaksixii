@@ -22,8 +22,17 @@ export default function MerchandisePage() {
 
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
-  // Sync dari Firebase setelah mount
   useEffect(() => {
+    let initial: Product[] = [];
+    const saved = localStorage.getItem("gala_merch_products");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Product[];
+        if (parsed.length > 0) initial = parsed;
+      } catch { /* ignore */ }
+    }
+    setProducts(initial);
+
     fetchProductsFromFirebase()
       .then((firebaseProducts) => {
         setProducts(firebaseProducts);
