@@ -60,22 +60,11 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
     setIsModalOpen(true);
   };
 
-  const handleMoveUp = (index: number) => {
-    if (index === 0) return;
+  const handleMoveTo = (currentIndex: number, newIndex: number) => {
+    if (currentIndex === newIndex) return;
     const newList = [...bundles];
-    const temp = newList[index];
-    newList[index] = newList[index - 1];
-    newList[index - 1] = temp;
-    newList.forEach((b, i) => (b.orderIndex = i));
-    handleSave(newList);
-  };
-
-  const handleMoveDown = (index: number) => {
-    if (index === bundles.length - 1) return;
-    const newList = [...bundles];
-    const temp = newList[index];
-    newList[index] = newList[index + 1];
-    newList[index + 1] = temp;
+    const [movedItem] = newList.splice(currentIndex, 1);
+    newList.splice(newIndex, 0, movedItem);
     newList.forEach((b, i) => (b.orderIndex = i));
     handleSave(newList);
   };
@@ -149,13 +138,18 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
                   <span className="text-xs font-bold text-neutral-900 ml-1.5">Rp {b.totalPrice.toLocaleString("id-ID")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="flex flex-col gap-0.5 mr-1">
-                    <button onClick={() => handleMoveUp(index)} disabled={index === 0} className="p-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Naik">
-                      <span className="material-symbols-outlined text-[12px] leading-none">expand_less</span>
-                    </button>
-                    <button onClick={() => handleMoveDown(index)} disabled={index === bundles.length - 1} className="p-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Turun">
-                      <span className="material-symbols-outlined text-[12px] leading-none">expand_more</span>
-                    </button>
+                  <div className="flex flex-col gap-0.5 mr-1 relative">
+                    <select
+                      value={index}
+                      onChange={(e) => handleMoveTo(index, Number(e.target.value))}
+                      className="appearance-none bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[11px] font-bold px-2 py-1.5 rounded outline-none border-none cursor-pointer pr-4 h-[34px]"
+                      title="Ubah Urutan"
+                    >
+                      {bundles.map((_, i) => (
+                        <option key={i} value={i}>#{i + 1}</option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined text-[12px] absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">expand_more</span>
                   </div>
                   <button onClick={() => openEditModal(b)} className="p-2.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition" title="Edit">
                     <Edit3 size={14} />
