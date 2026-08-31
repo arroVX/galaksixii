@@ -71,7 +71,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         {/* Tab Bar */}
-        <div className="flex items-center gap-1 bg-white border border-neutral-100 rounded-xl p-1 mb-6">
+        <div className="flex flex-nowrap items-center gap-1 bg-white border border-neutral-100 rounded-xl p-1 mb-6 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {tabs.map((tab) => (
             <button
               key={tab.key}

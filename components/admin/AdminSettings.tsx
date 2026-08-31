@@ -78,22 +78,22 @@ export const AdminSettings: React.FC = () => {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[600px]">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-neutral-100 text-xs font-bold text-neutral-400 uppercase tracking-wider">
-              <th className="py-3 px-4">Halaman</th>
-              <th className="py-3 px-4 text-center">Tampilkan di Navigasi</th>
-              <th className="py-3 px-4 text-center">Wajib Login (Kunci)</th>
+            <tr className="border-b border-neutral-100 text-[10px] sm:text-xs font-bold text-neutral-400 uppercase tracking-wider">
+              <th className="py-3 px-2 sm:px-4">Halaman</th>
+              <th className="py-3 px-2 sm:px-4 text-center">Tampil</th>
+              <th className="py-3 px-2 sm:px-4 text-center">Wajib Login</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {pages.map((page) => (
               <tr key={page.key} className="hover:bg-neutral-50/50 transition-colors">
-                <td className="py-4 px-4">
-                  <div className="font-semibold text-neutral-800 text-sm">{page.label}</div>
-                  <div className="text-xs text-neutral-500 font-mono mt-1">/{page.key === "tiketAlumni" ? "tiket-alumni" : page.key}</div>
+                <td className="py-4 px-2 sm:px-4">
+                  <div className="font-semibold text-neutral-800 text-[13px] sm:text-sm leading-tight sm:leading-normal">{page.label}</div>
+                  <div className="text-[10px] sm:text-xs text-neutral-500 font-mono mt-1">/{page.key === "tiketAlumni" ? "tiket-alumni" : page.key}</div>
                 </td>
-                <td className="py-4 px-4">
+                <td className="py-4 px-2 sm:px-4">
                   <div className="flex justify-center">
                     <button
                       onClick={() => handleToggle(page.key, "visible")}
@@ -109,7 +109,7 @@ export const AdminSettings: React.FC = () => {
                     </button>
                   </div>
                 </td>
-                <td className="py-4 px-4">
+                <td className="py-4 px-2 sm:px-4">
                   <div className="flex justify-center">
                     <button
                       onClick={() => handleToggle(page.key, "locked")}
