@@ -29,9 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const mounted = useMounted();
 
   const navLinks = [
-    { name: "Merchandise", path: "/merchandise" },
-    { name: "Keranjang", path: "/keranjang" },
     { name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true },
+    { name: "Keranjang", path: "/keranjang" },
     { name: "Cek Pesanan", path: "/orders" }
   ];
 
@@ -42,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Top App-Bar */}
       <div className="lg:hidden w-full flex justify-center sticky top-0 z-50 px-4 pb-2">
         <header className="w-full max-w-md bg-white/90 backdrop-blur-md border border-neutral-100 rounded-b-2xl pl-4 pr-2 py-3 shadow-sm flex justify-between items-center">
-          <Link href="/merchandise" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
+          <Link href="/tiket-alumni" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
             <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} priority className="h-8 w-auto max-w-[140px] object-contain" />
           </Link>
           <div className="flex items-center">
@@ -78,9 +77,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               : "bg-white/90 backdrop-blur-md border-neutral-100"
           }`}
         >
-          {/* ── Left: Logo ── */}
           <Link
-            href="/merchandise"
+            href="/tiket-alumni"
             className="flex items-center shrink-0 transition-transform duration-200 hover:scale-105"
           >
             <Image
