@@ -180,13 +180,38 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                     <Trash2 size={14} />
                   </button>
                 </div>
-                <input
-                  type="text"
-                  placeholder="URL gambar item (opsional)"
-                  value={item.imageUrl || ""}
-                  onChange={(e) => updateItem(idx, "imageUrl", e.target.value)}
-                  className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-1.5 text-[11px] text-neutral-500"
-                />
+                <div className="flex gap-2 items-center mt-1.5">
+                  {item.imageUrl && <img src={item.imageUrl} alt="" className="w-8 h-8 rounded-lg bg-neutral-200 object-cover shrink-0" />}
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        const img = new Image();
+                        img.onload = () => {
+                          const canvas = document.createElement("canvas");
+                          let width = img.width;
+                          let height = img.height;
+                          const MAX_SIZE = 400; // Smaller size for items
+                          if (width > height && width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                          } else if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                          }
+                          canvas.width = width;
+                          canvas.height = height;
+                          const ctx = canvas.getContext("2d");
+                          ctx?.drawImage(img, 0, 0, width, height);
+                          updateItem(idx, "imageUrl", canvas.toDataURL("image/webp", 0.7));
+                        };
+                        img.src = reader.result as string;
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }} className="text-[10px] text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-white file:text-neutral-700 hover:file:bg-neutral-100 cursor-pointer w-full" />
+                </div>
               </div>
             ))}
           </div>

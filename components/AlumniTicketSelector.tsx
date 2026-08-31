@@ -80,11 +80,17 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
             <div className="mt-6 grid grid-cols-3 gap-2">
               {bundle.items.map((item, i) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-col items-center gap-1.5">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-full aspect-square object-cover rounded-xl bg-slate-50"
-                  />
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full aspect-square object-cover rounded-xl bg-slate-50"
+                    />
+                  ) : (
+                    <div className="w-full aspect-square rounded-xl bg-slate-100 flex items-center justify-center text-slate-300">
+                      <span className="material-symbols-outlined text-[24px]">image</span>
+                    </div>
+                  )}
                   <span className="text-[11px] font-bold text-slate-500 text-center leading-tight line-clamp-2">{item.name}</span>
                 </div>
               ))}
@@ -117,7 +123,13 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
               <div className="space-y-2.5">
                 {bundle.items.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
-                    <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name} className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-300">
+                        <span className="material-symbols-outlined text-[16px]">image</span>
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-slate-900 truncate">{item.name}</p>
                       <p className="text-[10px] text-slate-400">Qty: {item.quantity}</p>
