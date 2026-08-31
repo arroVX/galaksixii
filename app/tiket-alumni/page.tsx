@@ -138,15 +138,7 @@ export default function AlumniTicketPage() {
           ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <Link
-            href="/merchandise"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 font-bold text-xs rounded-full shadow-sm transition"
-          >
-            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-            <span>Kembali ke Merchandise Umum</span>
-          </Link>
-        </div>
+
       </main>
 
       {selectedBundle && (

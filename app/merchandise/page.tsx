@@ -27,9 +27,15 @@ function MerchandiseContent() {
 
   useEffect(() => {
     if (!settingsLoading && siteSettings.merchandise.locked && !user) {
-      router.push("/login");
+      router.replace("/login");
     }
   }, [settingsLoading, siteSettings.merchandise.locked, user, router]);
+
+  useEffect(() => {
+    if (!settingsLoading && !siteSettings.merchandise.visible && activeView !== "admin") {
+      router.replace("/tiket-alumni");
+    }
+  }, [settingsLoading, siteSettings.merchandise.visible, activeView, router]);
 
   useEffect(() => {
     let initial: Product[] = [];
@@ -89,14 +95,8 @@ function MerchandiseContent() {
   });
 
   if (!settingsLoading && !siteSettings.merchandise.visible && activeView !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 text-neutral-500 flex-col gap-4">
-        <span className="material-symbols-outlined text-[48px]">store_off</span>
-        <h2 className="text-xl font-bold">Halaman Tidak Tersedia</h2>
-        <p className="text-sm">Toko merchandise sedang ditutup atau belum tersedia.</p>
-        <button onClick={() => router.push("/tiket-alumni")} className="mt-4 px-4 py-2 bg-neutral-900 text-white rounded-lg">Kembali ke Tiket</button>
-      </div>
-    );
+    // Return null while redirecting via useEffect
+    return null;
   }
 
   return (
