@@ -45,7 +45,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
     router.push("/checkout-alumni");
   };
 
-  if (!user) return null;
+
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center bg-[#F8F8F6] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">

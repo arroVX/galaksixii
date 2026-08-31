@@ -47,46 +47,6 @@ export default function AlumniTicketPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center p-4 sm:p-6 py-16">
-          <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl max-w-md w-full p-8 shadow-sm text-center space-y-5 animate-in fade-in">
-            <div className="w-16 h-16 rounded-full bg-primary text-on-primary mx-auto flex items-center justify-center shadow-md">
-              <span className="material-symbols-outlined text-[28px]">verified_user</span>
-            </div>
-
-            <h2 className="text-2xl font-bold font-headline-md text-primary">
-              Akses Terbatas - Khusus Pelanggan
-            </h2>
-
-            <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed font-medium">
-              Halaman Tiket & Bundling hanya dapat diakses oleh pelanggan yang sudah login. Silakan masuk ke akun Anda terlebih dahulu.
-            </p>
-
-            <div className="pt-3 space-y-3">
-              <Link
-                href="/login"
-                className="w-full py-3 px-6 rounded-full bg-primary hover:bg-neutral-800 text-on-primary font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 transition transform active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-                <span>Masuk ke Akun Sekarang</span>
-              </Link>
-
-              <Link
-                href="/merchandise"
-                className="block text-xs text-on-surface-variant hover:text-primary font-semibold"
-              >
-                ← Kembali ke Merchandise Umum
-              </Link>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   const handleOpenSelector = (bundle: AlumniTicketBundle) => {
     setSelectedBundle(bundle);
   };
