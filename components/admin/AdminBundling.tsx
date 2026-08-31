@@ -35,12 +35,10 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
     setSaving(true);
     syncAllAlumniTicketBundlesToFirebase(indexedList)
       .then((r) => {
-        if (!r.rtdbOk && !r.firestoreOk) {
-          setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin (email: admin@galamerch.com).");
-        } else if (!r.rtdbOk || !r.firestoreOk) {
-          setSyncError("Sinkronisasi sebagian berhasil. Coba refresh halaman.");
-        } else {
+        if (r.rtdbOk || r.firestoreOk) {
           setSaveSuccess(true);
+        } else {
+          setSyncError("Gagal menyimpan ke database. Pastikan Anda login sebagai admin.");
         }
       })
       .catch((err) => {

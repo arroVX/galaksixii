@@ -35,12 +35,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
     setSaving(true);
     syncAllProductsToFirebase(indexedList)
       .then((r) => {
-        if (!r.rtdbOk && !r.firestoreOk) {
-          setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin.");
-        } else if (!r.rtdbOk || !r.firestoreOk) {
-          setSyncError("Sinkronisasi sebagian berhasil. Coba refresh halaman.");
-        } else {
+        if (r.rtdbOk || r.firestoreOk) {
           setSaveSuccess(true);
+        } else {
+          setSyncError("Gagal menyimpan ke database. Pastikan Anda login sebagai admin.");
         }
       })
       .catch((err) => {
