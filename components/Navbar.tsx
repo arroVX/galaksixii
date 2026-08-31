@@ -140,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => {
                   setActiveView("admin");
-                  if (pathname !== "/merchandise") router.push("/merchandise");
+                  if (pathname !== "/merchandise") router.push("/merchandise?admin=true");
                 }}
                 className="px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-200 flex items-center gap-1.5"
               >

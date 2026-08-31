@@ -43,7 +43,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     setPopKey((k) => k + 1);
     if (tabPath === "__admin__") {
       setActiveView("admin");
-      if (pathname !== "/merchandise") router.push("/merchandise");
+      if (pathname !== "/merchandise") router.push("/merchandise?admin=true");
       return;
     }
     if (pathname !== tabPath) router.push(tabPath);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { ProductModal } from "@/components/ProductModal";
 import { AdminDashboard } from "@/components/admin";
@@ -13,10 +13,11 @@ import { useCart } from "@/context/CartContext";
 
 export default function MerchandisePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
-  const [activeView, setActiveView] = useState<"shop" | "admin">("shop");
+  const [activeView, setActiveView] = useState<"shop" | "admin">(searchParams.get("admin") === "true" ? "admin" : "shop");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
