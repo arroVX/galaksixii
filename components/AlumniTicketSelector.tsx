@@ -37,7 +37,8 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       bundleImageUrl: bundle.imageUrl,
       ticketPrice: bundle.ticketPrice,
       totalPrice: bundle.totalPrice,
-      bundleItems: bundle.items
+      bundleItems: bundle.items,
+      isAlumniOnly: bundle.isAlumniOnly ?? true
     };
 
     sessionStorage.setItem("alumni_ticket_checkout", JSON.stringify(checkoutData));

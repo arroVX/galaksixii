@@ -153,6 +153,7 @@ export interface AlumniTicketBundle {
   items: AlumniTicketBundleItem[];
   imageUrl?: string;
   orderIndex?: number;
+  isAlumniOnly?: boolean;
 }
 
 export interface PageSetting {

@@ -92,12 +92,13 @@ export default function CheckoutAlumniPage() {
   };
 
   const validate = (): boolean => {
+    const isAlumni = checkoutData?.isAlumniOnly !== false;
     const newErrors = {
       customerName: customerName.trim() === "",
       phone: phone.trim() === "",
       addressOrClass: addressOrClass.trim() === "",
-      verificationFile: !verificationFileUrl,
-      graduationYear: !graduationYear || graduationYear < GRADUATION_YEAR_MIN || graduationYear > GRADUATION_YEAR_MAX,
+      verificationFile: isAlumni && !verificationFileUrl,
+      graduationYear: isAlumni && (!graduationYear || graduationYear < GRADUATION_YEAR_MIN || graduationYear > GRADUATION_YEAR_MAX),
       proofFile: paymentMethod === "BANK_TRANSFER_QRIS" && !proofFile
     };
     setErrors(newErrors);
@@ -188,6 +189,12 @@ export default function CheckoutAlumniPage() {
       localStorage.setItem("gala_merch_guest_id", guestId);
     }
 
+    const isAlumni = checkoutData.isAlumniOnly !== false;
+
+    const notesText = isAlumni
+      ? `${notes}\n\n[TIKET ALUMNI]\nTahun Lulus: ${graduationYear}\nJenis Verifikasi: ${verificationType}\nFile Verifikasi: ${verificationFileName || "uploaded"}`.trim()
+      : notes.trim();
+
     const newOrder: Order = {
       id: orderId,
       userId: user?.uid || guestId,
@@ -197,7 +204,7 @@ export default function CheckoutAlumniPage() {
       addressOrClass: `${addressOrClass} • [PENGAMBILAN: ${deliveryLabel}]`,
       deliveryMethod,
       deliveryLocationDetail: deliveryMethod === "PICKUP_AULA_SMKN3" ? "Aula SMKN 3 Jepara" : codLocationDetail,
-      notes: `${notes}\n\n[TIKET ALUMNI]\nTahun Lulus: ${graduationYear}\nJenis Verifikasi: ${verificationType}\nFile Verifikasi: ${verificationFileName || "uploaded"}`.trim(),
+      notes: notesText,
       items: orderItems,
       subtotal: checkoutData.totalPrice,
       shippingFee: 0,
@@ -213,13 +220,13 @@ export default function CheckoutAlumniPage() {
       id: ticketId,
       orderId,
       userId: user?.uid || guestId,
-      verificationType,
-      verificationFileUrl: verificationFileUrl || "",
-      graduationYear: Number(graduationYear),
+      verificationType: isAlumni ? verificationType : "SKL",
+      verificationFileUrl: isAlumni ? (verificationFileUrl || "") : "-",
+      graduationYear: isAlumni ? Number(graduationYear) : new Date().getFullYear(),
       bundleId: checkoutData.bundleId,
       bundleName: checkoutData.bundleName,
       bundleItems: checkoutData.bundleItems,
-      status: "PENDING_VERIFICATION",
+      status: isAlumni ? "PENDING_VERIFICATION" : "VERIFIED",
       createdAt: new Date().toISOString()
     };
 
@@ -338,73 +345,72 @@ export default function CheckoutAlumniPage() {
             <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-on-surface-variant">verified_user</span> Verifikasi Identitas (Wajib)
             </h4>
+          {/* 2. ALUMNI VERIFICATION */}
+          {checkoutData.isAlumniOnly !== false && (
+            <div className="space-y-4 pt-4 border-t border-outline-variant/30">
+              <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-primary">school</span> Verifikasi Alumni
+              </h4>
 
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5">
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Tiket ini khusus untuk pelanggan terdaftar. Wajib melampirkan bukti verifikasi dan tahun lulus.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div
-                  onClick={() => setVerificationType("KARTU_PELAJAR")}
-                  className={`p-5 rounded-2xl border-2 cursor-pointer text-center transition ${
-                    verificationType === "KARTU_PELAJAR"
-                      ? "border-slate-900 bg-slate-900 text-white shadow-md"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-900"
-                  }`}
-                >
-                  <span className={`material-symbols-outlined text-[28px] block mb-2 ${verificationType === "KARTU_PELAJAR" ? "text-white" : "text-slate-400"}`}>badge</span>
-                  <div className="font-bold text-sm">Kartu Pelajar</div>
-                  <div className={`text-xs mt-1 ${verificationType === "KARTU_PELAJAR" ? "text-white/70" : "text-slate-400"}`}>Kartu pelajar SMK</div>
+              <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-5 sm:p-6 space-y-6">
+                <div>
+                  <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">JENIS VERIFIKASI *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setVerificationType("KARTU_PELAJAR"); setVerificationFileUrl(null); setVerificationFileName(null); clearError("verificationFile"); }}
+                      className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold border-2 transition-all ${
+                        verificationType === "KARTU_PELAJAR" ? "border-primary bg-primary-container/30 text-primary" : "border-outline-variant/50 text-on-surface-variant hover:border-outline-variant hover:bg-surface-container-high"
+                      }`}
+                    >
+                      Kartu Pelajar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setVerificationType("SKL"); setVerificationFileUrl(null); setVerificationFileName(null); clearError("verificationFile"); }}
+                      className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold border-2 transition-all ${
+                        verificationType === "SKL" ? "border-primary bg-primary-container/30 text-primary" : "border-outline-variant/50 text-on-surface-variant hover:border-outline-variant hover:bg-surface-container-high"
+                      }`}
+                    >
+                      Surat Keterangan Lulus (SKL)
+                    </button>
+                  </div>
                 </div>
 
-                <div
-                  onClick={() => setVerificationType("SKL")}
-                  className={`p-5 rounded-2xl border-2 cursor-pointer text-center transition ${
-                    verificationType === "SKL"
-                      ? "border-slate-900 bg-slate-900 text-white shadow-md"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-900"
-                  }`}
-                >
-                  <span className={`material-symbols-outlined text-[28px] block mb-2 ${verificationType === "SKL" ? "text-white" : "text-slate-400"}`}>description</span>
-                  <div className="font-bold text-sm">SKL</div>
-                  <div className={`text-xs mt-1 ${verificationType === "SKL" ? "text-white/70" : "text-slate-400"}`}>Surat Keterangan Lulus</div>
-                </div>
-              </div>
+                <AlumniVerificationUpload
+                  onUploadComplete={(url, name) => {
+                    setVerificationFileUrl(url);
+                    setVerificationFileName(name);
+                    clearError("verificationFile");
+                  }}
+                  currentFileUrl={verificationFileUrl}
+                  currentFileName={verificationFileName}
+                  label={`Upload ${verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"} *`}
+                />
+                {errors.verificationFile && <p className="text-[11px] text-red-500 font-medium">Wajib upload bukti verifikasi</p>}
 
-              <AlumniVerificationUpload
-                onFileChange={(url, name) => {
-                  setVerificationFileUrl(url);
-                  setVerificationFileName(name);
-                  clearError("verificationFile");
-                }}
-                currentFileUrl={verificationFileUrl}
-                currentFileName={verificationFileName}
-                label={`Upload ${verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"} *`}
-              />
-              {errors.verificationFile && <p className="text-[11px] text-red-500 font-medium">Wajib upload bukti verifikasi</p>}
-
-              <div>
-                <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">TAHUN LULUS *</label>
-                <div className="relative">
-                  <select
-                    value={graduationYear}
-                    onChange={(e) => { setGraduationYear(e.target.value ? Number(e.target.value) : ""); clearError("graduationYear"); }}
-                    className={`w-full bg-white border rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-1 transition ${
-                      errors.graduationYear ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-slate-300 focus:border-slate-900 focus:ring-slate-900"
-                    }`}
-                  >
-                    <option value="">Pilih Tahun Lulus</option>
-                    {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                <div>
+                  <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">TAHUN LULUS *</label>
+                  <div className="relative">
+                    <select
+                      value={graduationYear}
+                      onChange={(e) => { setGraduationYear(e.target.value ? Number(e.target.value) : ""); clearError("graduationYear"); }}
+                      className={`w-full bg-white border rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-1 transition ${
+                        errors.graduationYear ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                      }`}
+                    >
+                      <option value="">Pilih Tahun Lulus</option>
+                      {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                  </div>
+                  {errors.graduationYear && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib pilih tahun lulus ({GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX})</p>}
                 </div>
-                {errors.graduationYear && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib pilih tahun lulus ({GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX})</p>}
               </div>
             </div>
-          </div>
+          )}
 
           {/* 3. DETAIL BUNDLE */}
           <div className="space-y-4 pt-4 border-t border-outline-variant/30">
@@ -417,9 +423,11 @@ export default function CheckoutAlumniPage() {
                 <img src={checkoutData.bundleImageUrl} alt={checkoutData.bundleName} className="w-16 h-16 rounded-xl object-cover bg-white border border-outline-variant/30" />
                 <div className="flex-1">
                   <p className="font-bold text-primary text-sm font-headline-md">{checkoutData.bundleName}</p>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    Tahun Lulus: {graduationYear} • Verifikasi: {verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"}
-                  </p>
+                  {checkoutData.isAlumniOnly !== false && (
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      Tahun Lulus: {graduationYear} • Verifikasi: {verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"}
+                    </p>
+                  )}
                 </div>
                 <span className="font-bold text-primary font-headline-md text-sm">
                   Rp {checkoutData.totalPrice.toLocaleString("id-ID")}

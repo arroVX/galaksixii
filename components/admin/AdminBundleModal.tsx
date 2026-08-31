@@ -17,6 +17,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
   const [imageUrl, setImageUrl] = useState(bundle?.imageUrl || "");
   const [ticketPrice, setTicketPrice] = useState<number>(bundle?.ticketPrice || 150000);
   const [totalPrice, setTotalPrice] = useState<number>(bundle?.totalPrice || 0);
+  const [isAlumniOnly, setIsAlumniOnly] = useState<boolean>(bundle?.isAlumniOnly ?? true);
   const [items, setItems] = useState<AlumniTicketBundleItem[]>(
     bundle?.items || [{ name: "", quantity: 1, imageUrl: "" }]
   );
@@ -65,6 +66,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
       description: description.trim(),
       ticketPrice: Number(ticketPrice) || 0,
       totalPrice: Number(totalPrice),
+      isAlumniOnly,
       items: validItems.map((item) => ({
         name: item.name.trim(),
         quantity: item.quantity,
@@ -148,6 +150,19 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                 }
               }} className="w-full text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 cursor-pointer" />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 py-1">
+            <input
+              type="checkbox"
+              id="alumni-only"
+              checked={isAlumniOnly}
+              onChange={(e) => setIsAlumniOnly(e.target.checked)}
+              className="w-4 h-4 text-neutral-900 border-neutral-300 rounded focus:ring-neutral-900 accent-neutral-900"
+            />
+            <label htmlFor="alumni-only" className="text-xs text-neutral-700 cursor-pointer select-none">
+              Wajib Verifikasi Alumni (Upload SKL / Kartu Pelajar saat Checkout)
+            </label>
           </div>
 
           {/* Items */}
