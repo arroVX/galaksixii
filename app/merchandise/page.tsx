@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { ProductModal } from "@/components/ProductModal";
@@ -11,7 +11,7 @@ import { fetchProductsFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 
-export default function MerchandisePage() {
+function MerchandiseContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -224,5 +224,20 @@ export default function MerchandisePage() {
       {/* Modals */}
       <ProductModal product={selectedProductModal} onClose={() => setSelectedProductModal(null)} />
     </>
+  );
+}
+
+export default function MerchandisePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center font-body-md">
+        <div className="flex items-center gap-3 text-neutral-400">
+          <span className="material-symbols-outlined animate-spin text-[32px]">sync</span>
+          <span className="text-sm font-medium tracking-wide">Memuat halaman...</span>
+        </div>
+      </div>
+    }>
+      <MerchandiseContent />
+    </Suspense>
   );
 }
