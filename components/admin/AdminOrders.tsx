@@ -36,9 +36,18 @@ export const AdminOrders: React.FC = () => {
             return combined;
           });
         }
-        
         const fbTickets = await fetchAllAlumniTicketsFromFirebase();
         const ticketsMap: Record<string, AlumniTicket> = {};
+        
+        // Recover local tickets that failed to sync to Firebase previously due to missing rules
+        const savedTickets = localStorage.getItem("gala_alumni_tickets");
+        if (savedTickets) {
+          try {
+            const localTickets: AlumniTicket[] = JSON.parse(savedTickets);
+            localTickets.forEach(t => { ticketsMap[t.orderId] = t; });
+          } catch { /* ignore */ }
+        }
+        
         fbTickets.forEach(t => { ticketsMap[t.orderId] = t; });
         setTickets(ticketsMap);
       } catch { /* ignore */ }

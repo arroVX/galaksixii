@@ -26,6 +26,14 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /alumniTickets/{ticketId} {
+      // Admin dapat membaca semua tiket, user hanya tiket miliknya
+      allow read: if isAdmin() || (request.auth != null && (request.auth.uid == resource.data.userId || request.auth.token.email == resource.data.userEmail));
+      // Pembeli login/tamu membuat tiket saat checkout, admin dapat mengubah
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
     match /orders/{orderId} {
       // Pembeli login membuat pesanan atas namanya sendiri;
       // guest (belum login) hanya boleh membuat pesanan dengan userId berawalan "guest-".
