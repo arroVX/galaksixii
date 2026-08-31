@@ -23,11 +23,17 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSave = (newList: Product[]) => {
+    // Pastikan orderIndex selalu diupdate berdasarkan urutan array saat ini
+    const indexedList = newList.map((item, index) => ({
+      ...item,
+      orderIndex: index
+    }));
+    
     setSyncError(null);
-    setProducts(newList);
-    localStorage.setItem("gala_merch_products", JSON.stringify(newList));
+    setProducts(indexedList);
+    localStorage.setItem("gala_merch_products", JSON.stringify(indexedList));
     setSaving(true);
-    syncAllProductsToFirebase(newList)
+    syncAllProductsToFirebase(indexedList)
       .then((r) => {
         if (!r.rtdbOk && !r.firestoreOk) {
           setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin.");

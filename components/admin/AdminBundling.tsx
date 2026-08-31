@@ -23,11 +23,17 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSave = (newList: AlumniTicketBundle[]) => {
+    // Pastikan orderIndex selalu diupdate berdasarkan urutan array saat ini
+    const indexedList = newList.map((item, index) => ({
+      ...item,
+      orderIndex: index
+    }));
+    
     setSyncError(null);
-    setBundles(newList);
-    localStorage.setItem("gala_merch_bundles", JSON.stringify(newList));
+    setBundles(indexedList);
+    localStorage.setItem("gala_merch_bundles", JSON.stringify(indexedList));
     setSaving(true);
-    syncAllAlumniTicketBundlesToFirebase(newList)
+    syncAllAlumniTicketBundlesToFirebase(indexedList)
       .then((r) => {
         if (!r.rtdbOk && !r.firestoreOk) {
           setSyncError("Gagal menyimpan ke Firebase. Data tersimpan di browser ini, tapi mungkin tidak muncul di perangkat lain. Pastikan Anda login sebagai admin (email: admin@galamerch.com).");
