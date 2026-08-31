@@ -28,10 +28,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isLogoutSuccessModalOpen, setIsLogoutSuccessModalOpen] = useState(false);
   const mounted = useMounted();
 
+  const { siteSettings } = require("@/context/SiteContext").useSiteSettings();
+
   const navLinks = [
-    { name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true },
+    ...(siteSettings.merchandise.visible ? [{ name: "Merchandise", path: "/merchandise" }] : []),
+    ...(siteSettings.tiketAlumni.visible ? [{ name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true }] : []),
     { name: "Keranjang", path: "/keranjang" },
-    { name: "Cek Pesanan", path: "/orders" }
+    ...(siteSettings.orders.visible ? [{ name: "Cek Pesanan", path: "/orders" }] : []),
   ];
 
   const isAdminMode = activeView === "admin";

@@ -71,41 +71,38 @@ export default function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
-  if (!user && !loading) {
+  const { siteSettings, loading: settingsLoading } = require("@/context/SiteContext").useSiteSettings();
+
+  useEffect(() => {
+    if (!settingsLoading && siteSettings.orders.locked && !loading && !user) {
+      router.push("/login?redirect=/orders");
+    }
+  }, [settingsLoading, siteSettings.orders.locked, loading, user, router]);
+
+  if (loading || settingsLoading) {
     return (
-      <div className="min-h-screen bg-white text-neutral-900 flex flex-col">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center font-body-md">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center p-4 sm:p-6 py-16">
-          <div className="bg-white border border-neutral-100 rounded-2xl max-w-md w-full p-8 shadow-sm text-center space-y-5">
-            <div className="w-14 h-14 rounded-xl bg-neutral-900 text-white mx-auto flex items-center justify-center">
-              <span className="material-symbols-outlined text-[24px]">lock</span>
-            </div>
-            <h2 className="text-xl font-semibold font-headline-md text-neutral-900">
-              Masuk untuk Melihat Pesanan
-            </h2>
-            <p className="text-[13px] text-neutral-500 max-w-xs mx-auto leading-relaxed">
-              Silakan masuk ke akun Anda untuk memantau status dan histori pesanan.
-            </p>
-            <div className="pt-2 space-y-3">
-              <Link
-                href="/login"
-                className="w-full py-3 px-6 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-medium text-[13px] flex items-center justify-center gap-2 transition active:scale-[0.98]"
-              >
-                <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
-                <span>Masuk ke Akun</span>
-              </Link>
-              <Link
-                href="/merchandise"
-                className="block text-[13px] text-neutral-500 hover:text-neutral-900 font-medium transition"
-              >
-                ← Kembali ke Katalog
-              </Link>
-            </div>
-          </div>
-        </main>
+        <div className="flex items-center gap-3 text-neutral-400">
+          <span className="material-symbols-outlined animate-spin text-[32px]">sync</span>
+          <span className="text-sm font-medium tracking-wide">Memuat pesanan...</span>
+        </div>
       </div>
     );
   }
+
+  if (!siteSettings.orders.visible) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 text-neutral-500 flex-col gap-4">
+        <span className="material-symbols-outlined text-[48px]">receipt_long</span>
+        <h2 className="text-xl font-bold">Halaman Tidak Tersedia</h2>
+        <p className="text-sm">Fitur cek pesanan sedang ditutup atau belum tersedia.</p>
+        <button onClick={() => router.push("/")} className="mt-4 px-4 py-2 bg-neutral-900 text-white rounded-lg">Kembali ke Beranda</button>
+      </div>
+    );
+  }
+
+  if (siteSettings.orders.locked && !user) return null;
 
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =

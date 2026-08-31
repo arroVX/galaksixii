@@ -20,10 +20,13 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const { totalItemCount } = useCart();
   const [popKey, setPopKey] = useState(0);
 
+  const { siteSettings } = require("@/context/SiteContext").useSiteSettings();
+
   const navTabs = [
-    { name: "Tiket", path: "/tiket-alumni", icon: "confirmation_number" },
+    ...(siteSettings.merchandise.visible ? [{ name: "Toko", path: "/merchandise", icon: "storefront" }] : []),
+    ...(siteSettings.tiketAlumni.visible ? [{ name: "Tiket", path: "/tiket-alumni", icon: "confirmation_number" }] : []),
     { name: "Keranjang", path: "/keranjang", icon: "shopping_bag" },
-    { name: "Pesanan", path: "/orders", icon: "receipt_long" }
+    ...(siteSettings.orders.visible ? [{ name: "Pesanan", path: "/orders", icon: "receipt_long" }] : [])
   ];
 
   const extraTabs = [

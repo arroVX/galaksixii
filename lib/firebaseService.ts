@@ -284,7 +284,9 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
     console.warn("RTDB fetch products error:", err);
   }
 
-  return Array.from(productsMap.values());
+  const result = Array.from(productsMap.values());
+  result.sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+  return result;
 }
 
 /**
@@ -423,7 +425,9 @@ export async function fetchAlumniTicketBundlesFromFirebase(): Promise<AlumniTick
     console.warn("RTDB fetch alumniTicketBundles error:", err);
   }
 
-  return Array.from(bundlesMap.values());
+  const result = Array.from(bundlesMap.values());
+  result.sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+  return result;
 }
 
 /**
@@ -623,4 +627,39 @@ export async function fetchAlumniTicketsForUser(
   const result = Array.from(ticketsMap.values());
   result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   return result;
+}
+
+/**
+ * Settings
+ */
+import { SiteSettings } from "@/types/merch";
+
+export const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  merchandise: { visible: false, locked: false },
+  tiketAlumni: { visible: true, locked: false },
+  orders: { visible: true, locked: true },
+};
+
+export async function fetchSiteSettings(): Promise<SiteSettings> {
+  if (!rtdb) return DEFAULT_SITE_SETTINGS;
+  try {
+    const snap = await get(ref(rtdb, "siteSettings"));
+    if (snap.exists()) {
+      return { ...DEFAULT_SITE_SETTINGS, ...snap.val() };
+    }
+  } catch (err) {
+    console.warn("RTDB fetch site settings error:", err);
+  }
+  return DEFAULT_SITE_SETTINGS;
+}
+
+export async function saveSiteSettings(settings: SiteSettings): Promise<boolean> {
+  if (!rtdb) return false;
+  try {
+    await set(ref(rtdb, "siteSettings"), settings);
+    return true;
+  } catch (err) {
+    console.warn("RTDB save site settings error:", err);
+    return false;
+  }
 }

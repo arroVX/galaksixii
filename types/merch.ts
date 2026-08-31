@@ -33,6 +33,18 @@ export interface Product {
   createdAt?: string;
   rating?: number;
   soldCount?: number;
+  orderIndex?: number;
+}
+
+export interface PageSetting {
+  visible: boolean;
+  locked: boolean;
+}
+
+export interface SiteSettings {
+  merchandise: PageSetting;
+  tiketAlumni: PageSetting;
+  orders: PageSetting;
 }
 
 export interface CartItem {
@@ -140,4 +152,16 @@ export interface AlumniTicketBundle {
   totalPrice: number;
   items: AlumniTicketBundleItem[];
   imageUrl?: string;
+  orderIndex?: number;
+}
+
+export interface PageSetting {
+  visible: boolean;
+  locked: boolean;
+}
+
+export interface SiteSettings {
+  merchandise: PageSetting;
+  tiketAlumni: PageSetting;
+  orders: PageSetting;
 }

@@ -33,7 +33,16 @@ export default function AlumniTicketPage() {
     })().catch((err) => console.warn("Gagal fetch bundle:", err));
   }, []);
 
-  if (loading) {
+  const { siteSettings, loading: settingsLoading } = require("@/context/SiteContext").useSiteSettings();
+  const router = require("next/navigation").useRouter();
+
+  useEffect(() => {
+    if (!settingsLoading && siteSettings.tiketAlumni.locked && !loading && !user) {
+      router.push("/login");
+    }
+  }, [settingsLoading, siteSettings.tiketAlumni.locked, loading, user, router]);
+
+  if (loading || settingsLoading) {
     return (
       <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md">
         <Navbar />
@@ -43,6 +52,17 @@ export default function AlumniTicketPage() {
             <span>Memuat...</span>
           </div>
         </main>
+      </div>
+    );
+  }
+
+  if (!siteSettings.tiketAlumni.visible) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 text-neutral-500 flex-col gap-4">
+        <span className="material-symbols-outlined text-[48px]">confirmation_number</span>
+        <h2 className="text-xl font-bold">Halaman Tidak Tersedia</h2>
+        <p className="text-sm">Tiket alumni sedang ditutup atau belum tersedia.</p>
+        <button onClick={() => router.push("/")} className="mt-4 px-4 py-2 bg-neutral-900 text-white rounded-lg">Kembali ke Beranda</button>
       </div>
     );
   }

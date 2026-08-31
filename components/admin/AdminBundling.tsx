@@ -49,6 +49,26 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
     setIsModalOpen(true);
   };
 
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const newList = [...bundles];
+    const temp = newList[index];
+    newList[index] = newList[index - 1];
+    newList[index - 1] = temp;
+    newList.forEach((b, i) => (b.orderIndex = i));
+    handleSave(newList);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === bundles.length - 1) return;
+    const newList = [...bundles];
+    const temp = newList[index];
+    newList[index] = newList[index + 1];
+    newList[index + 1] = temp;
+    newList.forEach((b, i) => (b.orderIndex = i));
+    handleSave(newList);
+  };
+
   return (
     <div className="space-y-4">
       {syncError && (
@@ -87,8 +107,13 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {bundles.map((b) => (
-            <div key={b.id} className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col justify-between gap-3">
+          {bundles.map((b, index) => (
+            <div key={b.id} className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-sm relative group">
+              {/* Urutan Badge */}
+              <div className="absolute -top-2 -left-2 bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">
+                #{index + 1}
+              </div>
+
               <div className="flex gap-3">
                 <img src={b.imageUrl || "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"} alt={b.name} className="w-16 h-16 rounded-xl object-cover bg-neutral-100 shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -113,6 +138,14 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
                   <span className="text-xs font-bold text-neutral-900 ml-1.5">Rp {b.totalPrice.toLocaleString("id-ID")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
+                  <div className="flex flex-col gap-0.5 mr-1">
+                    <button onClick={() => handleMoveUp(index)} disabled={index === 0} className="p-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Naik">
+                      <span className="material-symbols-outlined text-[12px] leading-none">expand_less</span>
+                    </button>
+                    <button onClick={() => handleMoveDown(index)} disabled={index === bundles.length - 1} className="p-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Turun">
+                      <span className="material-symbols-outlined text-[12px] leading-none">expand_more</span>
+                    </button>
+                  </div>
                   <button onClick={() => openEditModal(b)} className="p-2.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition" title="Edit">
                     <Edit3 size={14} />
                   </button>

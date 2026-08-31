@@ -53,6 +53,28 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
     setDeleteTarget(productId);
   };
 
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const newList = [...products];
+    const temp = newList[index];
+    newList[index] = newList[index - 1];
+    newList[index - 1] = temp;
+    // update orderIndex
+    newList.forEach((p, i) => (p.orderIndex = i));
+    handleSave(newList);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === products.length - 1) return;
+    const newList = [...products];
+    const temp = newList[index];
+    newList[index] = newList[index + 1];
+    newList[index + 1] = temp;
+    // update orderIndex
+    newList.forEach((p, i) => (p.orderIndex = i));
+    handleSave(newList);
+  };
+
   return (
     <div className="space-y-4">
       {syncError && (
@@ -78,25 +100,28 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {products.map((p) => (
-          <div key={p.id} className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col justify-between gap-3">
-            <div className="flex gap-3">
-              <img src={p.imageUrl} alt={p.name} className="w-16 h-16 rounded-xl object-cover bg-neutral-100 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  {p.stockType === "PRE_ORDER" ? (
-                    <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full">PO</span>
-                  ) : (
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full">Ready</span>
-                  )}
-                  <span className="text-[10px] text-neutral-400">{p.category}</span>
-                </div>
-                <h4 className="font-bold text-neutral-900 text-xs truncate">{p.name}</h4>
-                <p className="text-xs font-bold text-neutral-900 mt-0.5">Rp {p.price.toLocaleString("id-ID")}</p>
-                <p className="text-[11px] text-neutral-400 mt-0.5">Stok: {p.stockCount} Pcs</p>
+        {products.map((p, index) => (
+          <div key={p.id} className="bg-white p-4 rounded-xl border border-neutral-100 flex flex-col justify-between shadow-sm relative group">
+            {/* Urutan Badge */}
+            <div className="absolute top-2 left-2 bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">
+              #{index + 1}
+            </div>
+            
+            <div>
+              <div className="relative aspect-[4/5] bg-neutral-50 rounded-lg overflow-hidden mb-3 border border-neutral-100">
+                <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover mix-blend-multiply" />
+              </div>
+              <h3 className="font-bold text-sm text-neutral-800 leading-snug line-clamp-2">{p.name}</h3>
+              <p className="text-xs text-neutral-500 mb-2 mt-1 line-clamp-1">{p.category}</p>
+              <div className="flex items-center justify-between mt-auto mb-3">
+                <span className="font-bold text-neutral-900 text-[13px]">Rp {p.price.toLocaleString("id-ID")}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  p.stockType === "READY" ? "bg-emerald-50 text-emerald-600" : "bg-purple-50 text-purple-600"
+                }`}>
+                  {p.stockType === "READY" ? "READY" : "PO"}
+                </span>
               </div>
             </div>
-
             <div className="pt-2 border-t border-neutral-50 flex items-center justify-between">
               <div className="flex gap-1">
                 {(p.variants?.sizes || []).map((s) => (
@@ -104,6 +129,14 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
                 ))}
               </div>
               <div className="flex items-center gap-1.5">
+                <div className="flex flex-col gap-0.5 mr-1">
+                  <button onClick={() => handleMoveUp(index)} disabled={index === 0} className="p-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Naik">
+                    <span className="material-symbols-outlined text-[12px] leading-none">expand_less</span>
+                  </button>
+                  <button onClick={() => handleMoveDown(index)} disabled={index === products.length - 1} className="p-1 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Turun">
+                    <span className="material-symbols-outlined text-[12px] leading-none">expand_more</span>
+                  </button>
+                </div>
                 <button onClick={() => openEditModal(p)} className="p-2.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition" title="Edit">
                   <Edit3 size={14} />
                 </button>

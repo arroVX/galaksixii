@@ -6,6 +6,7 @@ import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
+import { AdminSettings } from "./AdminSettings";
 import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 
 interface AdminDashboardProps {
@@ -19,7 +20,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   setProducts,
   onExit
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders" | "settings">("overview");
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
   // Load bundles: panggil seed bila database masih kosong (first-time), lalu
@@ -47,7 +48,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { key: "overview" as const, label: "Ringkasan" },
     { key: "products" as const, label: "Produk" },
     { key: "bundling" as const, label: "Bundling" },
-    { key: "orders" as const, label: "Pesanan" }
+    { key: "orders" as const, label: "Pesanan" },
+    { key: "settings" as const, label: "Pengaturan" }
   ];
 
   return (
@@ -97,6 +99,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
         {activeTab === "orders" && (
           <AdminOrders />
+        )}
+        {activeTab === "settings" && (
+          <AdminSettings />
         )}
 
       </div>
