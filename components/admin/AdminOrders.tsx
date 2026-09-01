@@ -19,6 +19,7 @@ export const AdminOrders: React.FC = () => {
   const [tickets, setTickets] = useState<Record<string, AlumniTicket>>({});
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [viewProofUrl, setViewProofUrl] = useState<{ url: string; title: string } | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
 
   useEffect(() => {
     const loadFirebase = async () => {
@@ -65,9 +66,12 @@ export const AdminOrders: React.FC = () => {
     if (target) syncOrderToFirebase(target).catch((err) => console.warn(err));
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus pesanan ${orderId}?`)) return;
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
     
+    const orderId = orderToDelete.id;
+    setOrderToDelete(null);
+
     // Optimistic UI update
     const updated = orders.filter((o) => o.id !== orderId);
     setOrders(updated);
@@ -155,7 +159,7 @@ export const AdminOrders: React.FC = () => {
                       <GraduationCap size={12} /> {tickets[ord.id].verificationType === "SKL" ? "SKL" : "Kartu Pelajar"}
                     </button>
                   ) : null}
-                  <button onClick={() => handleDeleteOrder(ord.id)} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-red-100 transition ml-auto">
+                  <button onClick={() => setOrderToDelete(ord)} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-red-100 transition ml-auto">
                     <Trash2 size={12} /> Hapus
                   </button>
                 </div>
@@ -233,7 +237,7 @@ export const AdminOrders: React.FC = () => {
                       </select>
                     </td>
                     <td className="p-3 text-right">
-                      <button onClick={() => handleDeleteOrder(ord.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center" title="Hapus Pesanan">
+                      <button onClick={() => setOrderToDelete(ord)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center" title="Hapus Pesanan">
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -261,6 +265,32 @@ export const AdminOrders: React.FC = () => {
               ) : (
                 <p className="text-xs text-neutral-400 text-center p-6">Bukti tidak dapat ditampilkan.</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/50 backdrop-blur-sm">
+          <div className="bg-white border border-neutral-100 rounded-2xl max-w-sm w-full p-6 relative">
+            <h4 className="font-bold text-neutral-900 text-base mb-2">Konfirmasi Hapus</h4>
+            <p className="text-sm text-neutral-600 mb-6">
+              Apakah Anda yakin ingin menghapus pesanan <strong>{orderToDelete.id}</strong> atas nama <strong>{orderToDelete.customerName}</strong>? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setOrderToDelete(null)}
+                className="px-4 py-2 text-sm font-bold text-neutral-700 bg-neutral-100 rounded-xl hover:bg-neutral-200 transition"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleDeleteOrder}
+                className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition"
+              >
+                Hapus Pesanan
+              </button>
             </div>
           </div>
         </div>
