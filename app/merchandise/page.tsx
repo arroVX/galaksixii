@@ -154,12 +154,11 @@ function MerchandiseContent() {
               <button 
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
-                className={`whitespace-nowrap px-4 py-2.5 text-[11px] sm:text-xs font-bold tracking-widest uppercase transition-all border ${
+                className={`whitespace-nowrap px-4 py-2.5 text-[11px] sm:text-xs font-bold tracking-widest uppercase transition-all border rounded-full ${
                   activeFilter === filter.id 
                     ? "bg-neutral-900 text-white border-neutral-900 shadow-md" 
                     : "bg-white text-neutral-500 border-neutral-200 hover:border-neutral-400 hover:text-neutral-900"
                 }`}
-                style={{ borderRadius: '2px' }}
               >
                 {filter.label}
               </button>
@@ -174,8 +173,7 @@ function MerchandiseContent() {
               placeholder="Cari produk merchandise..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-neutral-50 border border-neutral-200 pl-11 pr-4 py-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-all" 
-              style={{ borderRadius: '2px' }}
+              className="w-full bg-neutral-50 border border-neutral-200 pl-11 pr-4 py-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 focus:bg-white transition-all rounded-2xl" 
             />
           </div>
         </div>
@@ -194,8 +192,7 @@ function MerchandiseContent() {
                 type="button"
                 aria-label={`Lihat detail ${product.name}`}
                 onClick={() => setSelectedProductModal(product)} 
-                className="group bg-white p-4 sm:p-5 border border-neutral-200 hover:border-neutral-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative text-left"
-                style={{ borderRadius: '2px' }}
+                className="group bg-white p-4 sm:p-5 border border-neutral-200 hover:border-neutral-400 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer relative text-left rounded-[20px]"
               >
                 {/* Decoration corners */}
                 <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -204,8 +201,8 @@ function MerchandiseContent() {
                 <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                 <div>
-                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 mb-4 flex items-center justify-center p-2" style={{ borderRadius: '2px' }}>
-                    <img src={product.images?.[0] || product.imageUrl || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518"} alt={product.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out" />
+                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 mb-4 flex items-center justify-center p-2 rounded-2xl">
+                    <img src={product.images?.[0] || product.imageUrl || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518"} alt={product.name} className="object-cover w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700 ease-in-out rounded-xl" />
                   </div>
 
                   <span className="font-dot-matrix text-[11px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
@@ -226,8 +223,7 @@ function MerchandiseContent() {
 
                   <button 
                     onClick={(e) => handleAddToCart(e, product)} 
-                    className="shrink-0 bg-neutral-900 text-white w-11 h-11 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors"
-                    style={{ borderRadius: '2px' }}
+                    className="shrink-0 bg-neutral-900 text-white w-11 h-11 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors rounded-xl"
                     title="Tambah ke keranjang"
                   >
                     <span className="material-symbols-outlined text-[18px]">add</span>

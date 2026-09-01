@@ -97,14 +97,14 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {products.map((p, index) => (
-          <div key={p.id} className="bg-white p-4 rounded-xl border border-neutral-100 flex flex-col justify-between shadow-sm relative group">
+          <div key={p.id} className="bg-white p-4 rounded-2xl border border-neutral-100 flex flex-col justify-between shadow-sm relative group">
             {/* Urutan Badge */}
             <div className="absolute top-2 left-2 bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">
               #{index + 1}
             </div>
             
             <div>
-              <div className="relative aspect-[4/5] bg-neutral-50 rounded-lg overflow-hidden mb-3 border border-neutral-100">
+              <div className="relative aspect-[4/5] bg-neutral-50 rounded-xl overflow-hidden mb-3 border border-neutral-100">
                 <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover mix-blend-multiply" />
               </div>
               <h3 className="font-bold text-sm text-neutral-800 leading-snug line-clamp-2">{p.name}</h3>
