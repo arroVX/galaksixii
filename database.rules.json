@@ -5,20 +5,20 @@
 
     "products": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === 'admin@galamerch.com'"
+      ".write": "auth != null && (auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$'))"
     },
 
     "alumniTicketBundles": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === 'admin@galamerch.com'"
+      ".write": "auth != null && (auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$'))"
     },
 
     "orders": {
       ".indexOn": ["userId", "userEmail"],
 
-      ".read": "auth != null && (auth.token.email === 'admin@galamerch.com' || (query.orderByChild === 'userId' && query.equalTo === auth.uid) || (query.orderByChild === 'userEmail' && query.equalTo === auth.token.email))",
+      ".read": "auth != null && ((auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$')) || (query.orderByChild === 'userId' && query.equalTo === auth.uid) || (query.orderByChild === 'userEmail' && query.equalTo === auth.token.email))",
 
-      ".write": "(!data.exists() && (auth == null || (auth != null && newData.child('userId').val() === auth.uid) || (auth != null && newData.child('userId').val() !== null && newData.child('userId').val().beginsWith('guest-')))) || (auth != null && auth.token.email === 'admin@galamerch.com')",
+      ".write": "(!data.exists() && (auth == null || (auth != null && newData.child('userId').val() === auth.uid) || (auth != null && newData.child('userId').val() !== null && newData.child('userId').val().beginsWith('guest-')))) || (auth != null && (auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$')))",
 
       ".validate": "newData.hasChildren(['id', 'items', 'totalPrice', 'status'])"
     },
@@ -26,19 +26,19 @@
     "alumniTickets": {
       ".indexOn": ["userId", "userEmail", "orderId"],
 
-      ".read": "auth != null && (auth.token.email === 'admin@galamerch.com' || (query.orderByChild === 'userId' && query.equalTo === auth.uid) || (query.orderByChild === 'userEmail' && query.equalTo === auth.token.email))",
+      ".read": "auth != null && ((auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$')) || (query.orderByChild === 'userId' && query.equalTo === auth.uid) || (query.orderByChild === 'userEmail' && query.equalTo === auth.token.email))",
 
-      ".write": "(!data.exists() && (auth == null || (auth != null && newData.child('userId').val() === auth.uid) || (auth != null && newData.child('userId').val() !== null && newData.child('userId').val().beginsWith('guest-')))) || (auth != null && auth.token.email === 'admin@galamerch.com')"
+      ".write": "(!data.exists() && (auth == null || (auth != null && newData.child('userId').val() === auth.uid) || (auth != null && newData.child('userId').val() !== null && newData.child('userId').val().beginsWith('guest-')))) || (auth != null && (auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$')))"
     },
 
     "siteSettings": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === 'admin@galamerch.com'"
+      ".write": "auth != null && (auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$'))"
     },
 
     "gallery": {
       ".read": true,
-      ".write": "auth != null && auth.token.email === 'admin@galamerch.com'"
+      ".write": "auth != null && (auth.token.email.matches('(?i)^admin@galamerch\\.com$') || auth.token.email.matches('(?i)^admin@example\\.com$'))"
     }
   }
 }

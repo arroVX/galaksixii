@@ -65,6 +65,11 @@ export const AdminOrders: React.FC = () => {
     
     const orderId = orderToDelete.id;
     const linkedTicket = tickets[orderId] || null;
+    // Simpan snapshot untuk revert jika Firebase gagal (partial failure = data kembali lagi)
+    const prevOrders = orders;
+    const prevTickets = tickets;
+    const prevLocalOrders = localStorage.getItem("gala_merch_orders");
+    const prevLocalTickets = localStorage.getItem("gala_alumni_tickets");
     setOrderToDelete(null);
 
     // Optimistic UI update — hapus order dan tiket terkait dari state + localStorage
@@ -87,24 +92,31 @@ export const AdminOrders: React.FC = () => {
     }
     
     try {
-      const promises: Promise<unknown>[] = [deleteOrderFromFirebase(orderId)];
+      const orderResult = await deleteOrderFromFirebase(orderId);
+      let ticketResult = { rtdbOk: true, firestoreOk: true };
       if (linkedTicket) {
-        promises.push(deleteAlumniTicketFromFirebase(linkedTicket.id));
+        ticketResult = await deleteAlumniTicketFromFirebase(linkedTicket.id);
       }
-      await Promise.all(promises);
+      // Cek partial failure — sebelumnya dianggap sukses sehingga data "kembali lagi" dari DB yang tidak terhapus
+      const orderOk = orderResult.rtdbOk && orderResult.firestoreOk;
+      const ticketOk = ticketResult.rtdbOk && ticketResult.firestoreOk;
+      if (!orderOk || !ticketOk) {
+        throw new Error(
+          `Hapus tidak lengkap — Order RTDB:${orderResult.rtdbOk ? "ok" : "GAGAL"} Firestore:${orderResult.firestoreOk ? "ok" : "GAGAL"}` +
+          (linkedTicket ? ` | Tiket RTDB:${ticketResult.rtdbOk ? "ok" : "GAGAL"} Firestore:${ticketResult.firestoreOk ? "ok" : "GAGAL"}` : "") +
+          ". Cek rules & login admin."
+        );
+      }
     } catch (err) {
       console.error("Gagal menghapus pesanan:", err);
-      alert("Gagal menghapus pesanan. Silakan coba lagi.");
-      // Revert on failure by reloading
-      const reloaded = loadInitialOrders();
-      setOrders(reloaded);
-      // Reload tickets dari Firebase/localStorage
-      try {
-        const fbTickets = await fetchAllAlumniTicketsFromFirebase();
-        const ticketsMap: Record<string, AlumniTicket> = {};
-        fbTickets.forEach(t => { ticketsMap[t.orderId] = t; });
-        setTickets(ticketsMap);
-      } catch { /* ignore */ }
+      alert(`Gagal menghapus pesanan. ${err instanceof Error ? err.message : "Silakan coba lagi."}`);
+      // Revert presisi dari snapshot (jangan reload dari localStorage yang sudah terlanjur di-overwrite)
+      setOrders(prevOrders);
+      setTickets(prevTickets);
+      if (prevLocalOrders !== null) localStorage.setItem("gala_merch_orders", prevLocalOrders);
+      else localStorage.removeItem("gala_merch_orders");
+      if (prevLocalTickets !== null) localStorage.setItem("gala_alumni_tickets", prevLocalTickets);
+      else localStorage.removeItem("gala_alumni_tickets");
     }
   };
 
@@ -112,6 +124,10 @@ export const AdminOrders: React.FC = () => {
     if (!ticketToDelete) return;
     const ticketId = ticketToDelete.id;
     const orderId = ticketToDelete.orderId;
+    const prevTickets = tickets;
+    const prevOrders = orders;
+    const prevLocalTickets = localStorage.getItem("gala_alumni_tickets");
+    const prevLocalOrders = localStorage.getItem("gala_merch_orders");
     setTicketToDelete(null);
 
     // Optimistic UI update
@@ -131,7 +147,6 @@ export const AdminOrders: React.FC = () => {
     } catch { /* ignore */ }
 
     // Jika ada order terkait, hapus order-nya juga agar tidak ada data yatim
-    // Admin tetap bisa menghapus tiket saja; order dihapus hanya bila orderId cocok dan order ada
     const hasLinkedOrder = orders.some((o) => o.id === orderId);
     if (hasLinkedOrder) {
       const updatedOrders = orders.filter((o) => o.id !== orderId);
@@ -140,23 +155,28 @@ export const AdminOrders: React.FC = () => {
     }
 
     try {
-      await deleteAlumniTicketFromFirebase(ticketId);
+      const ticketResult = await deleteAlumniTicketFromFirebase(ticketId);
+      let orderResult = { rtdbOk: true, firestoreOk: true };
       if (hasLinkedOrder) {
-        await deleteOrderFromFirebase(orderId);
+        orderResult = await deleteOrderFromFirebase(orderId);
+      }
+      const ticketOk = ticketResult.rtdbOk && ticketResult.firestoreOk;
+      const orderOk = orderResult.rtdbOk && orderResult.firestoreOk;
+      if (!ticketOk || !orderOk) {
+        throw new Error(
+          `Hapus tidak lengkap — Tiket RTDB:${ticketResult.rtdbOk ? "ok" : "GAGAL"} Firestore:${ticketResult.firestoreOk ? "ok" : "GAGAL"}` +
+          (hasLinkedOrder ? ` | Order RTDB:${orderResult.rtdbOk ? "ok" : "GAGAL"} Firestore:${orderResult.firestoreOk ? "ok" : "GAGAL"}` : "")
+        );
       }
     } catch (err) {
       console.error("Gagal menghapus tiket alumni:", err);
-      alert("Gagal menghapus tiket alumni. Silakan coba lagi.");
-      try {
-        const fbTickets = await fetchAllAlumniTicketsFromFirebase();
-        const ticketsMap: Record<string, AlumniTicket> = {};
-        fbTickets.forEach(t => { ticketsMap[t.orderId] = t; });
-        setTickets(ticketsMap);
-        const fbOrders = await fetchOrdersFromFirebase();
-        const sorted = fbOrders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-        setOrders(sorted);
-        localStorage.setItem("gala_merch_orders", JSON.stringify(sorted));
-      } catch { /* ignore */ }
+      alert(`Gagal menghapus tiket alumni. ${err instanceof Error ? err.message : "Silakan coba lagi."}`);
+      setTickets(prevTickets);
+      setOrders(prevOrders);
+      if (prevLocalTickets !== null) localStorage.setItem("gala_alumni_tickets", prevLocalTickets);
+      else localStorage.removeItem("gala_alumni_tickets");
+      if (prevLocalOrders !== null) localStorage.setItem("gala_merch_orders", prevLocalOrders);
+      else localStorage.removeItem("gala_merch_orders");
     }
   };
 
