@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/merch";
 import { useCart } from "@/context/CartContext";
@@ -32,6 +32,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const allImages = Array.from(new Set([product?.imageUrl, ...(product?.images || [])])).filter(Boolean) as string[];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Swipe jari — simpan posisi awal touch
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  const handleNextImage = () => {
+    if (allImages.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const handlePrevImage = () => {
+    if (allImages.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
   useEffect(() => {
     if (product) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset form saat produk berganti (derived state)
@@ -43,15 +57,40 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
+  // Keyboard ArrowLeft / ArrowRight untuk slide
+  useEffect(() => {
+    if (!product || allImages.length <= 1) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") handlePrevImage();
+      if (e.key === "ArrowRight") handleNextImage();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, allImages.length]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const dx = touchEndX.current - touchStartX.current;
+    const threshold = 50;
+    if (Math.abs(dx) > threshold) {
+      if (dx < 0) handleNextImage();
+      else handlePrevImage();
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   if (!product) return null;
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  };
-
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
 
   const isPO = product.stockType === "PRE_ORDER";
   
@@ -89,33 +128,59 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
         {/* Main Content: 2 Columns */}
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start flex-1 pb-20">
           
-          {/* LEFT: Product Image */}
+          {/* LEFT: Product Image — swipe jari ke samping untuk lihat foto lain */}
           <div className="w-full lg:w-1/2 shrink-0">
-            <div className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group">
+            <div
+              role="region"
+              aria-roledescription="carousel"
+              aria-label={`Galeri ${product.name}`}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              style={{ touchAction: "pan-y" }}
+              className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group select-none"
+            >
               <img
                 src={allImages[currentImageIndex] || product.imageUrl}
-                alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                alt={`${product.name} foto ${currentImageIndex + 1} dari ${allImages.length}`}
+                draggable={false}
+                className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
               />
               
               {allImages.length > 1 && (
                 <>
-                  <button onClick={handlePrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-colors opacity-0 group-hover:opacity-100 z-10">
+                  <button
+                    type="button"
+                    onClick={handlePrevImage}
+                    aria-label="Foto sebelumnya"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                  >
                     <span className="material-symbols-outlined text-[20px]">chevron_left</span>
                   </button>
-                  <button onClick={handleNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-colors opacity-0 group-hover:opacity-100 z-10">
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    aria-label="Foto berikutnya"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                  >
                     <span className="material-symbols-outlined text-[20px]">chevron_right</span>
                   </button>
                   
                   {/* Dots */}
-                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10" aria-hidden="true">
                     {allImages.map((_, idx) => (
                       <button
                         key={idx}
+                        type="button"
+                        aria-label={`Lihat foto ${idx + 1}`}
                         onClick={() => setCurrentImageIndex(idx)}
-                        className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'}`}
+                        className={`h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/50 w-2'}`}
                       />
                     ))}
+                  </div>
+                  {/* Counter untuk aksesibilitas */}
+                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
+                    {currentImageIndex + 1} / {allImages.length}
                   </div>
                 </>
               )}
@@ -131,7 +196,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               <div className="flex gap-3 mt-4 overflow-x-auto hide-scrollbar pb-2 px-1">
                 {allImages.map((img, idx) => (
                   <button 
-                    key={idx} 
+                    key={idx}
+                    type="button"
+                    aria-label={`Lihat foto ${idx + 1}`}
+                    aria-current={idx === currentImageIndex ? "true" : undefined}
                     onClick={() => setCurrentImageIndex(idx)}
                     className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${idx === currentImageIndex ? 'border-slate-800 opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
                   >
