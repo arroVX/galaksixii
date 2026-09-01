@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { AlumniTicketSelector } from "@/components/AlumniTicketSelector";
 import { AlumniTicketBundle } from "@/types/merch";
+import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
 import { useSiteSettings } from "@/context/SiteContext";
@@ -17,20 +18,28 @@ export default function AlumniTicketPage() {
   const { siteSettings, loading: settingsLoading } = useSiteSettings();
   const router = useRouter();
 
-  // Baca dari Firebase sebagai satu-satunya sumber kebenaran.
-  // Fallback = localStorage (bila Firebase tidak tersedia, misal offline).
+  // Baca dari Firebase sebagai sumber kebenaran.
+  // Fallback = localStorage, lalu ALUMNI_TICKET_BUNDLES (seed default) bila keduanya kosong
   useEffect(() => {
     let cancelled = false;
     const saved = localStorage.getItem("gala_merch_bundles");
+    let hasLocal = false;
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as AlumniTicketBundle[];
         if (parsed.length > 0) {
+          hasLocal = true;
           queueMicrotask(() => {
             if (!cancelled) setBundles(parsed);
           });
         }
       } catch { /* ignore */ }
+    }
+    // Jika tidak ada localStorage, tampilkan seed default sementara loading Firebase
+    if (!hasLocal) {
+      queueMicrotask(() => {
+        if (!cancelled) setBundles(ALUMNI_TICKET_BUNDLES);
+      });
     }
 
     (async () => {
@@ -39,6 +48,9 @@ export default function AlumniTicketPage() {
       if (fbBundles.length > 0) {
         setBundles(fbBundles);
         localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      } else if (!hasLocal) {
+        // Firebase kosong & tidak ada localStorage -> persist seed ke localStorage
+        localStorage.setItem("gala_merch_bundles", JSON.stringify(ALUMNI_TICKET_BUNDLES));
       }
     })().catch((err) => console.warn("Gagal fetch bundle:", err));
     return () => {
@@ -101,6 +113,12 @@ export default function AlumniTicketPage() {
             </div>
           </div>
 
+        {bundles.length === 0 ? (
+          <div className="py-20 text-center text-gray-400 space-y-3 bg-white rounded-3xl border border-gray-200/80 shadow-sm">
+            <span className="material-symbols-outlined text-[48px] text-gray-300">confirmation_number</span>
+            <p className="text-sm font-medium text-gray-500">Belum ada bundling. Admin bisa menambah via Dashboard → Bundling.</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
           {bundles.map((bundle) => (
             <div
@@ -145,6 +163,7 @@ export default function AlumniTicketPage() {
             </div>
           ))}
         </div>
+        )}
 
 
       </main>

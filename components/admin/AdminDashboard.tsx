@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Product, AlumniTicketBundle } from "@/types/merch";
+import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
@@ -25,21 +26,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders" | "settings">("overview");
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
-  // Load bundles: panggil seed bila database masih kosong (first-time), lalu
-  // baca data terbaru dari Firebase sebagai sumber kebenaran. Fallback awal
-  // = localStorage (persistensi lokal) / ALUMNI_TICKET_BUNDLES.
+  // Load bundles: localStorage -> Firebase -> fallback seed ALUMNI_TICKET_BUNDLES
   useEffect(() => {
     let cancelled = false;
     const saved = localStorage.getItem("gala_merch_bundles");
+    let hasLocal = false;
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as AlumniTicketBundle[];
         if (parsed.length > 0) {
+          hasLocal = true;
           queueMicrotask(() => {
             if (!cancelled) setBundles(parsed);
           });
         }
       } catch { /* ignore */ }
+    }
+    if (!hasLocal) {
+      queueMicrotask(() => {
+        if (!cancelled) setBundles(ALUMNI_TICKET_BUNDLES);
+      });
     }
 
     (async () => {
@@ -48,6 +54,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (fbBundles.length > 0) {
         setBundles(fbBundles);
         localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      } else if (!hasLocal) {
+        localStorage.setItem("gala_merch_bundles", JSON.stringify(ALUMNI_TICKET_BUNDLES));
       }
     })().catch((err) => console.warn("Gagal fetch bundle:", err));
     return () => {
