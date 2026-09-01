@@ -220,26 +220,6 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
                 ))}
               </div>
             )}
-
-            {/* Bundle Items Grid */}
-            <div className="mt-6 grid grid-cols-3 gap-2">
-              {bundle.items.map((item, i) => (
-                <div key={i} className="bg-white border border-slate-200 rounded-2xl p-2 flex flex-col items-center gap-1.5">
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full aspect-square object-cover rounded-xl bg-slate-50"
-                    />
-                  ) : (
-                    <div className="w-full aspect-square rounded-xl bg-slate-100 flex items-center justify-center text-slate-300">
-                      <span className="material-symbols-outlined text-[24px]">image</span>
-                    </div>
-                  )}
-                  <span className="text-[11px] font-bold text-slate-500 text-center leading-tight line-clamp-2">{item.name}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* RIGHT: Form */}
