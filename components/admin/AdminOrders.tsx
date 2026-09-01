@@ -25,17 +25,10 @@ export const AdminOrders: React.FC = () => {
     const loadFirebase = async () => {
       try {
         const fbOrders = await fetchOrdersFromFirebase();
-        if (fbOrders.length > 0) {
-          setOrders((prev) => {
-            const map = new Map<string, Order>();
-            prev.forEach((o) => map.set(o.id, o));
-            fbOrders.forEach((o) => map.set(o.id, o));
-            const combined = Array.from(map.values()).sort(
-              (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-            );
-            localStorage.setItem("gala_merch_orders", JSON.stringify(combined));
-            return combined;
-          });
+        if (fbOrders.length >= 0) { // Changed to >= 0 to handle case where ALL orders are deleted
+          const sorted = fbOrders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          setOrders(sorted);
+          localStorage.setItem("gala_merch_orders", JSON.stringify(sorted));
         }
         const fbTickets = await fetchAllAlumniTicketsFromFirebase();
         const ticketsMap: Record<string, AlumniTicket> = {};
