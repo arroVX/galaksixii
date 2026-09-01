@@ -19,9 +19,19 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const [error, setError] = useState<string | null>(null);
 
   // Carousel — sama seperti ProductModal (swipe + keyboard + mouse drag)
+  // Fallback: jika bundle.images belum diisi (data lama Firebase), pakai item images agar slider tetap berfungsi
   const allImages = useMemo(
-    () => Array.from(new Set([bundle.imageUrl, ...(bundle.images || [])])).filter(Boolean) as string[],
-    [bundle.imageUrl, bundle.images]
+    () =>
+      Array.from(
+        new Set(
+          [
+            bundle.imageUrl,
+            ...(bundle.images || []),
+            ...bundle.items.map((i) => i.imageUrl).filter(Boolean) as string[],
+          ].filter(Boolean) as string[]
+        )
+      ),
+    [bundle.imageUrl, bundle.images, bundle.items]
   );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
