@@ -12,7 +12,12 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
       { name: "Sticker Pack All City", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop" },
       { name: "Cermin Aesthetic Frame Emas", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop" }
     ],
-    imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop"
+    ]
   },
   {
     id: "ticket-alumni-bundle-2",
@@ -24,7 +29,12 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
       { name: "Totebag Canvas Free Mockup", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
       { name: "Topi Gala Aksi Siswa", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?q=80&w=800&auto=format&fit=crop" }
     ],
-    imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop"
+    ]
   },
   {
     id: "ticket-alumni-bundle-3",
@@ -37,7 +47,12 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
       { name: "Totebag Canvas Free Mockup", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
       { name: "Topi Gala Aksi Siswa", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?q=80&w=800&auto=format&fit=crop" }
     ],
-    imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?q=80&w=800&auto=format&fit=crop"
+    ]
   },
   {
     id: "ticket-alumni-bundle-4",
@@ -51,7 +66,12 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
       { name: "Keychain Ball & Dice", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop" },
       { name: "Sticker Pack All City", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop" }
     ],
-    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+    ]
   },
   {
     id: "ticket-alumni-bundle-5",
@@ -67,7 +87,12 @@ export const ALUMNI_TICKET_BUNDLES: AlumniTicketBundle[] = [
       { name: "Sticker Pack All City", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop" },
       { name: "Cermin Aesthetic Frame Emas", quantity: 1, imageUrl: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop" }
     ],
-    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+    ]
   }
 ];
 

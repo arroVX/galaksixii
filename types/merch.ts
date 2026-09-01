@@ -155,6 +155,8 @@ export interface AlumniTicketBundle {
   totalPrice: number;
   items: AlumniTicketBundleItem[];
   imageUrl?: string;
+  /** Opsional: foto tambahan bundling untuk carousel (seperti Product.images) */
+  images?: string[];
   orderIndex?: number;
   isAlumniOnly?: boolean;
   updatedAt?: number;

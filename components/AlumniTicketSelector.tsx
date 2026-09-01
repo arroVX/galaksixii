@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AlumniTicketBundle } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +17,83 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
 
   const [isSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Carousel — sama seperti ProductModal (swipe + keyboard + mouse drag)
+  const allImages = useMemo(
+    () => Array.from(new Set([bundle.imageUrl, ...(bundle.images || [])])).filter(Boolean) as string[],
+    [bundle.imageUrl, bundle.images]
+  );
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isDragging = useRef(false);
+
+  const handleNextImage = useCallback(() => {
+    if (allImages.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  }, [allImages.length]);
+  const handlePrevImage = useCallback(() => {
+    if (allImages.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  }, [allImages.length]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset index saat bundle berganti
+    setCurrentImageIndex(0);
+  }, [bundle.id]);
+
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") handlePrevImage();
+      if (e.key === "ArrowRight") handleNextImage();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [allImages.length, handlePrevImage, handleNextImage]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    const threshold = 35;
+    if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) handleNextImage();
+      else handlePrevImage();
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+  const onMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    if (allImages.length <= 1) return;
+    isDragging.current = true;
+    touchStartX.current = e.clientX;
+    touchStartY.current = e.clientY;
+  };
+  const onMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging.current || touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.clientX - touchStartX.current;
+    const dy = e.clientY - touchStartY.current;
+    const threshold = 35;
+    if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) handleNextImage();
+      else handlePrevImage();
+    }
+    isDragging.current = false;
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+  const onMouseLeave = () => {
+    isDragging.current = false;
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
 
   const handleContinue = () => {
     setError(null);
@@ -59,18 +136,80 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start flex-1 pb-20">
 
-          {/* LEFT: Product Image */}
+          {/* LEFT: Bundle Image — swipe jari ke samping untuk lihat foto lain */}
           <div className="w-full lg:w-1/2 shrink-0">
-            <div className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group">
+            <div
+              role="region"
+              aria-roledescription="carousel"
+              aria-label={`Galeri ${bundle.name}`}
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+              onMouseDown={onMouseDown}
+              onMouseUp={onMouseUp}
+              onMouseLeave={onMouseLeave}
+              style={{ touchAction: "pan-y" }}
+              className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group select-none cursor-grab active:cursor-grabbing"
+            >
               <img
-                src={bundle.imageUrl}
-                alt={bundle.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                src={allImages[currentImageIndex] || bundle.imageUrl}
+                alt={`${bundle.name} foto ${currentImageIndex + 1} dari ${allImages.length}`}
+                draggable={false}
+                className="w-full h-full object-cover select-none pointer-events-none"
               />
-              <div className="absolute bottom-5 right-5 bg-[#111] text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-xl">
+              {allImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevImage}
+                    aria-label="Foto sebelumnya"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    aria-label="Foto berikutnya"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                  </button>
+                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10" aria-hidden="true">
+                    {allImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        aria-label={`Lihat foto ${idx + 1}`}
+                        onClick={() => setCurrentImageIndex(idx)}
+                        className={`h-2 rounded-full transition-all ${idx === currentImageIndex ? "bg-white w-4" : "bg-white/50 w-2"}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
+                    {currentImageIndex + 1} / {allImages.length}
+                  </div>
+                </>
+              )}
+              <div className="absolute bottom-5 right-5 bg-[#111] text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-xl z-10">
                 Rp {bundle.totalPrice.toLocaleString("id-ID")}
               </div>
             </div>
+            {allImages.length > 1 && (
+              <div className="flex gap-3 mt-4 overflow-x-auto hide-scrollbar pb-2 px-1">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    aria-label={`Lihat foto ${idx + 1}`}
+                    aria-current={idx === currentImageIndex ? "true" : undefined}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${idx === currentImageIndex ? "border-slate-800 opacity-100 scale-105" : "border-transparent opacity-60 hover:opacity-100"}`}
+                  >
+                    <img src={img} alt={`${bundle.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Bundle Items Grid */}
             <div className="mt-6 grid grid-cols-3 gap-2">

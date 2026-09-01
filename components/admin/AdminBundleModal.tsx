@@ -14,7 +14,9 @@ interface AdminBundleModalProps {
 export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onClose, onSave, bundles }) => {
   const [name, setName] = useState(bundle?.name || "");
   const [description, setDescription] = useState(bundle?.description || "");
-  const [imageUrl, setImageUrl] = useState(bundle?.imageUrl || "");
+  const [images, setImages] = useState<string[]>(
+    bundle?.images && bundle.images.length > 0 ? bundle.images : bundle?.imageUrl ? [bundle.imageUrl] : []
+  );
   const [ticketPrice, setTicketPrice] = useState<number>(bundle?.ticketPrice || 150000);
   const [totalPrice, setTotalPrice] = useState<number>(bundle?.totalPrice || 0);
   const [isAlumniOnly, setIsAlumniOnly] = useState<boolean>(bundle?.isAlumniOnly ?? true);
@@ -72,7 +74,8 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
         quantity: item.quantity,
         imageUrl: item.imageUrl?.trim() || ""
       })),
-      imageUrl: (imageUrl && imageUrl.trim()) || validItems[0]?.imageUrl?.trim() || ""
+      imageUrl: images[0]?.trim() || validItems[0]?.imageUrl?.trim() || "",
+      images: images.length > 0 ? images : undefined,
     };
 
     const newList = bundle
@@ -117,12 +120,21 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
           </div>
 
           <div>
-            <label className="block text-neutral-500 mb-1">Foto Bundling</label>
-            <div className="flex gap-3 items-center">
-              {imageUrl && <img src={imageUrl} alt="Preview" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />}
-              <input type="file" accept="image/*" onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
+            <label className="block text-neutral-500 mb-1">Foto Bundling (bisa banyak — untuk slide)</label>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2 flex-wrap">
+                {images.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img src={img} alt={`Preview ${idx + 1}`} className="w-12 h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />
+                    <button type="button" onClick={() => setImages(images.filter((_, i) => i !== idx))} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <input type="file" accept="image/*" multiple onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                files.forEach((file) => {
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     const img = new Image();
@@ -142,12 +154,12 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                       canvas.height = height;
                       const ctx = canvas.getContext("2d");
                       ctx?.drawImage(img, 0, 0, width, height);
-                      setImageUrl(canvas.toDataURL("image/webp", 0.7));
+                      setImages(prev => [...prev, canvas.toDataURL("image/webp", 0.7)]);
                     };
                     img.src = reader.result as string;
                   };
                   reader.readAsDataURL(file);
-                }
+                });
               }} className="w-full text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 cursor-pointer" />
             </div>
           </div>
