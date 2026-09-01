@@ -20,7 +20,7 @@
 
       ".write": "(!data.exists() && (auth == null || (auth != null && newData.child('userId').val() === auth.uid) || (auth != null && newData.child('userId').val() !== null && newData.child('userId').val().beginsWith('guest-')))) || (auth != null && (auth.token.email === 'admin@galamerch.com' || auth.token.email === 'admin@example.com'))",
 
-      ".validate": "newData.hasChildren(['id', 'items', 'totalPrice', 'status'])"
+      ".validate": "!newData.exists() || newData.hasChildren(['id', 'items', 'totalPrice', 'status'])"
     },
 
     "alumniTickets": {
