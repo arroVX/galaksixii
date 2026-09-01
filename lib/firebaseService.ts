@@ -67,6 +67,33 @@ export async function syncOrderToFirebase(order: Order): Promise<SyncResult> {
 }
 
 /**
+ * Menghapus pesanan dari Firebase.
+ */
+export async function deleteOrderFromFirebase(orderId: string): Promise<SyncResult> {
+  const [rtdbOk, firestoreOk] = await Promise.all([
+    withRetry(async () => {
+      if (!rtdb) throw new Error("RTDB not configured");
+      const orderRef = ref(rtdb, `orders/${orderId}`);
+      await remove(orderRef);
+      console.log(`✓ Order ${orderId} dihapus dari Realtime Database`);
+    }),
+    withRetry(async () => {
+      if (!db) throw new Error("Firestore not configured");
+      await deleteDoc(doc(db, "orders", orderId));
+      console.log(`✓ Order ${orderId} dihapus dari Cloud Firestore`);
+    })
+  ]);
+
+  if (!rtdbOk || !firestoreOk) {
+    console.error(
+      `Hapus order ${orderId} TIDAK LENGKAP — RTDB: ${rtdbOk ? "ok" : "GAGAL"}, Firestore: ${firestoreOk ? "ok" : "GAGAL"}`
+    );
+  }
+
+  return { rtdbOk, firestoreOk };
+}
+
+/**
  * Menyimpan / Menyinkronkan produk merchandise ke Firebase.
  * Mengembalikan status sinkronisasi untuk umpan balik admin.
  */

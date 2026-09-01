@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Order, OrderStatus, AlumniTicket } from "@/types/merch";
-import { syncOrderToFirebase, fetchOrdersFromFirebase, fetchAllAlumniTicketsFromFirebase } from "@/lib/firebaseService";
-import { Eye, Filter, TrendingUp, X, ImageIcon, GraduationCap } from "lucide-react";
+import { syncOrderToFirebase, fetchOrdersFromFirebase, fetchAllAlumniTicketsFromFirebase, deleteOrderFromFirebase } from "@/lib/firebaseService";
+import { Eye, Filter, TrendingUp, X, ImageIcon, GraduationCap, Trash2 } from "lucide-react";
 
 const loadInitialOrders = (): Order[] => {
   if (typeof window === "undefined") return [];
@@ -63,6 +63,25 @@ export const AdminOrders: React.FC = () => {
     localStorage.setItem("gala_merch_orders", JSON.stringify(updated));
     const target = updated.find((o) => o.id === orderId);
     if (target) syncOrderToFirebase(target).catch((err) => console.warn(err));
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus pesanan ${orderId}?`)) return;
+    
+    // Optimistic UI update
+    const updated = orders.filter((o) => o.id !== orderId);
+    setOrders(updated);
+    localStorage.setItem("gala_merch_orders", JSON.stringify(updated));
+    
+    try {
+      await deleteOrderFromFirebase(orderId);
+    } catch (err) {
+      console.error("Gagal menghapus pesanan:", err);
+      alert("Gagal menghapus pesanan. Silakan coba lagi.");
+      // Revert on failure by reloading
+      const reloaded = loadInitialOrders();
+      setOrders(reloaded);
+    }
   };
 
   const filteredOrders = statusFilter === "ALL" ? orders : orders.filter((o) => o.status === statusFilter);
@@ -136,6 +155,9 @@ export const AdminOrders: React.FC = () => {
                       <GraduationCap size={12} /> {tickets[ord.id].verificationType === "SKL" ? "SKL" : "Kartu Pelajar"}
                     </button>
                   ) : null}
+                  <button onClick={() => handleDeleteOrder(ord.id)} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-red-100 transition ml-auto">
+                    <Trash2 size={12} /> Hapus
+                  </button>
                 </div>
               </div>
             ))
@@ -155,6 +177,7 @@ export const AdminOrders: React.FC = () => {
                 <th className="p-3">Total</th>
                 <th className="p-3">Bukti</th>
                 <th className="p-3">Status</th>
+                <th className="p-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
@@ -208,6 +231,11 @@ export const AdminOrders: React.FC = () => {
                         <option value="Siap Diambil/Dikirim">Siap Kirim</option>
                         <option value="Selesai">Selesai</option>
                       </select>
+                    </td>
+                    <td className="p-3 text-right">
+                      <button onClick={() => handleDeleteOrder(ord.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center" title="Hapus Pesanan">
+                        <Trash2 size={14} />
+                      </button>
                     </td>
                   </tr>
                 ))
