@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/merch";
 import { useCart } from "@/context/CartContext";
@@ -28,23 +28,27 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
       ? Math.max(1, product.stockCount || 1)
       : 99;
 
-  // Tentukan seluruh gambar yang ada
-  const allImages = Array.from(new Set([product?.imageUrl, ...(product?.images || [])])).filter(Boolean) as string[];
+  // Tentukan seluruh gambar yang ada — memoize biar referensi stabil untuk callback
+  const allImages = useMemo(
+    () => Array.from(new Set([product?.imageUrl, ...(product?.images || [])])).filter(Boolean) as string[],
+    [product?.imageUrl, product?.images]
+  );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Swipe jari — simpan posisi awal touch
+  // Refs untuk swipe — support touch + mouse/pointer
   const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isDragging = useRef(false);
 
-  const handleNextImage = () => {
+  const handleNextImage = useCallback(() => {
     if (allImages.length <= 1) return;
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  };
+  }, [allImages.length]);
 
-  const handlePrevImage = () => {
+  const handlePrevImage = useCallback(() => {
     if (allImages.length <= 1) return;
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
+  }, [allImages.length]);
 
   useEffect(() => {
     if (product) {
@@ -57,7 +61,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
-  // Keyboard ArrowLeft / ArrowRight untuk slide
+  // Keyboard ArrowLeft / ArrowRight untuk slide — pakai callback yang memoize
   useEffect(() => {
     if (!product || allImages.length <= 1) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -66,28 +70,58 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product?.id, allImages.length]);
+  }, [product, allImages.length, handlePrevImage, handleNextImage]);
 
+  // --- Swipe touch (pakai changedTouches biar reliable even tanpa move) ---
   const onTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
     touchStartX.current = e.touches[0].clientX;
-    touchEndX.current = null;
+    touchStartY.current = e.touches[0].clientY;
   };
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const onTouchEnd = () => {
-    if (touchStartX.current === null || touchEndX.current === null) return;
-    const dx = touchEndX.current - touchStartX.current;
-    const threshold = 50;
-    if (Math.abs(dx) > threshold) {
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - touchStartX.current;
+    const dy = endY - touchStartY.current;
+    // Abaikan swipe vertikal (scroll) — hanya kalau horizontal > vertikal
+    const threshold = 35;
+    if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
       if (dx < 0) handleNextImage();
       else handlePrevImage();
     }
     touchStartX.current = null;
-    touchEndX.current = null;
+    touchStartY.current = null;
+  };
+
+  // --- Mouse drag untuk test di desktop ---
+  const onMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    if (allImages.length <= 1) return;
+    isDragging.current = true;
+    touchStartX.current = e.clientX;
+    touchStartY.current = e.clientY;
+  };
+
+  const onMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging.current || touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.clientX - touchStartX.current;
+    const dy = e.clientY - touchStartY.current;
+    const threshold = 35;
+    if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) handleNextImage();
+      else handlePrevImage();
+    }
+    isDragging.current = false;
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const onMouseLeave = () => {
+    isDragging.current = false;
+    touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   if (!product) return null;
@@ -135,16 +169,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               aria-roledescription="carousel"
               aria-label={`Galeri ${product.name}`}
               onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
+              onMouseDown={onMouseDown}
+              onMouseUp={onMouseUp}
+              onMouseLeave={onMouseLeave}
               style={{ touchAction: "pan-y" }}
-              className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group select-none"
+              className="relative aspect-[4/5] sm:aspect-square lg:aspect-[4/5] w-full rounded-[2.5rem] overflow-hidden bg-slate-100 shadow-xl group select-none cursor-grab active:cursor-grabbing"
             >
               <img
                 src={allImages[currentImageIndex] || product.imageUrl}
                 alt={`${product.name} foto ${currentImageIndex + 1} dari ${allImages.length}`}
                 draggable={false}
-                className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+                className="w-full h-full object-cover select-none pointer-events-none"
               />
               
               {allImages.length > 1 && (

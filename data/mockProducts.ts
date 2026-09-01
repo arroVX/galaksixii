@@ -29,6 +29,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 15000,
     description: "Gantungan kunci akrilik & logam edisi khusus dengan charm bola 8 dan dadu vintage. Cocok untuk tas, kunci motor, atau dompet.",
     imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop"
+    ],
     stockType: "READY",
     stockCount: 100,
     variants: {
@@ -46,6 +51,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 30000,
     description: "Botol minum insulated tumbler double-wall stainless steel. Menjaga suhu dingin & panas hingga 12 jam dengan pilihan warna pastel matte.",
     imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop"
+    ],
     stockType: "PRE_ORDER",
     stockCount: 25,
     poQuotaTotal: 50,
@@ -65,6 +75,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 10000,
     description: "Paket stiker vinyl hologram isi 12 pcs bertema Gala Aksi Siswa & streetwear grafis. Tahan air, tidak berbekas saat dilepas.",
     imageUrl: "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1572375992501-4b0892d50c69?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop"
+    ],
     stockType: "READY",
     stockCount: 200,
     variants: {
@@ -82,6 +97,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 45000,
     description: "Tas kain bahan Kanvas Tebal 14oz ramah lingkungan. Muat laptop 15 inch, kantong dalam berdinding resleting ganda.",
     imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop"
+    ],
     stockType: "READY",
     stockCount: 30,
     variants: {
@@ -99,6 +119,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 25000,
     description: "Kipas angin lipat genggam bambu alami berbalut kain sutra dengan corak ukiran etnik Gala Aksi Siswa SMKN 3 Jepara.",
     imageUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800&auto=format&fit=crop"
+    ],
     stockType: "READY",
     stockCount: 50,
     variants: {
@@ -116,6 +141,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 65000,
     description: "Cermin ukir bergaya baroque klasik warna emas antik. Cocok sebagai hiasan meja rias maupun suvenir kenang-kenangan eksklusif.",
     imageUrl: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1602143407151-7111542de6e8?q=80&w=800&auto=format&fit=crop"
+    ],
     stockType: "PRE_ORDER",
     stockCount: 15,
     poQuotaTotal: 30,
@@ -135,6 +165,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 120000,
     description: "Kaos Combed 24s Cotton Premium Boxy Fit. Sablon Plastisol berkualitas tinggi edisi Dies Natalis GALAKSI XII.",
     imageUrl: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=800&auto=format&fit=crop"
+    ],
     stockType: "PRE_ORDER",
     stockCount: 28,
     poQuotaTotal: 60,
