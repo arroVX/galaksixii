@@ -732,6 +732,35 @@ export async function fetchAllAlumniTicketsFromFirebase(): Promise<AlumniTicket[
 }
 
 /**
+ * Menghapus satu tiket alumni dari Firebase Realtime Database DAN Cloud Firestore.
+ * Dipakai di dashboard admin untuk menghapus data yang tidak bisa dihapus sebelumnya
+ * karena belum ada fungsi delete khusus untuk koleksi `alumniTickets`.
+ */
+export async function deleteAlumniTicketFromFirebase(ticketId: string): Promise<SyncResult> {
+  const [rtdbOk, firestoreOk] = await Promise.all([
+    withRetry(async () => {
+      if (!rtdb) throw new Error("RTDB not configured");
+      const ticketRef = ref(rtdb, `alumniTickets/${ticketId}`);
+      await remove(ticketRef);
+      console.log(`✓ AlumniTicket ${ticketId} dihapus dari Realtime Database`);
+    }),
+    withRetry(async () => {
+      if (!db) throw new Error("Firestore not configured");
+      await deleteDoc(doc(db, "alumniTickets", ticketId));
+      console.log(`✓ AlumniTicket ${ticketId} dihapus dari Cloud Firestore`);
+    })
+  ]);
+
+  if (!rtdbOk || !firestoreOk) {
+    console.error(
+      `Hapus alumniTicket ${ticketId} TIDAK LENGKAP — RTDB: ${rtdbOk ? "ok" : "GAGAL"}, Firestore: ${firestoreOk ? "ok" : "GAGAL"}`
+    );
+  }
+
+  return { rtdbOk, firestoreOk };
+}
+
+/**
  * Settings
  */
 import { SiteSettings } from "@/types/merch";

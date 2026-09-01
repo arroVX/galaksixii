@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Order, OrderStatus, AlumniTicket } from "@/types/merch";
-import { syncOrderToFirebase, fetchOrdersFromFirebase, fetchAllAlumniTicketsFromFirebase, deleteOrderFromFirebase } from "@/lib/firebaseService";
+import { syncOrderToFirebase, fetchOrdersFromFirebase, fetchAllAlumniTicketsFromFirebase, deleteOrderFromFirebase, deleteAlumniTicketFromFirebase } from "@/lib/firebaseService";
 import { Eye, Filter, TrendingUp, X, ImageIcon, GraduationCap, Trash2 } from "lucide-react";
 
 const loadInitialOrders = (): Order[] => {
@@ -20,6 +20,7 @@ export const AdminOrders: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [viewProofUrl, setViewProofUrl] = useState<{ url: string; title: string } | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [ticketToDelete, setTicketToDelete] = useState<AlumniTicket | null>(null);
 
   useEffect(() => {
     const loadFirebase = async () => {
@@ -63,21 +64,99 @@ export const AdminOrders: React.FC = () => {
     if (!orderToDelete) return;
     
     const orderId = orderToDelete.id;
+    const linkedTicket = tickets[orderId] || null;
     setOrderToDelete(null);
 
-    // Optimistic UI update
+    // Optimistic UI update — hapus order dan tiket terkait dari state + localStorage
     const updated = orders.filter((o) => o.id !== orderId);
     setOrders(updated);
     localStorage.setItem("gala_merch_orders", JSON.stringify(updated));
+
+    if (linkedTicket) {
+      const updatedTickets = { ...tickets };
+      delete updatedTickets[orderId];
+      setTickets(updatedTickets);
+      try {
+        const saved = localStorage.getItem("gala_alumni_tickets");
+        if (saved) {
+          const localTickets: AlumniTicket[] = JSON.parse(saved);
+          const filtered = localTickets.filter((t) => t.orderId !== orderId && t.id !== linkedTicket.id);
+          localStorage.setItem("gala_alumni_tickets", JSON.stringify(filtered));
+        }
+      } catch { /* ignore */ }
+    }
     
     try {
-      await deleteOrderFromFirebase(orderId);
+      const promises: Promise<unknown>[] = [deleteOrderFromFirebase(orderId)];
+      if (linkedTicket) {
+        promises.push(deleteAlumniTicketFromFirebase(linkedTicket.id));
+      }
+      await Promise.all(promises);
     } catch (err) {
       console.error("Gagal menghapus pesanan:", err);
       alert("Gagal menghapus pesanan. Silakan coba lagi.");
       // Revert on failure by reloading
       const reloaded = loadInitialOrders();
       setOrders(reloaded);
+      // Reload tickets dari Firebase/localStorage
+      try {
+        const fbTickets = await fetchAllAlumniTicketsFromFirebase();
+        const ticketsMap: Record<string, AlumniTicket> = {};
+        fbTickets.forEach(t => { ticketsMap[t.orderId] = t; });
+        setTickets(ticketsMap);
+      } catch { /* ignore */ }
+    }
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!ticketToDelete) return;
+    const ticketId = ticketToDelete.id;
+    const orderId = ticketToDelete.orderId;
+    setTicketToDelete(null);
+
+    // Optimistic UI update
+    const updatedTickets = { ...tickets };
+    // Hapus semua entri yang memiliki id tiket ini (key bisa orderId atau id)
+    Object.keys(updatedTickets).forEach((k) => {
+      if (updatedTickets[k].id === ticketId) delete updatedTickets[k];
+    });
+    setTickets(updatedTickets);
+    try {
+      const saved = localStorage.getItem("gala_alumni_tickets");
+      if (saved) {
+        const localTickets: AlumniTicket[] = JSON.parse(saved);
+        const filtered = localTickets.filter((t) => t.id !== ticketId);
+        localStorage.setItem("gala_alumni_tickets", JSON.stringify(filtered));
+      }
+    } catch { /* ignore */ }
+
+    // Jika ada order terkait, hapus order-nya juga agar tidak ada data yatim
+    // Admin tetap bisa menghapus tiket saja; order dihapus hanya bila orderId cocok dan order ada
+    const hasLinkedOrder = orders.some((o) => o.id === orderId);
+    if (hasLinkedOrder) {
+      const updatedOrders = orders.filter((o) => o.id !== orderId);
+      setOrders(updatedOrders);
+      localStorage.setItem("gala_merch_orders", JSON.stringify(updatedOrders));
+    }
+
+    try {
+      await deleteAlumniTicketFromFirebase(ticketId);
+      if (hasLinkedOrder) {
+        await deleteOrderFromFirebase(orderId);
+      }
+    } catch (err) {
+      console.error("Gagal menghapus tiket alumni:", err);
+      alert("Gagal menghapus tiket alumni. Silakan coba lagi.");
+      try {
+        const fbTickets = await fetchAllAlumniTicketsFromFirebase();
+        const ticketsMap: Record<string, AlumniTicket> = {};
+        fbTickets.forEach(t => { ticketsMap[t.orderId] = t; });
+        setTickets(ticketsMap);
+        const fbOrders = await fetchOrdersFromFirebase();
+        const sorted = fbOrders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setOrders(sorted);
+        localStorage.setItem("gala_merch_orders", JSON.stringify(sorted));
+      } catch { /* ignore */ }
     }
   };
 
@@ -242,6 +321,117 @@ export const AdminOrders: React.FC = () => {
         </div>
       </div>
 
+      {/* Tiket Alumni Section */}
+      <div className="space-y-3 mt-6">
+        <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
+          <GraduationCap size={16} /> Tiket Alumni ({Object.keys(tickets).length})
+        </h3>
+
+        {/* Mobile */}
+        <div className="bg-white border border-neutral-100 rounded-2xl overflow-hidden md:hidden">
+          <div className="divide-y divide-neutral-50">
+            {Object.values(tickets).length === 0 ? (
+              <p className="p-8 text-center text-neutral-400 text-xs">Tidak ada tiket alumni.</p>
+            ) : (
+              Object.values(tickets).map((t) => (
+                <div key={t.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-neutral-900 text-sm truncate">{t.id}</p>
+                      <p className="text-[10px] text-neutral-400">Order: {t.orderId} • {new Date(t.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${t.status === "VERIFIED" ? "bg-emerald-100 text-emerald-700" : t.status === "REJECTED" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                      {t.status === "VERIFIED" ? "Terverifikasi" : t.status === "REJECTED" ? "Ditolak" : "Menunggu"}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-neutral-900 text-xs">{t.bundleName}</p>
+                    <p className="text-[11px] text-neutral-500">{t.bundleItems.map((b) => `${b.name} x${b.quantity}`).join(", ")}</p>
+                    <p className="text-[11px] text-neutral-400 mt-1">Tahun Lulus: {t.graduationYear} • {t.verificationType === "SKL" ? "SKL" : "Kartu Pelajar"}</p>
+                    {t.userEmail && <p className="text-[11px] text-neutral-400">{t.userEmail}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {t.verificationFileUrl && t.verificationFileUrl !== "-" ? (
+                      <button onClick={() => setViewProofUrl({ url: t.verificationFileUrl, title: t.verificationType === "SKL" ? "Bukti SKL" : "Kartu Pelajar" })} className="px-3 py-2 bg-primary-container/20 text-primary rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-primary-container/40 transition">
+                        <GraduationCap size={12} /> Lihat Bukti
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-neutral-400">Tanpa bukti</span>
+                    )}
+                    <button onClick={() => setTicketToDelete(t)} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-red-100 transition ml-auto">
+                      <Trash2 size={12} /> Hapus Tiket
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Desktop */}
+        <div className="bg-white border border-neutral-100 rounded-2xl overflow-hidden hidden md:block">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-neutral-700">
+              <thead className="bg-neutral-50 text-[10px] text-neutral-400 border-b border-neutral-100">
+                <tr>
+                  <th className="p-3">ID Tiket & Tanggal</th>
+                  <th className="p-3">Bundle</th>
+                  <th className="p-3">Verifikasi</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Bukti</th>
+                  <th className="p-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-50">
+                {Object.values(tickets).length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-neutral-400">Tidak ada tiket alumni.</td>
+                  </tr>
+                ) : (
+                  Object.values(tickets).map((t) => (
+                    <tr key={t.id} className="hover:bg-neutral-50/50 transition">
+                      <td className="p-3">
+                        <p className="font-bold text-neutral-900">{t.id}</p>
+                        <p className="text-[10px] text-neutral-400">Order: {t.orderId}</p>
+                        <p className="text-[10px] text-neutral-400">{new Date(t.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</p>
+                        {t.userEmail && <p className="text-[10px] text-neutral-400 truncate max-w-[160px]">{t.userEmail}</p>}
+                      </td>
+                      <td className="p-3 max-w-[200px]">
+                        <p className="font-bold text-neutral-900">{t.bundleName}</p>
+                        <p className="text-[11px] text-neutral-500 truncate">{t.bundleItems.map((b) => `${b.name} x${b.quantity}`).join(", ")}</p>
+                        <p className="text-[10px] text-neutral-400">Lulus: {t.graduationYear}</p>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-[11px] font-medium text-neutral-700">{t.verificationType === "SKL" ? "SKL" : "Kartu Pelajar"}</span>
+                      </td>
+                      <td className="p-3">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${t.status === "VERIFIED" ? "bg-emerald-100 text-emerald-700" : t.status === "REJECTED" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                          {t.status === "VERIFIED" ? "Terverifikasi" : t.status === "REJECTED" ? "Ditolak" : "Menunggu"}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        {t.verificationFileUrl && t.verificationFileUrl !== "-" ? (
+                          <button onClick={() => setViewProofUrl({ url: t.verificationFileUrl, title: t.verificationType === "SKL" ? "Bukti SKL" : "Kartu Pelajar" })} className="px-3 py-1.5 bg-primary-container/20 text-primary rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-primary-container/40 transition">
+                            <GraduationCap size={11} /> Lihat
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-neutral-400">—</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right">
+                        <button onClick={() => setTicketToDelete(t)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center" title="Hapus Tiket Alumni">
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* Proof Modal */}
       {viewProofUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/50 backdrop-blur-sm">
@@ -263,13 +453,13 @@ export const AdminOrders: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - Order */}
       {orderToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/50 backdrop-blur-sm">
           <div className="bg-white border border-neutral-100 rounded-2xl max-w-sm w-full p-6 relative">
-            <h4 className="font-bold text-neutral-900 text-base mb-2">Konfirmasi Hapus</h4>
+            <h4 className="font-bold text-neutral-900 text-base mb-2">Konfirmasi Hapus Pesanan</h4>
             <p className="text-sm text-neutral-600 mb-6">
-              Apakah Anda yakin ingin menghapus pesanan <strong>{orderToDelete.id}</strong> atas nama <strong>{orderToDelete.customerName}</strong>? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus pesanan <strong>{orderToDelete.id}</strong> atas nama <strong>{orderToDelete.customerName}</strong>? Tiket alumni terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex gap-3 justify-end">
               <button 
@@ -283,6 +473,32 @@ export const AdminOrders: React.FC = () => {
                 className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition"
               >
                 Hapus Pesanan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal - Alumni Ticket */}
+      {ticketToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/50 backdrop-blur-sm">
+          <div className="bg-white border border-neutral-100 rounded-2xl max-w-sm w-full p-6 relative">
+            <h4 className="font-bold text-neutral-900 text-base mb-2">Konfirmasi Hapus Tiket</h4>
+            <p className="text-sm text-neutral-600 mb-6">
+              Apakah Anda yakin ingin menghapus tiket alumni <strong>{ticketToDelete.id}</strong> ({ticketToDelete.bundleName}) — Order <strong>{ticketToDelete.orderId}</strong>? Pesanan terkait juga akan dihapus jika ada. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setTicketToDelete(null)}
+                className="px-4 py-2 text-sm font-bold text-neutral-700 bg-neutral-100 rounded-xl hover:bg-neutral-200 transition"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleDeleteTicket}
+                className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition"
+              >
+                Hapus Tiket
               </button>
             </div>
           </div>
