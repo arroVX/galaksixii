@@ -172,7 +172,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
                     type="button"
                     onClick={handlePrevImage}
                     aria-label="Foto sebelumnya"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full hidden lg:flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 lg:opacity-0 lg:group-hover:opacity-100"
                   >
                     <span className="material-symbols-outlined text-[20px]">chevron_left</span>
                   </button>
@@ -180,7 +180,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
                     type="button"
                     onClick={handleNextImage}
                     aria-label="Foto berikutnya"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur hover:bg-white rounded-full hidden lg:flex items-center justify-center shadow-lg text-slate-800 transition-all active:scale-95 z-10 lg:opacity-0 lg:group-hover:opacity-100"
                   >
                     <span className="material-symbols-outlined text-[20px]">chevron_right</span>
                   </button>
