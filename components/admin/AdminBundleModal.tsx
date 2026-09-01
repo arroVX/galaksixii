@@ -24,6 +24,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
     bundle?.items || [{ name: "", quantity: 1, imageUrl: "" }]
   );
   const [error, setError] = useState<string | null>(null);
+  const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 
   const addItem = () => {
     setItems([...items, { name: "", quantity: 1, imageUrl: "" }]);
@@ -120,13 +121,13 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
           </div>
 
           <div>
-            <label className="block text-neutral-500 mb-1">Foto Bundling (bisa banyak — untuk slide)</label>
+            <label className="block text-neutral-500 mb-1">Foto Bundling (bisa banyak — untuk slide, maks 3MB per file)</label>
             <div className="flex flex-col gap-3">
               <div className="flex gap-2 flex-wrap">
                 {images.map((img, idx) => (
                   <div key={idx} className="relative group">
                     <img src={img} alt={`Preview ${idx + 1}`} className="w-12 h-12 rounded-lg object-cover border border-neutral-200 shrink-0" />
-                    <button type="button" onClick={() => setImages(images.filter((_, i) => i !== idx))} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onClick={() => { setImages(images.filter((_, i) => i !== idx)); setError(null); }} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <X size={12} />
                     </button>
                   </div>
@@ -134,7 +135,19 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
               </div>
               <input type="file" accept="image/*" multiple onChange={(e) => {
                 const files = Array.from(e.target.files || []);
+                setError(null);
+                let hasError = false;
                 files.forEach((file) => {
+                  if (file.size > MAX_FILE_SIZE) {
+                    setError(`"${file.name}" terlalu besar (${(file.size / 1024 / 1024).toFixed(2)}MB). Maksimal 3MB per file.`);
+                    hasError = true;
+                    return;
+                  }
+                  if (!file.type.startsWith("image/")) {
+                    setError(`"${file.name}" bukan file gambar.`);
+                    hasError = true;
+                    return;
+                  }
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     const img = new Image();
@@ -142,7 +155,7 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                       const canvas = document.createElement("canvas");
                       let width = img.width;
                       let height = img.height;
-                      const MAX_SIZE = 800;
+                      const MAX_SIZE = 1024;
                       if (width > height && width > MAX_SIZE) {
                         height *= MAX_SIZE / width;
                         width = MAX_SIZE;
@@ -154,13 +167,17 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                       canvas.height = height;
                       const ctx = canvas.getContext("2d");
                       ctx?.drawImage(img, 0, 0, width, height);
-                      setImages(prev => [...prev, canvas.toDataURL("image/webp", 0.7)]);
+                      setImages(prev => [...prev, canvas.toDataURL("image/webp", 0.85)]);
                     };
+                    img.onerror = () => setError(`Gagal memproses "${file.name}". Coba file lain.`);
                     img.src = reader.result as string;
                   };
+                  reader.onerror = () => setError(`Gagal membaca "${file.name}".`);
                   reader.readAsDataURL(file);
                 });
+                if (hasError || files.length > 0) e.target.value = "";
               }} className="w-full text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 cursor-pointer" />
+              <p className="text-[10px] text-neutral-400">Maks 3MB per file • Format JPG/PNG/WebP • Auto compress 1024px webp 0.85 biar tidak burik</p>
             </div>
           </div>
 
@@ -211,32 +228,45 @@ export const AdminBundleModal: React.FC<AdminBundleModalProps> = ({ bundle, onCl
                   {item.imageUrl && <img src={item.imageUrl} alt="" className="w-8 h-8 rounded-lg bg-neutral-200 object-cover shrink-0" />}
                   <input type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        const img = new Image();
-                        img.onload = () => {
-                          const canvas = document.createElement("canvas");
-                          let width = img.width;
-                          let height = img.height;
-                          const MAX_SIZE = 400; // Smaller size for items
-                          if (width > height && width > MAX_SIZE) {
-                            height *= MAX_SIZE / width;
-                            width = MAX_SIZE;
-                          } else if (height > MAX_SIZE) {
-                            width *= MAX_SIZE / height;
-                            height = MAX_SIZE;
-                          }
-                          canvas.width = width;
-                          canvas.height = height;
-                          const ctx = canvas.getContext("2d");
-                          ctx?.drawImage(img, 0, 0, width, height);
-                          updateItem(idx, "imageUrl", canvas.toDataURL("image/webp", 0.7));
-                        };
-                        img.src = reader.result as string;
-                      };
-                      reader.readAsDataURL(file);
+                    if (!file) return;
+                    if (file.size > MAX_FILE_SIZE) {
+                      setError(`"${file.name}" terlalu besar (${(file.size / 1024 / 1024).toFixed(2)}MB). Maksimal 3MB.`);
+                      e.target.value = "";
+                      return;
                     }
+                    if (!file.type.startsWith("image/")) {
+                      setError(`"${file.name}" bukan file gambar.`);
+                      e.target.value = "";
+                      return;
+                    }
+                    setError(null);
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const img = new Image();
+                      img.onload = () => {
+                        const canvas = document.createElement("canvas");
+                        let width = img.width;
+                        let height = img.height;
+                        const MAX_SIZE = 600;
+                        if (width > height && width > MAX_SIZE) {
+                          height *= MAX_SIZE / width;
+                          width = MAX_SIZE;
+                        } else if (height > MAX_SIZE) {
+                          width *= MAX_SIZE / height;
+                          height = MAX_SIZE;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext("2d");
+                        ctx?.drawImage(img, 0, 0, width, height);
+                        updateItem(idx, "imageUrl", canvas.toDataURL("image/webp", 0.85));
+                      };
+                      img.onerror = () => setError(`Gagal memproses "${file.name}".`);
+                      img.src = reader.result as string;
+                    };
+                    reader.onerror = () => setError(`Gagal membaca "${file.name}".`);
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
                   }} className="text-[10px] text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-white file:text-neutral-700 hover:file:bg-neutral-100 cursor-pointer w-full" />
                 </div>
               </div>

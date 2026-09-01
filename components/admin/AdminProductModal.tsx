@@ -23,6 +23,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
   const [poQuotaTotal] = useState<number>(product?.poQuotaTotal || 50);
   const [sizesInput, setSizesInput] = useState(product?.variants?.sizes?.join(", ") || "Standard");
   const [colorsInput, setColorsInput] = useState(product?.variants?.colors?.join(", ") || "White, Black");
+  const [error, setError] = useState<string | null>(null);
+  const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +80,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+    setError(null);
   };
 
   return (
@@ -122,7 +125,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
           </div>
 
           <div>
-            <label className="block text-neutral-500 mb-1">Foto Produk *</label>
+            <label className="block text-neutral-500 mb-1">Foto Produk * (maks 3MB per file)</label>
             <div className="flex flex-col gap-3">
               <div className="flex gap-2 flex-wrap">
                 {images.map((img, idx) => (
@@ -134,9 +137,26 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
                   </div>
                 ))}
               </div>
+              {error && (
+                <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-600 text-[11px] rounded-lg">
+                  {error}
+                </div>
+              )}
               <input type="file" accept="image/*" multiple onChange={(e) => {
                 const files = Array.from(e.target.files || []);
+                setError(null);
+                let hasError = false;
                 files.forEach((file) => {
+                  if (file.size > MAX_FILE_SIZE) {
+                    setError(`"${file.name}" terlalu besar (${(file.size / 1024 / 1024).toFixed(2)}MB). Maksimal 3MB per file.`);
+                    hasError = true;
+                    return;
+                  }
+                  if (!file.type.startsWith("image/")) {
+                    setError(`"${file.name}" bukan file gambar.`);
+                    hasError = true;
+                    return;
+                  }
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     const img = new Image();
@@ -144,7 +164,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
                       const canvas = document.createElement("canvas");
                       let width = img.width;
                       let height = img.height;
-                      const MAX_SIZE = 800;
+                      const MAX_SIZE = 1024;
                       if (width > height && width > MAX_SIZE) {
                         height *= MAX_SIZE / width;
                         width = MAX_SIZE;
@@ -156,13 +176,20 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
                       canvas.height = height;
                       const ctx = canvas.getContext("2d");
                       ctx?.drawImage(img, 0, 0, width, height);
-                      setImages(prev => [...prev, canvas.toDataURL("image/webp", 0.7)]);
+                      setImages(prev => [...prev, canvas.toDataURL("image/webp", 0.85)]);
                     };
+                    img.onerror = () => setError(`Gagal memproses "${file.name}". Coba file lain.`);
                     img.src = reader.result as string;
                   };
+                  reader.onerror = () => setError(`Gagal membaca "${file.name}".`);
                   reader.readAsDataURL(file);
                 });
+                // reset input agar file yang sama bisa dipilih lagi setelah error
+                if (hasError || files.length > 0) {
+                  e.target.value = "";
+                }
               }} className="w-full text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200 cursor-pointer" />
+              <p className="text-[10px] text-neutral-400">Maks 3MB per file • Format JPG/PNG/WebP • Auto compress 1024px webp 0.85 biar tidak burik</p>
             </div>
           </div>
 
