@@ -201,28 +201,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end mb-6">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (email) {
-                        try {
-                          const { getAuth, sendPasswordResetEmail } = await import("firebase/auth");
-                          await sendPasswordResetEmail(getAuth(), email);
-                          showAuthAlert("Email reset password telah dikirim. Silakan cek inbox kamu.");
-                        } catch {
-                          showAuthAlert("Gagal mengirim email reset. Pastikan email benar dan sudah terdaftar.");
-                        }
-                      } else {
-                        showAuthAlert("Masukkan email kamu terlebih dahulu.");
-                      }
-                    }}
-                    className="text-[11px] text-neutral-500 hover:text-neutral-900 transition-colors py-1"
-                  >
-                    Lupa password?
-                  </button>
-                </div>
-
                 <button
                   type="submit"
                   disabled={loading}

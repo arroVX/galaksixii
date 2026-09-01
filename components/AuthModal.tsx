@@ -134,27 +134,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900 font-semibold"
               />
             </div>
-            <div className="flex justify-end -mt-2 mb-4">
-              <button
-                type="button"
-                onClick={async () => {
-                  if (email) {
-                    try {
-                      const { getAuth, sendPasswordResetEmail } = await import("firebase/auth");
-                      await sendPasswordResetEmail(getAuth(), email);
-                      showAuthAlert("Email reset password telah dikirim. Cek inbox kamu.");
-                    } catch {
-                      showAuthAlert("Gagal mengirim email reset. Pastikan email benar.");
-                    }
-                  } else {
-                    showAuthAlert("Masukkan email terlebih dahulu.");
-                  }
-                }}
-                className="text-[11px] text-neutral-500 hover:text-neutral-900 transition-colors py-1"
-              >
-                Lupa password?
-              </button>
-            </div>
             <button
               type="submit"
               disabled={loading}
