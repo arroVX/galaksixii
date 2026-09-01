@@ -10,20 +10,30 @@ import { fetchProductsFromFirebase } from "@/lib/firebaseService";
 
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useSiteSettings } from "@/context/SiteContext";
 
 function MerchandiseContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [activeView, setActiveView] = useState<"shop" | "admin">(searchParams.get("admin") === "true" ? "admin" : "shop");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const { siteSettings, loading: settingsLoading } = require("@/context/SiteContext").useSiteSettings();
+  const { siteSettings, loading: settingsLoading } = useSiteSettings();
 
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
+
+  // Guard admin view — non-admin dipaksa kembali ke shop
+  useEffect(() => {
+    if (activeView === "admin" && !isAdmin) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- redirect guard
+      setActiveView("shop");
+      router.replace("/merchandise");
+    }
+  }, [activeView, isAdmin, router]);
 
   useEffect(() => {
     if (!settingsLoading && siteSettings.merchandise.locked && !user) {
@@ -38,22 +48,31 @@ function MerchandiseContent() {
   }, [settingsLoading, siteSettings.merchandise.visible, activeView, router]);
 
   useEffect(() => {
-    let initial: Product[] = [];
+    let cancelled = false;
     const saved = localStorage.getItem("gala_merch_products");
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Product[];
-        if (parsed.length > 0) initial = parsed;
+        if (parsed.length > 0) {
+          queueMicrotask(() => {
+            if (!cancelled) setProducts(parsed);
+          });
+        }
       } catch { /* ignore */ }
     }
-    setProducts(initial);
 
     fetchProductsFromFirebase()
       .then((firebaseProducts) => {
-        setProducts(firebaseProducts);
-        localStorage.setItem("gala_merch_products", JSON.stringify(firebaseProducts));
+        if (cancelled) return;
+        if (firebaseProducts.length > 0) {
+          setProducts(firebaseProducts);
+          localStorage.setItem("gala_merch_products", JSON.stringify(firebaseProducts));
+        }
       })
       .catch((err) => console.warn("Gagal fetch produk dari Firebase:", err));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {

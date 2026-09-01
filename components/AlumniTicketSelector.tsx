@@ -15,13 +15,8 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
   const router = useRouter();
   const { user, showAuthAlert } = useAuth();
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [prevBundleId, setPrevBundleId] = useState<string | null>(null);
-  if (bundle.id !== prevBundleId) {
-    setPrevBundleId(bundle.id);
-  }
 
   const handleContinue = () => {
     setError(null);

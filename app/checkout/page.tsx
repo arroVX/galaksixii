@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Order, OrderItem, DeliveryMethod, Product } from "@/types/merch";
-import { syncOrderToFirebase, syncProductToFirebase } from "@/lib/firebaseService";
+import { syncOrderToFirebase, syncProductToFirebase, uploadDataUrlToStorage } from "@/lib/firebaseService";
 import { useMounted } from "@/lib/useMounted";
 import { AlertModal } from "@/components/ui/AlertModal";
 import Link from "next/link";
@@ -88,6 +88,16 @@ export default function CheckoutPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        setClipboardError("Ukuran file terlalu besar. Maksimal 5MB, silakan pilih file lebih kecil.");
+        e.target.value = "";
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setClipboardError("Format file harus gambar (JPG/PNG/WebP).");
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
@@ -109,6 +119,7 @@ export default function CheckoutPage() {
           setProofFile(canvas.toDataURL("image/jpeg", 0.7));
           clearError("proofFile");
         };
+        img.onerror = () => setClipboardError("Gagal memproses gambar. Coba file lain.");
         img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
@@ -143,6 +154,16 @@ export default function CheckoutPage() {
       localStorage.setItem("gala_merch_guest_id", guestId);
     }
 
+    // Upload bukti bayar ke Storage jika berupa dataUrl besar
+    let finalProofUrl: string | undefined = proofFile || undefined;
+    if (finalProofUrl?.startsWith("data:")) {
+      try {
+        finalProofUrl = await uploadDataUrlToStorage(finalProofUrl, `orders/${orderId}/payment-proof.jpg`);
+      } catch (e) {
+        console.warn("Gagal upload bukti ke Storage, tetap pakai dataUrl:", e);
+      }
+    }
+
     const newOrder: Order = {
       id: orderId,
       userId: user?.uid || guestId,
@@ -158,7 +179,7 @@ export default function CheckoutPage() {
       shippingFee: 0,
       totalPrice: subtotal,
       paymentMethod,
-      paymentProofUrl: proofFile || undefined,
+      paymentProofUrl: finalProofUrl,
       status: paymentMethod === "COD" ? "Diverifikasi" : "Menunggu Pembayaran",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -167,7 +188,10 @@ export default function CheckoutPage() {
     try {
       // 1. Sync order ke Firebase (parallel RTDB + Firestore)
       const result = await syncOrderToFirebase(newOrder);
-      setSyncFailed(!result.rtdbOk && !result.firestoreOk);
+      setSyncFailed(!result.rtdbOk || !result.firestoreOk);
+      if (!result.rtdbOk || !result.firestoreOk) {
+        console.warn(`Sinkronisasi sebagian gagal — RTDB:${result.rtdbOk} Firestore:${result.firestoreOk}`);
+      }
     } catch (err) {
       console.error("Gagal sinkronisasi ke Firebase:", err);
       setSyncFailed(true);
@@ -178,12 +202,14 @@ export default function CheckoutPage() {
     const existingOrders: Order[] = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
     localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
 
-    // 3. Update stok produk localStorage (instant)
+    // 3. Update stok produk localStorage (instant) — simpan snapshot untuk sync Firebase tanpa double-decrement
+    const cartSnapshot = [...cart];
+    let updatedProductsForSync: Product[] | null = null;
     try {
       const saved = localStorage.getItem("gala_merch_products");
       if (saved) {
         const products: Product[] = JSON.parse(saved);
-        for (const item of cart) {
+        for (const item of cartSnapshot) {
           const idx = products.findIndex((p) => p.id === item.productId);
           if (idx === -1) continue;
           const updated: Product = { ...products[idx] };
@@ -191,9 +217,11 @@ export default function CheckoutPage() {
             updated.stockCount = Math.max(0, (updated.stockCount || 0) - item.quantity);
           }
           updated.soldCount = (updated.soldCount ?? 0) + item.quantity;
+          updated.updatedAt = Date.now();
           products[idx] = updated;
         }
         localStorage.setItem("gala_merch_products", JSON.stringify(products));
+        updatedProductsForSync = products;
       }
     } catch (e) {
       console.error("Gagal memperbarui stok produk lokal:", e);
@@ -206,27 +234,20 @@ export default function CheckoutPage() {
     setShowInvoiceModal(true);
 
     // 5. Sync stok produk ke Firebase di BACKGROUND (fire-and-forget, non-blocking)
-    try {
-      const saved = localStorage.getItem("gala_merch_products");
-      if (saved) {
-        const products: Product[] = JSON.parse(saved);
-        const stockPromises = cart.map((item) => {
-          const idx = products.findIndex((p) => p.id === item.productId);
-          if (idx === -1) return Promise.resolve();
-          const updated: Product = { ...products[idx] };
-          if (updated.stockType === "READY") {
-            updated.stockCount = Math.max(0, (updated.stockCount || 0) - item.quantity);
-          }
-          updated.soldCount = (updated.soldCount ?? 0) + item.quantity;
-          return syncProductToFirebase(updated).catch((err) => {
-            console.warn(`Stok produk ${updated.id} gagal disinkronkan ke Firebase:`, err);
+    // Kirim produk yang sudah ter-update, JANGAN kurangi stok lagi (hindari double-decrement)
+    if (updatedProductsForSync) {
+      try {
+        const stockPromises = cartSnapshot.map((item) => {
+          const prod = updatedProductsForSync!.find((p) => p.id === item.productId);
+          if (!prod) return Promise.resolve();
+          return syncProductToFirebase(prod).catch((err) => {
+            console.warn(`Stok produk ${prod.id} gagal disinkronkan ke Firebase:`, err);
           });
         });
-        // Jalankan semua sync stok paralel di background
         Promise.all(stockPromises).catch(console.warn);
+      } catch (e) {
+        console.error("Background stok sync error:", e);
       }
-    } catch (e) {
-      console.error("Background stok sync error:", e);
     }
   };
 

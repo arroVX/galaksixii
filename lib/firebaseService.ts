@@ -1,5 +1,6 @@
-import { db, rtdb } from "./firebase";
+import { db, rtdb, storage } from "./firebase";
 import { doc, setDoc, deleteDoc, collection, getDocs, query, where, writeBatch } from "firebase/firestore";
+import { ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { ref, set, remove, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
 import { Order, Product, AlumniTicketBundle, GalleryItem, AlumniTicket } from "@/types/merch";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
@@ -11,6 +12,27 @@ import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
  */
 function stripUndefined<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+/**
+ * Upload base64 dataUrl ke Firebase Storage dan kembalikan download URL.
+ * Jika storage tidak terkonfigurasi atau dataUrl kecil (<700KB), kembalikan dataUrl asli
+ * agar tidak menambah latency.
+ */
+export async function uploadDataUrlToStorage(dataUrl: string, path: string): Promise<string> {
+  if (!storage || !dataUrl.startsWith("data:")) return dataUrl;
+  // Hindari upload jika ukuran aman untuk Firestore (<600KB base64 ≈ 450KB binary)
+  if (dataUrl.length < 600 * 1024) return dataUrl;
+  try {
+    const ref = storageRef(storage, path);
+    await uploadString(ref, dataUrl, "data_url");
+    const url = await getDownloadURL(ref);
+    console.log(`✓ Uploaded to Storage: ${path}`);
+    return url;
+  } catch (e) {
+    console.warn(`Storage upload failed for ${path}, fallback to dataUrl:`, e);
+    return dataUrl;
+  }
 }
 
 export interface SyncResult {
@@ -183,18 +205,25 @@ export async function fetchOrdersFromFirebase(): Promise<Order[]> {
     console.warn("Firestore fetch orders error:", err);
   }
 
-  // 2. Ambil dari Realtime Database
+  // 2. Ambil dari Realtime Database — bandingkan updatedAt jika duplikat
   try {
-    const dbRef = ref(rtdb);
-    const snapshot = await get(child(dbRef, "orders"));
-    if (snapshot.exists()) {
-      const rtdbOrders = snapshot.val();
-      Object.keys(rtdbOrders).forEach((id) => {
-        const item = rtdbOrders[id] as Order;
-        if (item && item.id && !ordersMap.has(item.id)) {
-          ordersMap.set(item.id, item);
-        }
-      });
+    if (rtdb) {
+      const dbRef = ref(rtdb);
+      const snapshot = await get(child(dbRef, "orders"));
+      if (snapshot.exists()) {
+        const rtdbOrders = snapshot.val();
+        Object.keys(rtdbOrders).forEach((id) => {
+          const item = rtdbOrders[id] as Order;
+          if (item && item.id) {
+            const existing = ordersMap.get(item.id);
+            const itemUpdated = new Date(item.updatedAt || item.createdAt || 0).getTime();
+            const existingUpdated = existing ? new Date(existing.updatedAt || existing.createdAt || 0).getTime() : -1;
+            if (!existing || itemUpdated > existingUpdated) {
+              ordersMap.set(item.id, item);
+            }
+          }
+        });
+      }
     }
   } catch (err) {
     console.warn("RTDB fetch orders error:", err);
@@ -472,7 +501,7 @@ export async function fetchAlumniTicketBundlesFromFirebase(): Promise<AlumniTick
 export async function seedAlumniTicketBundlesToFirebase(): Promise<number> {
   if (!db && !rtdb) return 0;
 
-  let existing = new Set<string>();
+  const existing = new Set<string>();
   try {
     if (db) {
       const querySnapshot = await getDocs(collection(db, "alumniTicketBundles"));

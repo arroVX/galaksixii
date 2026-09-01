@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useMounted } from "@/lib/useMounted";
 import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, OrderItem, DeliveryMethod } from "@/types/merch";
-import { syncOrderToFirebase, syncAlumniTicketToFirebase } from "@/lib/firebaseService";
+import { syncOrderToFirebase, syncAlumniTicketToFirebase, uploadDataUrlToStorage } from "@/lib/firebaseService";
 import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
-import { ALUMNI_TICKET_BUNDLES, GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
+import { GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
 import { AlertModal } from "@/components/ui/AlertModal";
 import Link from "next/link";
 
@@ -20,10 +20,10 @@ interface CheckoutData {
   totalPrice: number;
   bundleItems: AlumniTicketBundleItem[];
   isAlumniOnly?: boolean;
-  verificationType: AlumniVerificationType;
-  verificationFileUrl: string;
-  verificationFileName: string;
-  graduationYear: number;
+  verificationType?: AlumniVerificationType;
+  verificationFileUrl?: string;
+  verificationFileName?: string;
+  graduationYear?: number;
 }
 
 export default function CheckoutAlumniPage() {
@@ -31,24 +31,21 @@ export default function CheckoutAlumniPage() {
   const { user } = useAuth();
   const mounted = useMounted();
 
+  const [loadedCheckoutData, setLoadedCheckoutData] = useState<CheckoutData | null>(null);
+  const checkoutData = loadedCheckoutData;
+
   useEffect(() => {
     const saved = sessionStorage.getItem("alumni_ticket_checkout");
     if (!saved) {
       router.push("/tiket-alumni");
       return;
     }
-  }, [router]);
-
-  const [loadedCheckoutData, setLoadedCheckoutData] = useState<CheckoutData | null>(null);
-  const savedCheckoutRaw = typeof window !== "undefined" ? sessionStorage.getItem("alumni_ticket_checkout") : null;
-  if (savedCheckoutRaw && !loadedCheckoutData) {
     try {
-      const data = JSON.parse(savedCheckoutRaw) as CheckoutData;
+      const data = JSON.parse(saved) as CheckoutData;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrasi sessionStorage (client-only source)
       setLoadedCheckoutData(data);
     } catch { /* ignore */ }
-  }
-
-  const checkoutData = loadedCheckoutData;
+  }, [router]);
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [addressOrClass, setAddressOrClass] = useState("");
@@ -69,13 +66,16 @@ export default function CheckoutAlumniPage() {
   const [graduationYear, setGraduationYear] = useState<number | "">("");
 
   const [initializedFromCheckout, setInitializedFromCheckout] = useState(false);
-  if (checkoutData && !initializedFromCheckout) {
-    setInitializedFromCheckout(true);
-    setVerificationType(checkoutData.verificationType);
-    setVerificationFileUrl(checkoutData.verificationFileUrl);
-    setVerificationFileName(checkoutData.verificationFileName);
-    setGraduationYear(checkoutData.graduationYear);
-  }
+  useEffect(() => {
+    if (checkoutData && !initializedFromCheckout) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- init form dari sessionStorage checkoutData
+      setInitializedFromCheckout(true);
+      if (checkoutData.verificationType) setVerificationType(checkoutData.verificationType);
+      if (checkoutData.verificationFileUrl) setVerificationFileUrl(checkoutData.verificationFileUrl);
+      if (checkoutData.verificationFileName) setVerificationFileName(checkoutData.verificationFileName);
+      if (checkoutData.graduationYear) setGraduationYear(checkoutData.graduationYear);
+    }
+  }, [checkoutData, initializedFromCheckout]);
 
   const [errors, setErrors] = useState({
     customerName: false,
@@ -131,6 +131,16 @@ export default function CheckoutAlumniPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        setClipboardError("Ukuran file terlalu besar. Maksimal 5MB.");
+        e.target.value = "";
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setClipboardError("Format file harus gambar.");
+        e.target.value = "";
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
@@ -152,6 +162,7 @@ export default function CheckoutAlumniPage() {
           setProofFile(canvas.toDataURL("image/jpeg", 0.7));
           clearError("proofFile");
         };
+        img.onerror = () => setClipboardError("Gagal memproses gambar.");
         img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
@@ -196,6 +207,20 @@ export default function CheckoutAlumniPage() {
       ? `${notes}\n\n[TIKET ALUMNI]\nTahun Lulus: ${graduationYear}\nJenis Verifikasi: ${verificationType}\nFile Verifikasi: ${verificationFileName || "uploaded"}`.trim()
       : notes.trim();
 
+    // Upload bukti bayar & verifikasi ke Storage jika berupa dataUrl besar
+    let finalProofUrl: string | undefined = proofFile || undefined;
+    let finalVerificationUrl = verificationFileUrl || "";
+    try {
+      if (finalProofUrl?.startsWith("data:")) {
+        finalProofUrl = await uploadDataUrlToStorage(finalProofUrl, `orders/${orderId}/payment-proof.jpg`);
+      }
+      if (isAlumni && finalVerificationUrl.startsWith("data:")) {
+        finalVerificationUrl = await uploadDataUrlToStorage(finalVerificationUrl, `alumniTickets/${ticketId}/verification.jpg`);
+      }
+    } catch (e) {
+      console.warn("Upload ke Storage gagal, fallback ke dataUrl:", e);
+    }
+
     const newOrder: Order = {
       id: orderId,
       userId: user?.uid || guestId,
@@ -211,7 +236,7 @@ export default function CheckoutAlumniPage() {
       shippingFee: 0,
       totalPrice: checkoutData.totalPrice,
       paymentMethod,
-      paymentProofUrl: proofFile || undefined,
+      paymentProofUrl: finalProofUrl,
       status: paymentMethod === "COD" ? "Diverifikasi" : "Menunggu Pembayaran",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -221,8 +246,9 @@ export default function CheckoutAlumniPage() {
       id: ticketId,
       orderId,
       userId: user?.uid || guestId,
+      userEmail: user?.email || "",
       verificationType: isAlumni ? verificationType : "SKL",
-      verificationFileUrl: isAlumni ? (verificationFileUrl || "") : "-",
+      verificationFileUrl: isAlumni ? (finalVerificationUrl || "") : "-",
       graduationYear: isAlumni ? Number(graduationYear) : new Date().getFullYear(),
       bundleId: checkoutData.bundleId,
       bundleName: checkoutData.bundleName,
@@ -234,7 +260,10 @@ export default function CheckoutAlumniPage() {
     try {
       const orderResult = await syncOrderToFirebase(newOrder);
       const ticketResult = await syncAlumniTicketToFirebase(alumniTicket);
-      setSyncFailed(!orderResult.rtdbOk && !orderResult.firestoreOk && !ticketResult.rtdbOk && !ticketResult.firestoreOk);
+      setSyncFailed(!orderResult.rtdbOk || !orderResult.firestoreOk || !ticketResult.rtdbOk || !ticketResult.firestoreOk);
+      if (!orderResult.rtdbOk || !orderResult.firestoreOk || !ticketResult.rtdbOk || !ticketResult.firestoreOk) {
+        console.warn("Sinkronisasi sebagian gagal", { orderResult, ticketResult });
+      }
     } catch (err) {
       console.error("Gagal sinkronisasi ke Firebase:", err);
       setSyncFailed(true);

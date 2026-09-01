@@ -19,15 +19,28 @@ export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId
 );
 
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+let app: ReturnType<typeof getApp>;
+if (getApps().length > 0) {
+  app = getApp();
+} else if (isFirebaseConfigured) {
+  app = initializeApp(firebaseConfig);
+} else {
+  // Inisialisasi dummy agar build/SSR tidak crash; runtime akan guard via isFirebaseConfigured
+  try {
+    app = initializeApp(firebaseConfig);
+  } catch {
+    // Fallback: buat app minimal tanpa validasi
+    app = { name: "[DEFAULT]", options: firebaseConfig } as unknown as ReturnType<typeof getApp>;
+  }
+}
 
 // getAuth memvalidasi apiKey secara eager dan melempar error bila kosong —
 // itu membuat prerender/build gagal saat env belum diset (mis. di Vercel).
 // Pemakaian runtime tetap aman karena AuthContext selalu memanggil ensureConfigured() dulu.
-export const auth = (isFirebaseConfigured ? getAuth(app) : null) as Auth;
+export const auth = (isFirebaseConfigured ? getAuth(app as unknown as Parameters<typeof getAuth>[0]) : null) as Auth;
 export const googleProvider = new GoogleAuthProvider();
-export const db = (isFirebaseConfigured ? getFirestore(app) : null) as Firestore;
-export const rtdb = (isFirebaseConfigured ? getDatabase(app) : null) as Database;
-export const storage = (isFirebaseConfigured ? getStorage(app) : null) as FirebaseStorage;
+export const db = (isFirebaseConfigured ? getFirestore(app as unknown as Parameters<typeof getFirestore>[0]) : null) as Firestore;
+export const rtdb = (isFirebaseConfigured ? getDatabase(app as unknown as Parameters<typeof getDatabase>[0]) : null) as Database;
+export const storage = (isFirebaseConfigured ? getStorage(app as unknown as Parameters<typeof getStorage>[0]) : null) as FirebaseStorage;
 
 export default app;

@@ -128,6 +128,7 @@ export interface AlumniTicket {
   id: string;
   orderId: string;
   userId: string;
+  userEmail?: string;
   verificationType: AlumniVerificationType;
   verificationFileUrl: string;
   graduationYear: number;
@@ -157,15 +158,4 @@ export interface AlumniTicketBundle {
   orderIndex?: number;
   isAlumniOnly?: boolean;
   updatedAt?: number;
-}
-
-export interface PageSetting {
-  visible: boolean;
-  locked: boolean;
-}
-
-export interface SiteSettings {
-  merchandise: PageSetting;
-  tiketAlumni: PageSetting;
-  orders: PageSetting;
 }

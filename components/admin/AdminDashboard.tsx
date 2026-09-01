@@ -8,6 +8,7 @@ import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
 import { AdminSettings } from "./AdminSettings";
 import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
+import { useAuth } from "@/context/AuthContext";
 
 interface AdminDashboardProps {
   products: Product[];
@@ -20,6 +21,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   setProducts,
   onExit
 }) => {
+  const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders" | "settings">("overview");
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
@@ -27,22 +29,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // baca data terbaru dari Firebase sebagai sumber kebenaran. Fallback awal
   // = localStorage (persistensi lokal) / ALUMNI_TICKET_BUNDLES.
   useEffect(() => {
-    let initial: AlumniTicketBundle[] = [];
+    let cancelled = false;
     const saved = localStorage.getItem("gala_merch_bundles");
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as AlumniTicketBundle[];
-        if (parsed.length > 0) initial = parsed;
+        if (parsed.length > 0) {
+          queueMicrotask(() => {
+            if (!cancelled) setBundles(parsed);
+          });
+        }
       } catch { /* ignore */ }
     }
-    setBundles(initial);
 
     (async () => {
       const fbBundles = await fetchAlumniTicketBundlesFromFirebase();
-      setBundles(fbBundles);
-      localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      if (cancelled) return;
+      if (fbBundles.length > 0) {
+        setBundles(fbBundles);
+        localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      }
     })().catch((err) => console.warn("Gagal fetch bundle:", err));
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <span className="material-symbols-outlined text-[48px] text-red-300">block</span>
+        <h2 className="text-lg font-bold text-neutral-900">Akses Ditolak</h2>
+        <p className="text-sm text-neutral-500">Halaman admin hanya untuk akun administrator.</p>
+        <button onClick={onExit} className="mt-2 px-5 py-2.5 bg-neutral-900 text-white text-xs font-semibold rounded-xl">Kembali ke Toko</button>
+      </div>
+    );
+  }
 
   const tabs = [
     { key: "overview" as const, label: "Ringkasan" },

@@ -6,7 +6,7 @@ import { Plus, Edit3, Trash2, Package, AlertTriangle, X } from "lucide-react";
 import { AdminProductModal } from "./AdminProductModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AlertModal } from "@/components/ui/AlertModal";
-import { syncAllProductsToFirebase, deleteProductFromFirebase } from "@/lib/firebaseService";
+import { syncAllProductsToFirebase } from "@/lib/firebaseService";
 
 interface AdminProductsProps {
   products: Product[];
@@ -18,7 +18,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ products, setProdu
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [, setSaving] = useState(false);
 
   const [saveSuccess, setSaveSuccess] = useState(false);
 

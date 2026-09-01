@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useSiteSettings } from "@/context/SiteContext";
 
 interface MobileNavProps {
   activeView?: "shop" | "admin";
@@ -20,7 +21,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const { totalItemCount } = useCart();
   const [popKey, setPopKey] = useState(0);
 
-  const { siteSettings } = require("@/context/SiteContext").useSiteSettings();
+  const { siteSettings } = useSiteSettings();
 
   const navTabs = [
     ...(siteSettings.merchandise.visible ? [{ name: "Toko", path: "/merchandise", icon: "storefront" }] : []),

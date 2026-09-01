@@ -101,7 +101,7 @@ export const AdminBundling: React.FC<AdminBundlingProps> = ({ bundles, setBundle
       {bundles.length === 0 ? (
         <div className="bg-white border border-neutral-100 rounded-2xl p-8 text-center">
           <PackageOpen size={32} className="mx-auto text-neutral-300 mb-3" />
-          <p className="text-xs text-neutral-400">Belum ada bundling. Klik "Tambah" untuk membuat bundling baru.</p>
+          <p className="text-xs text-neutral-400">Belum ada bundling. Klik &quot;Tambah&quot; untuk membuat bundling baru.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

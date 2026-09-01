@@ -191,13 +191,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      if (auth) await signOut(auth);
     } catch (e) {
       console.error(e);
     }
     setUser(null);
     try {
       localStorage.removeItem(USER_STORAGE_KEY);
+      // Bersihkan data sesi lain agar tidak bocor antar akun di perangkat bersama
+      localStorage.removeItem("gala_merch_cart");
+      localStorage.removeItem("gala_merch_guest_id");
+      sessionStorage.removeItem("alumni_ticket_checkout");
     } catch {}
   };
 

@@ -10,6 +10,7 @@ import { useMounted } from "@/lib/useMounted";
 import { MobileNav } from "@/components/MobileNav";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SuccessModal } from "@/components/ui/SuccessModal";
+import { useSiteSettings } from "@/context/SiteContext";
 
 interface NavbarProps {
   activeView?: "shop" | "admin";
@@ -28,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isLogoutSuccessModalOpen, setIsLogoutSuccessModalOpen] = useState(false);
   const mounted = useMounted();
 
-  const { siteSettings } = require("@/context/SiteContext").useSiteSettings();
+  const { siteSettings } = useSiteSettings();
 
   const navLinks = [
     ...(siteSettings.merchandise.visible ? [{ name: "Merchandise", path: "/merchandise" }] : []),

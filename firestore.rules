@@ -6,7 +6,12 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email in ['admin@galamerch.com'];
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() in ['admin@galamerch.com', 'admin@example.com'];
+    }
+
+    function isOwnerOrAdmin(userId, userEmail) {
+      return isAdmin() || (request.auth != null && (request.auth.uid == userId || request.auth.token.email == userEmail));
     }
 
     match /products/{productId} {

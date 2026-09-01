@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Order, OrderStatus } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
+import { useSiteSettings } from "@/context/SiteContext";
 
 const STATUS_FILTERS: { label: string; value: OrderStatus | "all" }[] = [
   { label: "Semua", value: "all" },
@@ -71,7 +72,7 @@ export default function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
-  const { siteSettings, loading: settingsLoading } = require("@/context/SiteContext").useSiteSettings();
+  const { siteSettings, loading: settingsLoading } = useSiteSettings();
 
   useEffect(() => {
     if (!settingsLoading && siteSettings.orders.locked && !loading && !user) {

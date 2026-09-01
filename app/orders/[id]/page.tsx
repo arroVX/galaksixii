@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { Order, OrderStatus } from "@/types/merch";
+import { Order } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
 
 const STATUS_COLORS: Record<string, string> = {

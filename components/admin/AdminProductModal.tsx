@@ -20,7 +20,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
   const [stockType, setStockType] = useState<StockType>(product?.stockType || "READY");
   const [stockCount, setStockCount] = useState<number>(product?.stockCount || 50);
   const [poReleaseDate, setPoReleaseDate] = useState(product?.poReleaseDate || "2026-08-30");
-  const [poQuotaTotal, setPoQuotaTotal] = useState<number>(product?.poQuotaTotal || 50);
+  const [poQuotaTotal] = useState<number>(product?.poQuotaTotal || 50);
   const [sizesInput, setSizesInput] = useState(product?.variants?.sizes?.join(", ") || "Standard");
   const [colorsInput, setColorsInput] = useState(product?.variants?.colors?.join(", ") || "White, Black");
 

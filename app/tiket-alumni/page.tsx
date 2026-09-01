@@ -6,35 +6,45 @@ import { AlumniTicketSelector } from "@/components/AlumniTicketSelector";
 import { AlumniTicketBundle } from "@/types/merch";
 import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
-import Link from "next/link";
+import { useSiteSettings } from "@/context/SiteContext";
+import { useRouter } from "next/navigation";
 
 export default function AlumniTicketPage() {
   const { user, loading } = useAuth();
   const [selectedBundle, setSelectedBundle] = useState<AlumniTicketBundle | null>(null);
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
+  const { siteSettings, loading: settingsLoading } = useSiteSettings();
+  const router = useRouter();
+
   // Baca dari Firebase sebagai satu-satunya sumber kebenaran.
   // Fallback = localStorage (bila Firebase tidak tersedia, misal offline).
   useEffect(() => {
-    let initial: AlumniTicketBundle[] = [];
+    let cancelled = false;
     const saved = localStorage.getItem("gala_merch_bundles");
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as AlumniTicketBundle[];
-        if (parsed.length > 0) initial = parsed;
+        if (parsed.length > 0) {
+          queueMicrotask(() => {
+            if (!cancelled) setBundles(parsed);
+          });
+        }
       } catch { /* ignore */ }
     }
-    setBundles(initial);
 
     (async () => {
       const fbBundles = await fetchAlumniTicketBundlesFromFirebase();
-      setBundles(fbBundles);
-      localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      if (cancelled) return;
+      if (fbBundles.length > 0) {
+        setBundles(fbBundles);
+        localStorage.setItem("gala_merch_bundles", JSON.stringify(fbBundles));
+      }
     })().catch((err) => console.warn("Gagal fetch bundle:", err));
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  const { siteSettings, loading: settingsLoading } = require("@/context/SiteContext").useSiteSettings();
-  const router = require("next/navigation").useRouter();
 
   useEffect(() => {
     if (!settingsLoading && siteSettings.tiketAlumni.locked && !loading && !user) {

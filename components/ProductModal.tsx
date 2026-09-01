@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/merch";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowLeft, Star, Info, Plus, Minus, ShoppingBag, Zap } from "lucide-react";
+import { ArrowLeft, Info, Plus, Minus, ShoppingBag, Zap } from "lucide-react";
 
 interface ProductModalProps {
   product: Product | null;
@@ -14,7 +14,7 @@ interface ProductModalProps {
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
   const router = useRouter();
-  const { addToCart, setIsCartOpen } = useCart();
+  const { addToCart } = useCart();
   const { user, showAuthAlert } = useAuth();
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedSize, setSelectedSize] = useState<string>("");
@@ -32,15 +32,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const allImages = Array.from(new Set([product?.imageUrl, ...(product?.images || [])])).filter(Boolean) as string[];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Reset pilihan saat produk berganti — pola "adjust state during render", bukan effect.
-  const [prevProductId, setPrevProductId] = useState<string | null>(null);
-  if (product && product.id !== prevProductId) {
-    setPrevProductId(product.id);
-    setQuantity(1);
-    setSelectedSize(product.variants?.sizes?.[0] ?? "Standard");
-    setSelectedColor(product.variants?.colors?.[0] ?? "Standard");
-    setCurrentImageIndex(0);
-  }
+  useEffect(() => {
+    if (product) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset form saat produk berganti (derived state)
+      setQuantity(1);
+      setSelectedSize(product.variants?.sizes?.[0] ?? "Standard");
+      setSelectedColor(product.variants?.colors?.[0] ?? "Standard");
+      setCurrentImageIndex(0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id]);
 
   if (!product) return null;
 
