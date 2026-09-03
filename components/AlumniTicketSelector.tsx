@@ -315,6 +315,15 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
               </div>
             )}
 
+            {isTicketBundle && (
+              <div className="bg-amber-50 border border-amber-200/70 text-amber-800 text-xs px-4 py-3 rounded-2xl flex items-start gap-2 mb-4">
+                <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">verified_user</span>
+                <p className="leading-relaxed">
+                  <span className="font-black">Batas 1 tiket per akun</span> — bundle tiket hanya dapat dibeli satu kali. Pastikan data verifikasi benar sebelum checkout.
+                </p>
+              </div>
+            )}
+
             {/* Action Bar */}
             <div className="mt-auto bg-[#222] p-2.5 rounded-full flex items-center justify-center shadow-2xl w-full gap-2">
               <button

@@ -160,7 +160,7 @@ export const CartDrawer: React.FC = () => {
                 {hasTicketBundle && (
                   <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-3 text-[11px] text-amber-700 flex items-start gap-2">
                     <Clock size={14} className="shrink-0 mt-0.5 text-amber-500" />
-                    <span>Keranjang berisi tiket bundle — verifikasi alumni (Kartu Pelajar/SKL) diperlukan saat checkout.</span>
+                    <span>Keranjang berisi tiket bundle — verifikasi alumni (Kartu Pelajar/SKL) diperlukan saat checkout. Batas 1 tiket per akun.</span>
                   </div>
                 )}
 

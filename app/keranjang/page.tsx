@@ -151,7 +151,7 @@ export default function KeranjangPage() {
               {hasTicketBundle && (
                 <div className="mb-4 bg-amber-50 border border-amber-200/60 rounded-2xl p-4 text-xs text-amber-700 flex items-start gap-2">
                   <span className="material-symbols-outlined text-[16px] text-amber-500 shrink-0">verified_user</span>
-                  <span>Keranjang berisi tiket bundle — Anda akan diarahkan ke checkout verifikasi alumni (Kartu Pelajar/SKL).</span>
+                  <span>Keranjang berisi tiket bundle — Anda akan diarahkan ke checkout verifikasi alumni (Kartu Pelajar/SKL). Batas 1 tiket per akun.</span>
                 </div>
               )}
 
