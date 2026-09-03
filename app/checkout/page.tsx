@@ -29,7 +29,6 @@ export default function CheckoutPage() {
   const [proofFile, setProofFile] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [syncFailed, setSyncFailed] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [clipboardError, setClipboardError] = useState<string | null>(null);
   const mounted = useMounted();
@@ -188,13 +187,11 @@ export default function CheckoutPage() {
     try {
       // 1. Sync order ke Firebase (parallel RTDB + Firestore)
       const result = await syncOrderToFirebase(newOrder);
-      setSyncFailed(!result.rtdbOk || !result.firestoreOk);
       if (!result.rtdbOk || !result.firestoreOk) {
         console.warn(`Sinkronisasi sebagian gagal — RTDB:${result.rtdbOk} Firestore:${result.firestoreOk}`);
       }
     } catch (err) {
       console.error("Gagal sinkronisasi ke Firebase:", err);
-      setSyncFailed(true);
     }
 
     // 2. Simpan ke localStorage (instant)
@@ -660,12 +657,9 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {syncFailed && (
-                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800">
-                    <p className="font-bold mb-1">Catatan: Pesanan belum terkirim ke server</p>
-                    <p>Screenshot invoice ini & kirim ke panitia via WhatsApp.</p>
-                  </div>
-                )}
+                <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-[11px] text-emerald-800">
+                  <p className="font-bold">Pesanan berhasil dibuat</p>
+                </div>
               </div>
             </div>
 

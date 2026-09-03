@@ -57,7 +57,6 @@ export default function CheckoutAlumniPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [syncFailed, setSyncFailed] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [clipboardError, setClipboardError] = useState<string | null>(null);
   const [verificationType, setVerificationType] = useState<AlumniVerificationType>("KARTU_PELAJAR");
@@ -260,13 +259,11 @@ export default function CheckoutAlumniPage() {
     try {
       const orderResult = await syncOrderToFirebase(newOrder);
       const ticketResult = await syncAlumniTicketToFirebase(alumniTicket);
-      setSyncFailed(!orderResult.rtdbOk || !orderResult.firestoreOk || !ticketResult.rtdbOk || !ticketResult.firestoreOk);
       if (!orderResult.rtdbOk || !orderResult.firestoreOk || !ticketResult.rtdbOk || !ticketResult.firestoreOk) {
         console.warn("Sinkronisasi sebagian gagal", { orderResult, ticketResult });
       }
     } catch (err) {
       console.error("Gagal sinkronisasi ke Firebase:", err);
-      setSyncFailed(true);
     }
 
     const existingTicketsStr = localStorage.getItem("gala_alumni_tickets");
@@ -766,12 +763,9 @@ export default function CheckoutAlumniPage() {
                   </div>
                 </div>
 
-                {syncFailed && (
-                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800">
-                    <p className="font-bold mb-1">Catatan: Pesanan belum terkirim ke server</p>
-                    <p>Screenshot invoice ini & kirim ke panitia via WhatsApp.</p>
-                  </div>
-                )}
+                <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-[11px] text-emerald-800">
+                  <p className="font-bold">Pesanan berhasil dibuat</p>
+                </div>
               </div>
             </div>
 

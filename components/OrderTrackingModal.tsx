@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Order, OrderStatus } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
+import { ADMIN_WA_NUMBER } from "@/lib/config";
 
 interface OrderTrackingModalProps {
   isOpen: boolean;
@@ -137,7 +138,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, 
                   </div>
 
                   <a
-                    href={`https://wa.me/6281234567890?text=Halo%20Admin,%20saya%20ingin%20menanyakan%20status%20pesanan%20dengan%20Kode:%20${selectedOrder.id}`}
+                    href={`https://wa.me/${ADMIN_WA_NUMBER}?text=Halo%20Admin,%20saya%20ingin%20menanyakan%20status%20pesanan%20dengan%20Kode:%20${selectedOrder.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2.5 bg-primary hover:bg-neutral-800 text-on-primary text-xs font-bold rounded-full flex items-center gap-1.5 transition shadow-sm"

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Order } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
+import { ADMIN_WA_NUMBER } from "@/lib/config";
 
 const STATUS_COLORS: Record<string, string> = {
   "Menunggu Pembayaran": "text-amber-600",
@@ -252,7 +253,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* WA Admin Button */}
         <a
-          href={`https://wa.me/6281234567890?text=Halo%20Admin,%20saya%20ingin%20menanyakan%20status%20pesanan%20dengan%20Kode:%20${order.id}`}
+          href={`https://wa.me/${ADMIN_WA_NUMBER}?text=Halo%20Admin,%20saya%20ingin%20menanyakan%20status%20pesanan%20dengan%20Kode:%20${order.id}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full py-3 bg-neutral-900 text-white text-[13px] font-medium rounded-xl hover:bg-neutral-800 transition active:scale-[0.98]"
