@@ -24,7 +24,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const { siteSettings } = useSiteSettings();
 
   const navTabs = [
-    ...(siteSettings.merchandise.visible ? [{ name: "Toko", path: "/merchandise", icon: "storefront" }] : []),
+    ...(siteSettings.merchandise.visible ? [{ name: "Toko", path: "/", icon: "storefront" }] : []),
     ...(siteSettings.tiketAlumni.visible ? [{ name: "Tiket", path: "/tiket-alumni", icon: "confirmation_number" }] : []),
     { name: "Keranjang", path: "/keranjang", icon: "shopping_bag" },
     ...(siteSettings.orders.visible ? [{ name: "Pesanan", path: "/orders", icon: "receipt_long" }] : [])
@@ -44,7 +44,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     setPopKey((k) => k + 1);
     if (tabPath === "__admin__") {
       setActiveView("admin");
-      if (pathname !== "/merchandise") router.push("/merchandise?admin=true");
+      if (pathname !== "/") router.push("/?admin=true");
       return;
     }
     if (pathname !== tabPath) router.push(tabPath);

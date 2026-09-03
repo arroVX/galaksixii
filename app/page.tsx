@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { MerchandiseView } from "@/components/MerchandiseView";
 
 export default function Home() {
-  redirect("/tiket-alumni");
+  return <MerchandiseView />;
 }

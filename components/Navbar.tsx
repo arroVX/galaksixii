@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { siteSettings } = useSiteSettings();
 
   const navLinks = [
-    ...(siteSettings.merchandise.visible ? [{ name: "Merchandise", path: "/merchandise" }] : []),
+    ...(siteSettings.merchandise.visible ? [{ name: "Merchandise", path: "/" }] : []),
     ...(siteSettings.tiketAlumni.visible ? [{ name: "Tiket & Bundling", path: "/tiket-alumni", isSpecial: true }] : []),
     { name: "Keranjang", path: "/keranjang" },
     ...(siteSettings.orders.visible ? [{ name: "Cek Pesanan", path: "/orders" }] : []),
@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Top App-Bar */}
       <div className="lg:hidden w-full flex justify-center sticky top-0 z-50 px-4 pb-2">
         <header className="w-full max-w-md bg-white/90 backdrop-blur-md border border-neutral-100 rounded-b-2xl pl-4 pr-2 py-3 shadow-sm flex justify-between items-center">
-          <Link href="/tiket-alumni" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
+          <Link href="/" className="flex items-center shrink-0 active:scale-95 transition-transform duration-150">
             <Image src="/logo.png" alt="Galaksi XII Logo" width={512} height={512} priority className="h-8 w-auto max-w-[140px] object-contain" />
           </Link>
           <div className="flex items-center">
@@ -82,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <Link
-            href="/tiket-alumni"
+            href="/"
             className="flex items-center shrink-0 transition-transform duration-200 hover:scale-105"
           >
             <Image
@@ -100,9 +100,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isAdminMode ? (
               <>
                 <Link
-                  href="/merchandise"
+                  href="/"
                   className={`px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide transition-all duration-200 ${
-                    pathname === "/merchandise"
+                    pathname === "/"
                       ? "bg-red-600 text-white"
                       : "text-red-600 hover:bg-red-50"
                   }`}
@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   Dashboard Admin
                 </Link>
                 <button
-                  onClick={() => { setActiveView("shop"); router.push("/merchandise"); }}
+                  onClick={() => { setActiveView("shop"); router.push("/"); }}
                   className="px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 transition-all duration-200"
                 >
                   Keluar Admin
@@ -141,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => {
                   setActiveView("admin");
-                  if (pathname !== "/merchandise") router.push("/merchandise?admin=true");
+                  if (pathname !== "/") router.push("/?admin=true");
                 }}
                 className="px-4 py-2 rounded-xl text-[12px] font-medium tracking-wide text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-200 flex items-center gap-1.5"
               >
@@ -223,7 +223,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           await logout();
           setIsLogoutSuccessModalOpen(true);
           router.refresh();
-          router.push("/merchandise");
+          router.push("/");
         }}
         title="Konfirmasi Keluar Akun"
         message={`Apakah Anda yakin ingin keluar dari akun ${user?.displayName || user?.email?.split("@")[0]}?`}

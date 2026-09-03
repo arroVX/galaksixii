@@ -38,7 +38,7 @@ export const Footer: React.FC = () => {
                   <span className="w-1.5 h-1.5 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Kompetisi
                 </Link>
-                <Link className="text-body-md font-body-md text-on-surface-variant hover:text-primary hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/merchandise">
+                <Link className="text-body-md font-body-md text-on-surface-variant hover:text-primary hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group" href="/">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Merchandise
                 </Link>

@@ -36,7 +36,7 @@ export default function KeranjangPage() {
                 Silakan pilih merchandise kesukaan Anda dari katalog.
               </p>
               <Link
-                href="/merchandise"
+                href="/"
                 className="px-8 py-3 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-bold rounded-xl transition-colors"
               >
                 Jelajahi Katalog

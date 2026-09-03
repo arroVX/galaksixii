@@ -91,7 +91,7 @@ export const AdminSettings: React.FC = () => {
               <tr key={page.key} className="hover:bg-neutral-50/50 transition-colors">
                 <td className="py-4 px-2 sm:px-4">
                   <div className="font-semibold text-neutral-800 text-[13px] sm:text-sm leading-tight sm:leading-normal">{page.label}</div>
-                  <div className="text-[10px] sm:text-xs text-neutral-500 font-mono mt-1">/{page.key === "tiketAlumni" ? "tiket-alumni" : page.key}</div>
+                  <div className="text-[10px] sm:text-xs text-neutral-500 font-mono mt-1">{page.key === "merchandise" ? "/" : page.key === "tiketAlumni" ? "/tiket-alumni" : `/${page.key}`}</div>
                 </td>
                 <td className="py-4 px-2 sm:px-4">
                   <div className="flex justify-center">

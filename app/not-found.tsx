@@ -10,10 +10,10 @@ export default function NotFound() {
           Halaman yang kamu cari tidak ada atau sudah dipindahkan.
         </p>
         <Link
-          href="/merchandise"
+          href="/"
           className="inline-block px-6 py-3 bg-neutral-900 text-white rounded-xl text-sm font-bold hover:bg-neutral-800 transition-colors active:scale-95"
         >
-          Kembali ke Merchandise
+          Kembali ke Beranda
         </Link>
       </div>
     </main>

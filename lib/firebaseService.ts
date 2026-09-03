@@ -766,7 +766,7 @@ export async function deleteAlumniTicketFromFirebase(ticketId: string): Promise<
 import { SiteSettings } from "@/types/merch";
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
-  merchandise: { visible: false, locked: false },
+  merchandise: { visible: true, locked: false },
   tiketAlumni: { visible: true, locked: false },
   orders: { visible: true, locked: true },
 };

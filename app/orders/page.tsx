@@ -128,7 +128,7 @@ export default function OrdersPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <Link
-              href="/merchandise"
+              href="/"
               className="w-10 h-10 rounded-xl bg-white border border-neutral-100 text-neutral-500 hover:text-neutral-900 flex items-center justify-center transition"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -196,7 +196,7 @@ export default function OrdersPage() {
             </p>
             {orders.length === 0 && (
               <Link
-                href="/merchandise"
+                href="/"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white font-medium text-[13px] rounded-xl hover:bg-neutral-800 transition active:scale-[0.98]"
               >
                 <span>Jelajahi Katalog</span>
