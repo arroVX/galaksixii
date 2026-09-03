@@ -75,6 +75,8 @@ export const CartDrawer: React.FC = () => {
                 {cart.map((item) => {
                   const isBundle = item.kind === "bundle";
                   const isTicket = isBundle && item.isAlumniOnly !== false;
+                  // Bundle tiket qty dikunci 1; bundle non-tiket bebas qty seperti merch.
+                  const lockQty = isTicket;
                   return (
                   <div
                     key={item.id}
@@ -107,7 +109,7 @@ export const CartDrawer: React.FC = () => {
                           </h4>
                           <p className="text-xs text-neutral-400 mt-0.5">
                             {isBundle
-                              ? "1 tiket · verifikasi saat checkout"
+                              ? (isTicket ? "1 tiket · verifikasi saat checkout" : "Bundle merch")
                               : (item.stockType === "PRE_ORDER" ? "Pre-Order" : "Ready Stock")}
                           </p>
                         </div>
@@ -125,7 +127,7 @@ export const CartDrawer: React.FC = () => {
                         <span className="font-bold text-sm text-neutral-900">
                           Rp {(item.price * item.quantity).toLocaleString("id-ID")}
                         </span>
-                        {isBundle ? (
+                        {lockQty ? (
                           <span className="text-[11px] font-bold text-neutral-400 bg-neutral-100 px-3 py-1.5 rounded-full">
                             1 tiket
                           </span>

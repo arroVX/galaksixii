@@ -9,13 +9,28 @@ import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useSiteSettings } from "@/context/SiteContext";
+import { useUserTickets, findBlockingTicket } from "@/lib/useUserTickets";
 import { useRouter } from "next/navigation";
 
+const OWNED_TICKET_STATUS_LABEL: Record<string, string> = {
+  VERIFIED: "Terverifikasi",
+  REJECTED: "Ditolak",
+  PENDING_VERIFICATION: "Menunggu verifikasi",
+};
+
 export default function AlumniTicketPage() {
-  const { user, loading } = useAuth();
-  const { addBundleToCart } = useCart();
+  const { user, loading, isAdmin } = useAuth();
+  const { addBundleToCart, cart, removeFromCart } = useCart();
   const [selectedBundle, setSelectedBundle] = useState<AlumniTicketBundle | null>(null);
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
+
+  // Aturan 1 akun = 1 tiket (admin dikecualikan).
+  const { tickets: myTickets, loading: ticketsLoading } = useUserTickets(user?.uid, user?.email);
+  const blockingTicket = !isAdmin && user ? findBlockingTicket(myTickets, bundles) : null;
+  const ownershipChecking = !!user && !isAdmin && ticketsLoading;
+  const visibleBundles = blockingTicket
+    ? bundles.filter((b) => b.isAlumniOnly === false)
+    : bundles;
 
   const { siteSettings, loading: settingsLoading } = useSiteSettings();
   const router = useRouter();
@@ -65,6 +80,19 @@ export default function AlumniTicketPage() {
       router.push("/login");
     }
   }, [settingsLoading, siteSettings.tiketAlumni.locked, loading, user, router]);
+
+  // Bersihkan sisa baris bundle tiket di cart bila akun sudah punya tiket.
+  // Bundle non-tiket (termasuk yang qty > 1) tidak disentuh.
+  useEffect(() => {
+    if (!blockingTicket) return;
+    const staleLines = cart.filter(
+      (item) => item.kind === "bundle" && item.isAlumniOnly !== false
+    );
+    if (staleLines.length === 0) return;
+    queueMicrotask(() => {
+      staleLines.forEach((line) => removeFromCart(line.id));
+    });
+  }, [blockingTicket, cart, removeFromCart]);
 
   if (loading || settingsLoading) {
     return (
@@ -124,14 +152,34 @@ export default function AlumniTicketPage() {
             </div>
           </div>
 
-        {bundles.length === 0 ? (
+        {blockingTicket && (
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+            <span className="material-symbols-outlined text-[22px] text-emerald-600 shrink-0">verified</span>
+            <div>
+              <p className="text-sm font-bold text-emerald-900">
+                Anda sudah memiliki tiket: {blockingTicket.bundleName}
+              </p>
+              <p className="text-xs text-emerald-700 mt-0.5">
+                Status: {OWNED_TICKET_STATUS_LABEL[blockingTicket.status] || blockingTicket.status}
+                {" "}• Satu akun hanya dapat membeli satu tiket. Bundle tiket disembunyikan dari katalog Anda.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {ownershipChecking ? (
+          <div className="py-20 flex items-center justify-center gap-3 text-neutral-400">
+            <span className="material-symbols-outlined animate-spin text-[28px]">sync</span>
+            <span className="text-sm font-medium">Memeriksa tiket Anda...</span>
+          </div>
+        ) : visibleBundles.length === 0 ? (
           <div className="py-20 text-center text-gray-400 space-y-3 bg-white rounded-3xl border border-gray-200/80 shadow-sm">
             <span className="material-symbols-outlined text-[48px] text-gray-300">confirmation_number</span>
             <p className="text-sm font-medium text-gray-500">Belum ada bundling. Admin bisa menambah via Dashboard → Bundling.</p>
           </div>
         ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
-          {bundles.map((bundle) => (
+          {visibleBundles.map((bundle) => (
             <div
               key={bundle.id}
               onClick={() => handleOpenSelector(bundle)}
@@ -149,7 +197,7 @@ export default function AlumniTicketPage() {
                 </div>
 
                 <span className="font-dot-matrix text-[11px] font-bold text-neutral-400 tracking-widest uppercase block mb-2">
-                  {"//"} TIKET BUNDLE
+                  {"//"} {bundle.isAlumniOnly === false ? "BUNDLE MERCH" : "TIKET BUNDLE"}
                 </span>
                 <h3 className="font-sans font-bold text-sm md:text-base text-neutral-900 mb-4 leading-snug">
                   {bundle.name}

@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useMounted } from "@/lib/useMounted";
-import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, OrderItem, DeliveryMethod, Product } from "@/types/merch";
+import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, AlumniTicketBundle, Order, OrderItem, DeliveryMethod, Product } from "@/types/merch";
 import { syncOrderToFirebase, syncAlumniTicketToFirebase, syncProductToFirebase, uploadDataUrlToStorage } from "@/lib/firebaseService";
+import { useUserTickets, findBlockingTicket } from "@/lib/useUserTickets";
 import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
 import { GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
 import { AlertModal } from "@/components/ui/AlertModal";
@@ -45,9 +46,12 @@ const EMPTY_CART_VERIFICATION: CartBundleVerification = {
 
 export default function CheckoutAlumniPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { cart, subtotal: cartSubtotal, clearCart, hydrated: cartHydrated } = useCart();
   const mounted = useMounted();
+  // Tiket yang sudah dimiliki akun (aturan 1 akun = 1 tiket).
+  const { tickets: myTickets } = useUserTickets(user?.uid, user?.email);
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
 
   const [loadedCheckoutData, setLoadedCheckoutData] = useState<CheckoutData | null>(null);
   // "single" = beli langsung satu bundle via sessionStorage (alur lama).
@@ -184,10 +188,40 @@ export default function CheckoutAlumniPage() {
     );
   };
 
+  // Cek aturan 1 akun = 1 tiket. Hanya dipanggil dari handler submit
+  // (bukan saat render) agar aman dari analisis react-hooks/purity.
+  // Admin dikecualikan. Bundle non-tiket tidak dihitung.
+  const checkOwnsTicket = (): AlumniTicket | null => {
+    if (isAdmin) return null;
+    if (!user) return null;
+    let bundles: AlumniTicketBundle[] = [];
+    try {
+      const saved = localStorage.getItem("gala_merch_bundles");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) bundles = parsed;
+      }
+    } catch { /* abaikan */ }
+    return findBlockingTicket(myTickets, bundles);
+  };
+
   // Submit mode keranjang: satu Order gabungan + satu AlumniTicket per bundle tiket.
   const handleSubmitCartOrder = async () => {
     if (!validateCart()) return;
     if (cart.length === 0) return;
+
+    // Aturan 1 akun = 1 tiket: tolak bila akun sudah punya tiket dan cart berisi bundle tiket.
+    const blockingCart = checkOwnsTicket();
+    const cartWantsTicket = cart.some(
+      (line) => line.kind === "bundle" && line.isAlumniOnly !== false
+    );
+    if (blockingCart && cartWantsTicket) {
+      setBlockedMessage(
+        `Akun ini sudah memiliki tiket (${blockingCart.bundleName}). Satu akun hanya dapat membeli satu tiket.`
+      );
+      return;
+    }
+    setBlockedMessage(null);
 
     setIsSubmitting(true);
 
@@ -251,7 +285,8 @@ export default function CheckoutAlumniPage() {
         bundleName: line.name,
         bundleItems: line.bundleItems || [],
         status: "PENDING_VERIFICATION",
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        isTicketBundle: true
       });
       newTicketVerifications.push({ ...v, fileName: v.fileName });
     }
@@ -425,6 +460,19 @@ export default function CheckoutAlumniPage() {
     if (!validate()) return;
     if (!checkoutData) return;
 
+    // Aturan 1 akun = 1 tiket (mode tunggal).
+    const isAlumniSingle = checkoutData.isAlumniOnly !== false;
+    if (isAlumniSingle) {
+      const blockingSingle = checkOwnsTicket();
+      if (blockingSingle) {
+        setBlockedMessage(
+          `Akun ini sudah memiliki tiket (${blockingSingle.bundleName}). Satu akun hanya dapat membeli satu tiket.`
+        );
+        return;
+      }
+    }
+    setBlockedMessage(null);
+
     setIsSubmitting(true);
 
     const orderItems: OrderItem[] = [
@@ -494,34 +542,41 @@ export default function CheckoutAlumniPage() {
       updatedAt: new Date().toISOString()
     };
 
-    const alumniTicket: AlumniTicket = {
+    const alumniTicket: AlumniTicket | null = isAlumni ? {
       id: ticketId,
       orderId,
       userId: user?.uid || guestId,
       userEmail: user?.email || "",
-      verificationType: isAlumni ? verificationType : "SKL",
-      verificationFileUrl: isAlumni ? (finalVerificationUrl || "") : "-",
-      graduationYear: isAlumni ? Number(graduationYear) : new Date().getFullYear(),
+      verificationType: verificationType,
+      verificationFileUrl: finalVerificationUrl || "",
+      graduationYear: Number(graduationYear),
       bundleId: checkoutData.bundleId,
       bundleName: checkoutData.bundleName,
       bundleItems: checkoutData.bundleItems,
-      status: isAlumni ? "PENDING_VERIFICATION" : "VERIFIED",
-      createdAt: new Date().toISOString()
-    };
+      status: "PENDING_VERIFICATION",
+      createdAt: new Date().toISOString(),
+      isTicketBundle: true
+    } : null;
 
     try {
       const orderResult = await syncOrderToFirebase(newOrder);
-      const ticketResult = await syncAlumniTicketToFirebase(alumniTicket);
-      if (!orderResult.rtdbOk || !orderResult.firestoreOk || !ticketResult.rtdbOk || !ticketResult.firestoreOk) {
-        console.warn("Sinkronisasi sebagian gagal", { orderResult, ticketResult });
+      if (alumniTicket) {
+        const ticketResult = await syncAlumniTicketToFirebase(alumniTicket);
+        if (!orderResult.rtdbOk || !orderResult.firestoreOk || !ticketResult.rtdbOk || !ticketResult.firestoreOk) {
+          console.warn("Sinkronisasi sebagian gagal", { orderResult, ticketResult });
+        }
+      } else if (!orderResult.rtdbOk || !orderResult.firestoreOk) {
+        console.warn("Sinkronisasi sebagian gagal", { orderResult });
       }
     } catch (err) {
       console.error("Gagal sinkronisasi ke Firebase:", err);
     }
 
-    const existingTicketsStr = localStorage.getItem("gala_alumni_tickets");
-    const existingTickets: AlumniTicket[] = existingTicketsStr ? JSON.parse(existingTicketsStr) : [];
-    localStorage.setItem("gala_alumni_tickets", JSON.stringify([alumniTicket, ...existingTickets]));
+    if (alumniTicket) {
+      const existingTicketsStr = localStorage.getItem("gala_alumni_tickets");
+      const existingTickets: AlumniTicket[] = existingTicketsStr ? JSON.parse(existingTicketsStr) : [];
+      localStorage.setItem("gala_alumni_tickets", JSON.stringify([alumniTicket, ...existingTickets]));
+    }
 
     const existingOrdersStr = localStorage.getItem("gala_merch_orders");
     const existingOrders: Order[] = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
@@ -827,7 +882,7 @@ export default function CheckoutAlumniPage() {
                       )}
                       <p className="font-bold text-primary text-sm truncate">{line.name}</p>
                       <p className="text-xs text-on-surface-variant mt-0.5">
-                        {isBundleLine ? "1 tiket" : `${line.selectedSize} · ${line.selectedColor}`} × {line.quantity}
+                        {isTicketLine ? "1 tiket" : isBundleLine ? "Bundle merch" : `${line.selectedSize} · ${line.selectedColor}`} × {line.quantity}
                       </p>
                     </div>
                     <span className="font-bold text-primary text-sm shrink-0">
@@ -1077,6 +1132,12 @@ export default function CheckoutAlumniPage() {
           </div>
 
           {/* Action Footer */}
+          {blockedMessage && (
+            <div className="mt-10 bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-2xl flex items-center gap-2 animate-in slide-in-from-top-2">
+              <span className="material-symbols-outlined text-[16px]">block</span>
+              {blockedMessage}
+            </div>
+          )}
           <div className="mt-10 pt-6 border-t border-outline-variant/30 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-6">
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 flex-1 w-full max-w-sm">
               <span className="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest block mb-1">TOTAL PEMBAYARAN:</span>

@@ -124,10 +124,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateQuantity = (cartItemId: string, delta: number) => {
+    const target = cartRef.current.find((item) => item.id === cartItemId);
     // Bundle tiket bersifat satuan (1 tiket per identitas) — qty dikunci di 1.
     // Pengurangan di bawah 1 menghapus baris; penambahan diabaikan.
-    const target = cartRef.current.find((item) => item.id === cartItemId);
-    if (target?.kind === "bundle") {
+    // Bundle NON-tiket bebas tambah/kurang seperti merch (stok tak terbatas).
+    if (target?.kind === "bundle" && target.isAlumniOnly !== false) {
       if (delta < 0 && target.quantity + delta <= 0) {
         setCart((prev) => prev.filter((item) => item.id !== cartItemId));
       } else if (delta > 0) {
@@ -160,14 +161,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Tambah bundle tiket & merch ke keranjang bersama.
-   * Qty dikunci 1 (satu tiket per identitas alumni); tambah ulang hanya menampilkan toast.
+   * - Bundle tiket (isAlumniOnly): qty dikunci 1 (satu tiket per identitas);
+   *   tambah ulang hanya menampilkan toast.
+   * - Bundle non-tiket: tiap panggil +1 tanpa batas (seperti merch).
    * Bundle tidak mengurangi stok (stok tak terbatas) sehingga maxStock dibiarkan undefined.
    */
   const addBundleToCart = (bundle: AlumniTicketBundle) => {
     const cartItemId = `bundle-${bundle.id}`;
+    const isTicket = (bundle.isAlumniOnly ?? true) !== false;
     const existing = cartRef.current.find((item) => item.id === cartItemId);
     if (existing) {
-      showToast(`"${bundle.name}" sudah ada di keranjang (1 tiket).`);
+      if (isTicket) {
+        showToast(`"${bundle.name}" sudah ada di keranjang (1 tiket).`);
+        return;
+      }
+      setCart((prevCart) =>
+        prevCart.map((item) =>
+          item.id === cartItemId ? { ...item, quantity: item.quantity + 1 } : item
+        )
+      );
+      showToast(`✓ ${bundle.name} ditambahkan ke keranjang!`);
       return;
     }
     const newItem: CartItem = {

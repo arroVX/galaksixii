@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlumniTicketBundle } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useUserTickets, findBlockingTicket } from "@/lib/useUserTickets";
 import { ArrowLeft } from "lucide-react";
 
 interface AlumniTicketSelectorProps {
@@ -14,8 +15,23 @@ interface AlumniTicketSelectorProps {
 
 export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bundle, onClose }) => {
   const router = useRouter();
-  const { user, showAuthAlert } = useAuth();
+  const { user, isAdmin, showAuthAlert } = useAuth();
   const { addBundleToCart, setIsCartOpen } = useCart();
+  const { tickets: myTickets } = useUserTickets(user?.uid, user?.email);
+
+  // Aturan 1 akun = 1 tiket (admin dikecualikan, bundle non-tiket bebas).
+  const isTicketBundle = (bundle.isAlumniOnly ?? true) !== false;
+  const blockingTicket =
+    !isAdmin && user && isTicketBundle ? findBlockingTicket(myTickets, [bundle]) : null;
+  const refuseOwnedTicket = (): boolean => {
+    if (blockingTicket) {
+      setError(
+        `Akun ini sudah memiliki tiket (${blockingTicket.bundleName}). Satu akun hanya dapat membeli satu tiket.`
+      );
+      return true;
+    }
+    return false;
+  };
 
   const [isSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +130,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       showAuthAlert("Silakan masuk terlebih dahulu untuk membeli tiket.");
       return;
     }
+    if (refuseOwnedTicket()) return;
     const checkoutData = {
       bundleId: bundle.id,
       bundleName: bundle.name,
@@ -137,6 +154,7 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       showAuthAlert("Silakan masuk terlebih dahulu untuk menambah bundle ke keranjang.");
       return;
     }
+    if (refuseOwnedTicket()) return;
 
     addBundleToCart(bundle);
     onClose();

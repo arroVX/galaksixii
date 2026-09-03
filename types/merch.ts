@@ -152,6 +152,12 @@ export interface AlumniTicket {
   createdAt: string;
   verifiedAt?: string;
   verifiedBy?: string;
+  /**
+   * true bila tiket ini berasal dari bundle tiket alumni (wajib verifikasi).
+   * Record lama tanpa penanda dianggap tiket bila bundleId-nya tidak dikenal
+   * sebagai bundle non-tiket (aturan ketat: sudah beli = terkunci).
+   */
+  isTicketBundle?: boolean;
 }
 
 export interface AlumniTicketBundleItem {
