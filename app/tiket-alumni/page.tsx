@@ -9,7 +9,8 @@ import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useSiteSettings } from "@/context/SiteContext";
-import { useUserTickets, findBlockingTicket } from "@/lib/useUserTickets";
+import { useUserTickets, findBlockingTicket, hasTicketLimitAck, ackTicketLimit } from "@/lib/useUserTickets";
+import { AlertModal } from "@/components/ui/AlertModal";
 import { useRouter } from "next/navigation";
 
 const OWNED_TICKET_STATUS_LABEL: Record<string, string> = {
@@ -26,6 +27,9 @@ export default function AlumniTicketPage() {
 
   // Aturan 1 akun = 1 tiket (admin dikecualikan).
   const { tickets: myTickets, loading: ticketsLoading } = useUserTickets(user?.uid, user?.email);
+  // Popup konfirmasi batas 1 tiket (sekali per sesi).
+  const [limitAlertOpen, setLimitAlertOpen] = useState(false);
+  const [pendingQuickAdd, setPendingQuickAdd] = useState<AlumniTicketBundle | null>(null);
   const blockingTicket = !isAdmin && user ? findBlockingTicket(myTickets, bundles) : null;
   const ownershipChecking = !!user && !isAdmin && ticketsLoading;
   const visibleBundles = blockingTicket
@@ -133,7 +137,21 @@ export default function AlumniTicketPage() {
       router.push("/login");
       return;
     }
+    // Popup konfirmasi batas 1 tiket: sekali per sesi, hanya untuk bundle tiket.
+    if ((bundle.isAlumniOnly ?? true) !== false && !hasTicketLimitAck()) {
+      setPendingQuickAdd(bundle);
+      setLimitAlertOpen(true);
+      return;
+    }
     addBundleToCart(bundle);
+  };
+
+  const handleConfirmLimitAlert = () => {
+    ackTicketLimit();
+    setLimitAlertOpen(false);
+    const bundle = pendingQuickAdd;
+    setPendingQuickAdd(null);
+    if (bundle) addBundleToCart(bundle);
   };
 
   return (
@@ -234,6 +252,18 @@ export default function AlumniTicketPage() {
           onClose={handleCloseSelector}
         />
       )}
+
+      <AlertModal
+        isOpen={limitAlertOpen}
+        onClose={() => { setLimitAlertOpen(false); setPendingQuickAdd(null); }}
+        title="Batas 1 Tiket per Akun"
+        message="Bundle tiket hanya dapat dibeli satu kali per akun. Pastikan Anda memilih bundle yang tepat sebelum melanjutkan."
+        icon="verified_user"
+        iconColor="amber"
+        buttonText="Batal"
+        actionLabel="Mengerti, Lanjutkan"
+        onAction={handleConfirmLimitAlert}
+      />
     </>
   );
 }

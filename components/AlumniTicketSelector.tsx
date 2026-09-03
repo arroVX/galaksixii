@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { AlumniTicketBundle } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { useUserTickets, findBlockingTicket } from "@/lib/useUserTickets";
+import { useUserTickets, findBlockingTicket, hasTicketLimitAck, ackTicketLimit } from "@/lib/useUserTickets";
+import { AlertModal } from "@/components/ui/AlertModal";
 import { ArrowLeft } from "lucide-react";
 
 interface AlumniTicketSelectorProps {
@@ -35,6 +36,9 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
 
   const [isSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Popup konfirmasi batas 1 tiket: sekali per sesi, hanya untuk bundle tiket.
+  const [limitAlertOpen, setLimitAlertOpen] = useState(false);
+  const [pendingLimitAction, setPendingLimitAction] = useState<"cart" | "checkout" | null>(null);
 
   // Carousel — sama seperti ProductModal (swipe + keyboard + mouse drag)
   // Fallback: jika bundle.images belum diisi (data lama Firebase), pakai item images agar slider tetap berfungsi
@@ -131,6 +135,24 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       return;
     }
     if (refuseOwnedTicket()) return;
+    if (isTicketBundle && !hasTicketLimitAck()) {
+      setPendingLimitAction("checkout");
+      setLimitAlertOpen(true);
+      return;
+    }
+    doContinue();
+  };
+
+  const handleConfirmLimitAlert = () => {
+    ackTicketLimit();
+    setLimitAlertOpen(false);
+    const action = pendingLimitAction;
+    setPendingLimitAction(null);
+    if (action === "cart") doAddToCart();
+    else if (action === "checkout") doContinue();
+  };
+
+  const doContinue = () => {
     const checkoutData = {
       bundleId: bundle.id,
       bundleName: bundle.name,
@@ -155,7 +177,15 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       return;
     }
     if (refuseOwnedTicket()) return;
+    if (isTicketBundle && !hasTicketLimitAck()) {
+      setPendingLimitAction("cart");
+      setLimitAlertOpen(true);
+      return;
+    }
+    doAddToCart();
+  };
 
+  const doAddToCart = () => {
     addBundleToCart(bundle);
     onClose();
     setIsCartOpen(true);
@@ -347,6 +377,18 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
           </div>
         </div>
       </div>
+
+      <AlertModal
+        isOpen={limitAlertOpen}
+        onClose={() => { setLimitAlertOpen(false); setPendingLimitAction(null); }}
+        title="Batas 1 Tiket per Akun"
+        message="Bundle tiket hanya dapat dibeli satu kali per akun. Pastikan Anda memilih bundle yang tepat dan data verifikasi benar sebelum melanjutkan."
+        icon="verified_user"
+        iconColor="amber"
+        buttonText="Batal"
+        actionLabel="Mengerti, Lanjutkan"
+        onAction={handleConfirmLimitAlert}
+      />
     </div>
   );
 };

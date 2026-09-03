@@ -5,6 +5,23 @@ import { AlumniTicket, AlumniTicketBundle } from "@/types/merch";
 import { fetchAlumniTicketsForUser } from "@/lib/firebaseService";
 
 const TICKETS_STORAGE_KEY = "gala_alumni_tickets";
+const TICKET_LIMIT_ACK_KEY = "gala_ticket_limit_ack";
+
+/** Sudah pernah konfirmasi batas 1 tiket di sesi ini? (hanya dibaca dari handler). */
+export function hasTicketLimitAck(): boolean {
+  try {
+    return sessionStorage.getItem(TICKET_LIMIT_ACK_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Tandai sudah konfirmasi batas 1 tiket untuk sesi ini (hanya dipanggil dari handler). */
+export function ackTicketLimit(): void {
+  try {
+    sessionStorage.setItem(TICKET_LIMIT_ACK_KEY, "1");
+  } catch { /* abaikan */ }
+}
 
 function readLocalTickets(userId?: string | null, userEmail?: string | null): AlumniTicket[] {
   if (typeof window === "undefined") return [];
