@@ -307,8 +307,11 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
   if (!db && !rtdb) return [];
 
   // 1. Ambil dari Firestore
+  let firestoreAttempted = false;
+  let firestoreFailed = false;
   try {
     if (db) {
+      firestoreAttempted = true;
       const querySnapshot = await getDocs(collection(db, "products"));
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data() as Product;
@@ -318,12 +321,16 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
       });
     }
   } catch (err) {
+    firestoreFailed = true;
     console.warn("Firestore fetch products error:", err);
   }
 
   // 2. Ambil dari Realtime Database
+  let rtdbAttempted = false;
+  let rtdbFailed = false;
   try {
     if (rtdb) {
+      rtdbAttempted = true;
       const dbRef = ref(rtdb);
       const snapshot = await get(child(dbRef, "products"));
       if (snapshot.exists()) {
@@ -340,7 +347,19 @@ export async function fetchProductsFromFirebase(): Promise<Product[]> {
       }
     }
   } catch (err) {
+    rtdbFailed = true;
     console.warn("RTDB fetch products error:", err);
+  }
+
+  // Bedakan "database memang kosong" dari "keduanya gagal diakses":
+  // UI butuh menampilkan error + tombol retry, bukan mengira katalog kosong.
+  const attempted = firestoreAttempted || rtdbAttempted;
+  const allFailed =
+    attempted &&
+    (!firestoreAttempted || firestoreFailed) &&
+    (!rtdbAttempted || rtdbFailed);
+  if (allFailed && productsMap.size === 0) {
+    throw new Error("Gagal mengakses Firestore dan Realtime Database untuk produk.");
   }
 
   const result = Array.from(productsMap.values());
