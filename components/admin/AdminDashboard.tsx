@@ -7,6 +7,7 @@ import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
+import { AdminReports } from "./AdminReports";
 import { AdminSettings } from "./AdminSettings";
 import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
@@ -23,7 +24,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onExit
 }) => {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders" | "reports" | "settings">("overview");
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
   // Load bundles: localStorage -> Firebase -> fallback seed ALUMNI_TICKET_BUNDLES
@@ -79,6 +80,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { key: "products" as const, label: "Produk" },
     { key: "bundling" as const, label: "Bundling" },
     { key: "orders" as const, label: "Pesanan" },
+    { key: "reports" as const, label: "Laporan" },
     { key: "settings" as const, label: "Pengaturan" }
   ];
 
@@ -129,6 +131,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
         {activeTab === "orders" && (
           <AdminOrders />
+        )}
+        {activeTab === "reports" && (
+          <AdminReports />
         )}
         {activeTab === "settings" && (
           <AdminSettings />
