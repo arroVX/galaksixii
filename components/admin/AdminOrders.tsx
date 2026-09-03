@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Order, OrderStatus, AlumniTicket } from "@/types/merch";
 import { syncOrderToFirebase, fetchOrdersFromFirebase, fetchAllAlumniTicketsFromFirebase, deleteOrderFromFirebase, deleteAlumniTicketFromFirebase } from "@/lib/firebaseService";
-import { Eye, Filter, TrendingUp, X, ImageIcon, GraduationCap, Trash2 } from "lucide-react";
+import { Eye, Filter, TrendingUp, X, ImageIcon, GraduationCap, Trash2, ReceiptText } from "lucide-react";
+import { AdminOrderDetailModal } from "@/components/admin/AdminOrderDetailModal";
 
 const loadInitialOrders = (): Order[] => {
   if (typeof window === "undefined") return [];
@@ -21,6 +22,8 @@ export const AdminOrders: React.FC = () => {
   const [viewProofUrl, setViewProofUrl] = useState<{ url: string; title: string } | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [ticketToDelete, setTicketToDelete] = useState<AlumniTicket | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
+  const detailOrder = detailOrderId ? orders.find((o) => o.id === detailOrderId) ?? null : null;
 
   useEffect(() => {
     const loadFirebase = async () => {
@@ -234,6 +237,9 @@ export const AdminOrders: React.FC = () => {
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
+                  <button onClick={() => setDetailOrderId(ord.id)} className="px-3 py-2 bg-neutral-900 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 hover:bg-neutral-700 transition" title="Lihat detail pesanan">
+                    <ReceiptText size={12} /> Detail
+                  </button>
                   <select value={ord.status} onChange={(e) => handleUpdateStatus(ord.id, e.target.value as OrderStatus)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-2.5 text-sm font-semibold text-neutral-900 focus:outline-none flex-1">
                     <option value="Menunggu Pembayaran">Menunggu</option>
                     <option value="Diverifikasi">Diverifikasi</option>
@@ -329,9 +335,14 @@ export const AdminOrders: React.FC = () => {
                       </select>
                     </td>
                     <td className="p-3 text-right">
-                      <button onClick={() => setOrderToDelete(ord)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center" title="Hapus Pesanan">
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="inline-flex items-center gap-1.5">
+                        <button onClick={() => setDetailOrderId(ord.id)} className="p-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-700 transition inline-flex items-center justify-center" title="Lihat detail pesanan">
+                          <Eye size={14} />
+                        </button>
+                        <button onClick={() => setOrderToDelete(ord)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition inline-flex items-center justify-center" title="Hapus Pesanan">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -451,6 +462,16 @@ export const AdminOrders: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Order Detail Modal (tampilan sama seperti cek pesanan pelanggan) */}
+      <AdminOrderDetailModal
+        order={detailOrder}
+        ticket={detailOrder ? tickets[detailOrder.id] ?? null : null}
+        onClose={() => setDetailOrderId(null)}
+        onStatusChange={handleUpdateStatus}
+        onDelete={(ord) => setOrderToDelete(ord)}
+        onViewProof={(url, title) => setViewProofUrl({ url, title })}
+      />
 
       {/* Proof Modal */}
       {viewProofUrl && (

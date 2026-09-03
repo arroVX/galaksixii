@@ -4,17 +4,9 @@ import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Order } from "@/types/merch";
+import { OrderDetailView } from "@/components/OrderDetailView";
 import { useAuth } from "@/context/AuthContext";
 import { ADMIN_WA_NUMBER } from "@/lib/config";
-
-const STATUS_COLORS: Record<string, string> = {
-  "Menunggu Pembayaran": "text-amber-600",
-  "Diverifikasi": "text-blue-600",
-  "Sedang Diproduksi": "text-purple-600",
-  "Siap Diambil/Dikirim": "text-blue-600",
-  "Selesai": "text-emerald-600",
-  "Dibatalkan": "text-red-500"
-};
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -139,117 +131,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <span>Kembali ke Pesanan</span>
         </Link>
 
-        {/* Order Header */}
-        <div className="bg-white rounded-2xl border border-neutral-100 p-5 space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px] text-neutral-400">receipt</span>
-                <span className="font-mono text-[15px] font-medium text-neutral-900">{order.id}</span>
-              </div>
-              <p className="text-[13px] text-neutral-400">
-                {new Date(order.createdAt).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-            <span className={`text-[13px] font-medium ${STATUS_COLORS[order.status] || "text-neutral-500"}`}>
-              {order.status}
-            </span>
-          </div>
-
-          {/* Customer Info */}
-          <div className="flex flex-wrap gap-4 text-[13px]">
-            <div className="flex items-center gap-2 text-neutral-500">
-              <span className="material-symbols-outlined text-[16px]">person</span>
-              <span>{order.customerName}</span>
-            </div>
-            <div className="flex items-center gap-2 text-neutral-500">
-              <span className="material-symbols-outlined text-[16px]">call</span>
-              <span>{order.phone}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Items */}
-        <div className="bg-white rounded-2xl border border-neutral-100 p-5 space-y-4">
-          <h3 className="text-[13px] font-medium text-neutral-500">Barang yang Dipesan</h3>
-          <div className="space-y-3">
-            {order.items.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 py-2">
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="w-14 h-14 rounded-xl object-cover bg-neutral-100"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-neutral-900 truncate">{item.name}</p>
-                  <div className="flex items-center gap-2 text-[12px] text-neutral-400 mt-0.5">
-                    {item.selectedSize && <span>Ukuran: {item.selectedSize}</span>}
-                    {item.selectedColor && <span>· Warna: {item.selectedColor}</span>}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-[14px] font-medium text-neutral-900">
-                    Rp {(item.price * item.quantity).toLocaleString("id-ID")}
-                  </p>
-                  <p className="text-[12px] text-neutral-400">
-                    {item.quantity} × Rp {item.price.toLocaleString("id-ID")}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Price Summary */}
-        <div className="bg-white rounded-2xl border border-neutral-100 p-5 space-y-3">
-          <h3 className="text-[13px] font-medium text-neutral-500">Ringkasan Harga</h3>
-          <div className="space-y-2 text-[13px]">
-            <div className="flex justify-between text-neutral-500">
-              <span>Subtotal</span>
-              <span>Rp {order.subtotal.toLocaleString("id-ID")}</span>
-            </div>
-            <div className="flex justify-between text-neutral-500">
-              <span>Ongkir</span>
-              <span>{order.shippingFee > 0 ? `Rp ${order.shippingFee.toLocaleString("id-ID")}` : "Gratis"}</span>
-            </div>
-            <div className="border-t border-neutral-100 pt-2 flex justify-between font-medium text-neutral-900">
-              <span>Total</span>
-              <span>Rp {order.totalPrice.toLocaleString("id-ID")}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment & Delivery Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-white rounded-2xl border border-neutral-100 p-5 space-y-2">
-            <h3 className="text-[13px] font-medium text-neutral-500">Pembayaran</h3>
-            <p className="text-[13px] text-neutral-900 font-medium">
-              {order.paymentMethod === "COD" ? "Bayar di Tempat (COD)" : "Transfer Bank / QRIS"}
-            </p>
-            {order.paymentProofUrl && (
-              <div className="pt-2">
-                <p className="text-[12px] text-neutral-400 mb-1.5">Bukti Bayar:</p>
-                <img
-                  src={order.paymentProofUrl}
-                  alt="Bukti Pembayaran"
-                  className="w-full max-w-[200px] rounded-xl border border-neutral-100"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl border border-neutral-100 p-5 space-y-2">
-            <h3 className="text-[13px] font-medium text-neutral-500">Pengiriman</h3>
-            <p className="text-[13px] text-neutral-900">
-              {order.addressOrClass}
-            </p>
-            {order.notes && (
-              <p className="text-[12px] text-neutral-400 italic mt-1">
-                &quot;{order.notes}&quot;
-              </p>
-            )}
-          </div>
-        </div>
+        <OrderDetailView order={order} />
 
         {/* WA Admin Button */}
         <a
