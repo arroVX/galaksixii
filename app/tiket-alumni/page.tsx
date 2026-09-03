@@ -7,11 +7,13 @@ import { AlumniTicketBundle } from "@/types/merch";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
 import { fetchAlumniTicketBundlesFromFirebase } from "@/lib/firebaseService";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { useSiteSettings } from "@/context/SiteContext";
 import { useRouter } from "next/navigation";
 
 export default function AlumniTicketPage() {
   const { user, loading } = useAuth();
+  const { addBundleToCart } = useCart();
   const [selectedBundle, setSelectedBundle] = useState<AlumniTicketBundle | null>(null);
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
@@ -97,6 +99,15 @@ export default function AlumniTicketPage() {
     setSelectedBundle(null);
   };
 
+  const handleQuickAdd = (e: React.MouseEvent, bundle: AlumniTicketBundle) => {
+    e.stopPropagation();
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    addBundleToCart(bundle);
+  };
+
   return (
     <>
       <Navbar />
@@ -154,10 +165,11 @@ export default function AlumniTicketPage() {
                 </div>
 
                 <button
+                  onClick={(e) => handleQuickAdd(e, bundle)}
                   className="shrink-0 bg-neutral-900 text-white w-11 h-11 flex items-center justify-center hover:bg-[#e45b45] active:scale-95 transition-colors rounded-xl"
-                  title="Beli Tiket & Bundling"
+                  title="Tambah ke keranjang"
                 >
-                  <span className="material-symbols-outlined text-[18px]">confirmation_number</span>
+                  <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                 </button>
               </div>
             </div>

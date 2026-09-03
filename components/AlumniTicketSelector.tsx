@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation";
 import { AlumniTicketBundle } from "@/types/merch";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { ArrowLeft } from "lucide-react";
 
 interface AlumniTicketSelectorProps {
@@ -14,6 +15,7 @@ interface AlumniTicketSelectorProps {
 export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bundle, onClose }) => {
   const router = useRouter();
   const { user, showAuthAlert } = useAuth();
+  const { addBundleToCart, setIsCartOpen } = useCart();
 
   const [isSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +114,6 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
       showAuthAlert("Silakan masuk terlebih dahulu untuk membeli tiket.");
       return;
     }
-
     const checkoutData = {
       bundleId: bundle.id,
       bundleName: bundle.name,
@@ -124,8 +125,22 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
     };
 
     sessionStorage.setItem("alumni_ticket_checkout", JSON.stringify(checkoutData));
+    sessionStorage.removeItem("alumni_ticket_checkout_mode");
     onClose();
     router.push("/checkout-alumni");
+  };
+
+  const handleAddToCart = () => {
+    setError(null);
+
+    if (!user) {
+      showAuthAlert("Silakan masuk terlebih dahulu untuk menambah bundle ke keranjang.");
+      return;
+    }
+
+    addBundleToCart(bundle);
+    onClose();
+    setIsCartOpen(true);
   };
 
 
@@ -284,6 +299,14 @@ export const AlumniTicketSelector: React.FC<AlumniTicketSelectorProps> = ({ bund
 
             {/* Action Bar */}
             <div className="mt-auto bg-[#222] p-2.5 rounded-full flex items-center justify-center shadow-2xl w-full gap-2">
+              <button
+                onClick={handleAddToCart}
+                disabled={isSubmitting}
+                className="flex-1 py-3 px-4 bg-transparent text-white hover:bg-white/10 rounded-full flex items-center justify-center gap-2 text-xs font-black transition-colors disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                <span>Tambah Keranjang</span>
+              </button>
               <button
                 onClick={handleContinue}
                 disabled={isSubmitting}

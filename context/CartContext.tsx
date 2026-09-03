@@ -1,18 +1,23 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { CartItem, Product } from "@/types/merch";
+import { CartItem, Product, AlumniTicketBundle } from "@/types/merch";
 
 interface CartContextType {
   cart: CartItem[];
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   addToCart: (product: Product, size: string, color: string, quantity?: number) => void;
+  addBundleToCart: (bundle: AlumniTicketBundle) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, delta: number) => void;
   clearCart: () => void;
   subtotal: number;
   totalItemCount: number;
+  /** true bila keranjang berisi bundle tiket alumni (wajib verifikasi saat checkout). */
+  hasTicketBundle: boolean;
+  /** true setelah hydrasi localStorage selesai (hindari keputusan saat cart masih kosong sesaat). */
+  hydrated: boolean;
   toastMessage: string | null;
 }
 
@@ -119,6 +124,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateQuantity = (cartItemId: string, delta: number) => {
+    // Bundle tiket bersifat satuan (1 tiket per identitas) — qty dikunci di 1.
+    // Pengurangan di bawah 1 menghapus baris; penambahan diabaikan.
+    const target = cartRef.current.find((item) => item.id === cartItemId);
+    if (target?.kind === "bundle") {
+      if (delta < 0 && target.quantity + delta <= 0) {
+        setCart((prev) => prev.filter((item) => item.id !== cartItemId));
+      } else if (delta > 0) {
+        showToast(`Bundle "${target.name}" dibatasi 1 tiket per keranjang.`);
+      }
+      return;
+    }
     setCart((prev) =>
       prev
         .map((item) => {
@@ -138,6 +154,41 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const hasTicketBundle = cart.some(
+    (item) => item.kind === "bundle" && item.isAlumniOnly !== false
+  );
+
+  /**
+   * Tambah bundle tiket & merch ke keranjang bersama.
+   * Qty dikunci 1 (satu tiket per identitas alumni); tambah ulang hanya menampilkan toast.
+   * Bundle tidak mengurangi stok (stok tak terbatas) sehingga maxStock dibiarkan undefined.
+   */
+  const addBundleToCart = (bundle: AlumniTicketBundle) => {
+    const cartItemId = `bundle-${bundle.id}`;
+    const existing = cartRef.current.find((item) => item.id === cartItemId);
+    if (existing) {
+      showToast(`"${bundle.name}" sudah ada di keranjang (1 tiket).`);
+      return;
+    }
+    const newItem: CartItem = {
+      id: cartItemId,
+      productId: bundle.id,
+      name: bundle.name,
+      price: bundle.totalPrice,
+      imageUrl: bundle.imageUrl || bundle.images?.[0] || "",
+      selectedSize: "-",
+      selectedColor: "-",
+      quantity: 1,
+      stockType: "READY",
+      kind: "bundle",
+      bundleId: bundle.id,
+      ticketPrice: bundle.ticketPrice,
+      bundleItems: bundle.items,
+      isAlumniOnly: bundle.isAlumniOnly ?? true,
+    };
+    setCart((prevCart) => [...prevCart, newItem]);
+    showToast(`✓ ${bundle.name} ditambahkan ke keranjang!`);
+  };
 
   return (
     <CartContext.Provider
@@ -146,11 +197,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isCartOpen,
         setIsCartOpen,
         addToCart,
+        addBundleToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
         subtotal,
         totalItemCount,
+        hasTicketBundle,
+        hydrated,
         toastMessage
       }}
     >

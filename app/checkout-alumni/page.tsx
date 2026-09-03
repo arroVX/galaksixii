@@ -4,9 +4,10 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { useMounted } from "@/lib/useMounted";
-import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, OrderItem, DeliveryMethod } from "@/types/merch";
-import { syncOrderToFirebase, syncAlumniTicketToFirebase, uploadDataUrlToStorage } from "@/lib/firebaseService";
+import { AlumniTicket, AlumniVerificationType, AlumniTicketBundleItem, Order, OrderItem, DeliveryMethod, Product } from "@/types/merch";
+import { syncOrderToFirebase, syncAlumniTicketToFirebase, syncProductToFirebase, uploadDataUrlToStorage } from "@/lib/firebaseService";
 import { AlumniVerificationUpload } from "@/components/AlumniVerificationUpload";
 import { GRADUATION_YEAR_MIN, GRADUATION_YEAR_MAX } from "@/data/alumniTicketBundles";
 import { AlertModal } from "@/components/ui/AlertModal";
@@ -26,15 +27,46 @@ interface CheckoutData {
   graduationYear?: number;
 }
 
+// Verifikasi per baris bundle tiket (mode keranjang), key = cart item id.
+// Helper murni di level modul agar tidak terikat fase render komponen.
+interface CartBundleVerification {
+  verificationType: AlumniVerificationType;
+  fileUrl: string | null;
+  fileName: string | null;
+  graduationYear: number | "";
+}
+
+const EMPTY_CART_VERIFICATION: CartBundleVerification = {
+  verificationType: "KARTU_PELAJAR",
+  fileUrl: null,
+  fileName: null,
+  graduationYear: "",
+};
+
 export default function CheckoutAlumniPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { cart, subtotal: cartSubtotal, clearCart, hydrated: cartHydrated } = useCart();
   const mounted = useMounted();
 
   const [loadedCheckoutData, setLoadedCheckoutData] = useState<CheckoutData | null>(null);
-  const checkoutData = loadedCheckoutData;
+  // "single" = beli langsung satu bundle via sessionStorage (alur lama).
+  // "cart" = dari keranjang; seluruh isi cart diproses + verifikasi per bundle tiket.
+  const [checkoutMode, setCheckoutMode] = useState<"single" | "cart" | null>(null);
+  const checkoutData = checkoutMode === "single" ? loadedCheckoutData : null;
+  const isCartMode = checkoutMode === "cart";
+
+  // Baris bundle tiket di cart yang wajib verifikasi alumni (Kartu Pelajar/SKL + tahun lulus).
+  const ticketBundlesInCart = cart.filter(
+    (item) => item.kind === "bundle" && item.isAlumniOnly !== false
+  );
 
   useEffect(() => {
+    if (sessionStorage.getItem("alumni_ticket_checkout_mode") === "cart") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrasi mode checkout dari sessionStorage (client-only source)
+      setCheckoutMode("cart");
+      return;
+    }
     const saved = sessionStorage.getItem("alumni_ticket_checkout");
     if (!saved) {
       router.push("/tiket-alumni");
@@ -42,8 +74,8 @@ export default function CheckoutAlumniPage() {
     }
     try {
       const data = JSON.parse(saved) as CheckoutData;
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrasi sessionStorage (client-only source)
       setLoadedCheckoutData(data);
+      setCheckoutMode("single");
     } catch { /* ignore */ }
   }, [router]);
   const [customerName, setCustomerName] = useState("");
@@ -63,6 +95,18 @@ export default function CheckoutAlumniPage() {
   const [verificationFileUrl, setVerificationFileUrl] = useState<string | null>(null);
   const [verificationFileName, setVerificationFileName] = useState<string | null>(null);
   const [graduationYear, setGraduationYear] = useState<number | "">("");
+
+  // Verifikasi per baris bundle tiket (mode keranjang), key = cart item id.
+  const [cartVerifications, setCartVerifications] = useState<Record<string, CartBundleVerification>>({});
+  const [cartVerifyErrors, setCartVerifyErrors] = useState<Record<string, { file: boolean; year: boolean }>>({});
+
+  const setCartVerification = (cartItemId: string, patch: Partial<CartBundleVerification>) => {
+    setCartVerifications((prev) => ({
+      ...prev,
+      [cartItemId]: { ...(prev[cartItemId] ?? EMPTY_CART_VERIFICATION), ...patch },
+    }));
+    setCartVerifyErrors((prev) => ({ ...prev, [cartItemId]: { file: false, year: false } }));
+  };
 
   const [initializedFromCheckout, setInitializedFromCheckout] = useState(false);
   useEffect(() => {
@@ -92,6 +136,7 @@ export default function CheckoutAlumniPage() {
   };
 
   const validate = (): boolean => {
+    if (isCartMode) return validateCart();
     const isAlumni = checkoutData?.isAlumniOnly !== false;
     const newErrors = {
       customerName: customerName.trim() === "",
@@ -103,6 +148,210 @@ export default function CheckoutAlumniPage() {
     };
     setErrors(newErrors);
     return !Object.values(newErrors).some(Boolean);
+  };
+
+  // Validasi mode keranjang: data pemesan + pembayaran + verifikasi tiap bundle tiket.
+  // Catatan: filter dihitung ulang dari `cart` di sini (bukan memakai
+  // `ticketBundlesInCart` level komponen) agar fungsi ini tidak terikat fase render
+  // menurut analisis React Compiler (react-hooks/purity).
+  const validateCart = (): boolean => {
+    const newErrors = {
+      customerName: customerName.trim() === "",
+      phone: phone.trim() === "",
+      addressOrClass: addressOrClass.trim() === "",
+      verificationFile: false,
+      graduationYear: false,
+      proofFile: paymentMethod === "BANK_TRANSFER_QRIS" && !proofFile
+    };
+    setErrors(newErrors);
+
+    const newVerifyErrors: Record<string, { file: boolean; year: boolean }> = {};
+    const ticketLines = cart.filter(
+      (item) => item.kind === "bundle" && item.isAlumniOnly !== false
+    );
+    for (const line of ticketLines) {
+      const v = cartVerifications[line.id] ?? EMPTY_CART_VERIFICATION;
+      newVerifyErrors[line.id] = {
+        file: !v.fileUrl,
+        year: !v.graduationYear || v.graduationYear < GRADUATION_YEAR_MIN || v.graduationYear > GRADUATION_YEAR_MAX,
+      };
+    }
+    setCartVerifyErrors(newVerifyErrors);
+
+    return (
+      !Object.values(newErrors).some(Boolean) &&
+      !Object.values(newVerifyErrors).some((e) => e.file || e.year)
+    );
+  };
+
+  // Submit mode keranjang: satu Order gabungan + satu AlumniTicket per bundle tiket.
+  const handleSubmitCartOrder = async () => {
+    if (!validateCart()) return;
+    if (cart.length === 0) return;
+
+    setIsSubmitting(true);
+
+    const orderItems: OrderItem[] = cart.map((item) => ({
+      productId: item.kind === "bundle" ? (item.bundleId || item.productId) : item.productId,
+      name: item.name,
+      price: item.price,
+      selectedSize: item.selectedSize,
+      selectedColor: item.selectedColor,
+      quantity: item.quantity,
+      imageUrl: item.imageUrl || "",
+      stockType: item.kind === "bundle" ? "READY" : item.stockType
+    }));
+
+    const deliveryLabel = deliveryMethod === "PICKUP_AULA_SMKN3"
+      ? "Ambil Sendiri di Aula SMKN 3 Jepara"
+      : `COD Area Jepara (${codLocationDetail})`;
+
+    const orderId = `TKT-ALM-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+    let guestId = localStorage.getItem("gala_merch_guest_id");
+    if (!guestId) {
+      guestId = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      localStorage.setItem("gala_merch_guest_id", guestId);
+    }
+
+    let finalProofUrl: string | undefined = proofFile || undefined;
+    try {
+      if (finalProofUrl?.startsWith("data:")) {
+        finalProofUrl = await uploadDataUrlToStorage(finalProofUrl, `orders/${orderId}/payment-proof.jpg`);
+      }
+    } catch (e) {
+      console.warn("Upload bukti ke Storage gagal, tetap pakai dataUrl:", e);
+    }
+
+    // Satu tiket per baris bundle tiket, masing-masing dengan verifikasinya sendiri.
+    const cartSnapshot = [...cart];
+    const newTickets: AlumniTicket[] = [];
+    const newTicketVerifications: CartBundleVerification[] = [];
+    for (const line of cartSnapshot) {
+      if (!(line.kind === "bundle" && line.isAlumniOnly !== false)) continue;
+      const v = cartVerifications[line.id] ?? EMPTY_CART_VERIFICATION;
+      const ticketId = `TKT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}-${line.productId.slice(-4).toUpperCase()}`;
+      let finalVerificationUrl = v.fileUrl || "";
+      try {
+        if (finalVerificationUrl.startsWith("data:")) {
+          finalVerificationUrl = await uploadDataUrlToStorage(finalVerificationUrl, `alumniTickets/${ticketId}/verification.jpg`);
+        }
+      } catch (e) {
+        console.warn("Upload verifikasi ke Storage gagal, fallback ke dataUrl:", e);
+      }
+      newTickets.push({
+        id: ticketId,
+        orderId,
+        userId: user?.uid || guestId,
+        userEmail: user?.email || "",
+        verificationType: v.verificationType,
+        verificationFileUrl: finalVerificationUrl,
+        graduationYear: Number(v.graduationYear),
+        bundleId: line.bundleId || line.productId,
+        bundleName: line.name,
+        bundleItems: line.bundleItems || [],
+        status: "PENDING_VERIFICATION",
+        createdAt: new Date().toISOString()
+      });
+      newTicketVerifications.push({ ...v, fileName: v.fileName });
+    }
+
+    const ticketNotes = newTickets
+      .map((t, i) => {
+        const v = newTicketVerifications[i] ?? EMPTY_CART_VERIFICATION;
+        return `[TIKET ALUMNI ${i + 1}]\nBundle: ${t.bundleName}\nTahun Lulus: ${t.graduationYear}\nJenis Verifikasi: ${v.verificationType}\nFile Verifikasi: ${v.fileName || "uploaded"}`;
+      })
+      .join("\n\n");
+    const notesText = ticketNotes ? `${notes}\n\n${ticketNotes}`.trim() : notes.trim();
+
+    const newOrder: Order = {
+      id: orderId,
+      userId: user?.uid || guestId,
+      userEmail: user?.email || "",
+      customerName,
+      phone,
+      addressOrClass: `${addressOrClass} • [PENGAMBILAN: ${deliveryLabel}]`,
+      deliveryMethod,
+      deliveryLocationDetail: deliveryMethod === "PICKUP_AULA_SMKN3" ? "Aula SMKN 3 Jepara" : codLocationDetail,
+      notes: notesText,
+      items: orderItems,
+      subtotal: cartSubtotal,
+      shippingFee: 0,
+      totalPrice: cartSubtotal,
+      paymentMethod,
+      paymentProofUrl: finalProofUrl,
+      status: paymentMethod === "COD" ? "Diverifikasi" : "Menunggu Pembayaran",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      const orderResult = await syncOrderToFirebase(newOrder);
+      const ticketResults = await Promise.all(newTickets.map((t) => syncAlumniTicketToFirebase(t)));
+      const ticketsOk = ticketResults.every((r) => r.rtdbOk && r.firestoreOk);
+      if (!orderResult.rtdbOk || !orderResult.firestoreOk || !ticketsOk) {
+        console.warn("Sinkronisasi sebagian gagal", { orderResult, ticketResults });
+      }
+    } catch (err) {
+      console.error("Gagal sinkronisasi ke Firebase:", err);
+    }
+
+    const existingTicketsStr = localStorage.getItem("gala_alumni_tickets");
+    const existingTickets: AlumniTicket[] = existingTicketsStr ? JSON.parse(existingTicketsStr) : [];
+    localStorage.setItem("gala_alumni_tickets", JSON.stringify([...newTickets, ...existingTickets]));
+
+    const existingOrdersStr = localStorage.getItem("gala_merch_orders");
+    const existingOrders: Order[] = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
+    localStorage.setItem("gala_merch_orders", JSON.stringify([newOrder, ...existingOrders]));
+
+    // Kurangi stok lokal untuk baris merch reguler (bundle tidak mengurangi stok).
+    let updatedProductsForSync: Product[] | null = null;
+    try {
+      const saved = localStorage.getItem("gala_merch_products");
+      if (saved) {
+        const products: Product[] = JSON.parse(saved);
+        for (const item of cartSnapshot) {
+          if (item.kind === "bundle") continue;
+          const idx = products.findIndex((p) => p.id === item.productId);
+          if (idx === -1) continue;
+          const updated: Product = { ...products[idx] };
+          if (updated.stockType === "READY") {
+            updated.stockCount = Math.max(0, (updated.stockCount || 0) - item.quantity);
+          }
+          updated.soldCount = (updated.soldCount ?? 0) + item.quantity;
+          updated.updatedAt = Date.now();
+          products[idx] = updated;
+        }
+        localStorage.setItem("gala_merch_products", JSON.stringify(products));
+        updatedProductsForSync = products;
+      }
+    } catch (e) {
+      console.error("Gagal memperbarui stok produk lokal:", e);
+    }
+
+    clearCart();
+    sessionStorage.removeItem("alumni_ticket_checkout_mode");
+    setLastOrder(newOrder);
+    setIsSubmitting(false);
+    setShowInvoiceModal(true);
+
+    // Sync stok merch ke Firebase di BACKGROUND (fire-and-forget, tanpa double-decrement).
+    if (updatedProductsForSync) {
+      try {
+        const stockPromises = cartSnapshot
+          .filter((item) => item.kind !== "bundle")
+          .map((item) => {
+            const prod = updatedProductsForSync!.find((p) => p.id === item.productId);
+            if (!prod) return Promise.resolve();
+            return syncProductToFirebase(prod).catch((err) => {
+              console.warn(`Stok produk ${prod.id} gagal disinkronkan ke Firebase:`, err);
+            });
+          });
+        Promise.all(stockPromises).catch(console.warn);
+      } catch (e) {
+        console.error("Background stok sync error:", e);
+      }
+    }
   };
 
   const handleCopyAccount = async () => {
@@ -169,6 +418,10 @@ export default function CheckoutAlumniPage() {
   };
 
   const handleSubmitOrder = async () => {
+    if (isCartMode) {
+      await handleSubmitCartOrder();
+      return;
+    }
     if (!validate()) return;
     if (!checkoutData) return;
 
@@ -280,7 +533,29 @@ export default function CheckoutAlumniPage() {
     setShowInvoiceModal(true);
   };
 
-  if (!checkoutData) return null;
+  if (checkoutMode === null) return null;
+  if (checkoutMode === "single" && !checkoutData) return null;
+
+  // Mode keranjang tanpa isi (mis. setelah clearCart + tombol kembali): tampilkan
+  // pesan kosong alih-alih redirect agar tidak balapan dengan hydrasi localStorage.
+  if (isCartMode && cartHydrated && cart.length === 0 && !showInvoiceModal && !isSubmitting) {
+    return (
+      <div className="min-h-screen bg-background text-on-background py-10 px-4 font-body-md flex flex-col items-center">
+        <div className="w-full max-w-3xl bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-10 text-center space-y-4">
+          <span className="material-symbols-outlined text-[48px] text-outline">shopping_bag</span>
+          <h1 className="font-bold text-xl text-primary">Keranjang Kosong</h1>
+          <p className="text-sm text-on-surface-variant">Tidak ada item untuk di-checkout. Silakan pilih bundle atau merchandise terlebih dahulu.</p>
+          <Link
+            href="/keranjang"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white text-sm font-bold rounded-xl"
+          >
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            Kembali ke Keranjang
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const inputClass = (hasError: boolean) =>
     `w-full bg-surface border rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 transition ${
@@ -295,11 +570,11 @@ export default function CheckoutAlumniPage() {
       {/* Top Nav */}
       <div className="w-full max-w-3xl mb-8 flex items-center justify-between">
         <Link
-          href="/tiket-alumni"
+          href={isCartMode ? "/keranjang" : "/tiket-alumni"}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary font-semibold text-sm transition"
         >
           <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          Kembali ke Tiket & Bundling
+          {isCartMode ? "Kembali ke Keranjang" : "Kembali ke Tiket & Bundling"}
         </Link>
         <div className="text-xs font-bold text-on-surface-variant bg-surface-container-high px-3 py-1.5 rounded-full">
           <span className="material-symbols-outlined text-[14px] align-middle mr-1">verified_user</span>
@@ -367,8 +642,8 @@ export default function CheckoutAlumniPage() {
             </div>
           </div>
 
-          {/* 2. ALUMNI VERIFICATION */}
-          {checkoutData.isAlumniOnly !== false && (
+          {/* 2. ALUMNI VERIFICATION (mode tunggal) */}
+          {!isCartMode && checkoutData?.isAlumniOnly !== false && (
             <div className="space-y-4 pt-4 border-t border-outline-variant/30">
               <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-primary">school</span> Verifikasi Alumni
@@ -434,7 +709,152 @@ export default function CheckoutAlumniPage() {
             </div>
           )}
 
-          {/* 3. DETAIL BUNDLE */}
+          {/* 2b. VERIFIKASI ALUMNI PER BUNDLE TIKET (mode keranjang) */}
+          {isCartMode && ticketBundlesInCart.length > 0 && (
+            <div className="space-y-4 pt-4 border-t border-outline-variant/30">
+              <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-primary">school</span> Verifikasi Alumni per Tiket
+              </h4>
+
+              {ticketBundlesInCart.map((line, idx) => {
+                const v = cartVerifications[line.id] ?? EMPTY_CART_VERIFICATION;
+                const verr = cartVerifyErrors[line.id];
+                return (
+                <div key={line.id} className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-5 sm:p-6 space-y-5">
+                  <div className="flex items-center gap-3">
+                    {line.imageUrl ? (
+                      <img src={line.imageUrl} alt={line.name} className="w-12 h-12 rounded-xl object-cover bg-white border border-outline-variant/30" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-outline">
+                        <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-[10px] font-black text-on-surface-variant tracking-widest">TIKET {idx + 1}</p>
+                      <p className="font-bold text-primary text-sm">{line.name}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">JENIS VERIFIKASI *</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setCartVerification(line.id, { verificationType: "KARTU_PELAJAR", fileUrl: null, fileName: null })}
+                        className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold border-2 transition-all ${
+                          v.verificationType === "KARTU_PELAJAR" ? "border-primary bg-primary-container/30 text-primary" : "border-outline-variant/50 text-on-surface-variant hover:border-outline-variant hover:bg-surface-container-high"
+                        }`}
+                      >
+                        Kartu Pelajar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCartVerification(line.id, { verificationType: "SKL", fileUrl: null, fileName: null })}
+                        className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold border-2 transition-all ${
+                          v.verificationType === "SKL" ? "border-primary bg-primary-container/30 text-primary" : "border-outline-variant/50 text-on-surface-variant hover:border-outline-variant hover:bg-surface-container-high"
+                        }`}
+                      >
+                        Surat Keterangan Lulus (SKL)
+                      </button>
+                    </div>
+                  </div>
+
+                  <AlumniVerificationUpload
+                    onFileChange={(url, name) => {
+                      setCartVerifications((prev) => ({
+                        ...prev,
+                        [line.id]: { ...(prev[line.id] ?? EMPTY_CART_VERIFICATION), fileUrl: url, fileName: name },
+                      }));
+                      setCartVerifyErrors((prev) => ({ ...prev, [line.id]: { file: false, year: false } }));
+                    }}
+                    currentFileUrl={v.fileUrl}
+                    currentFileName={v.fileName}
+                    label={`Upload ${v.verificationType === "KARTU_PELAJAR" ? "Kartu Pelajar" : "SKL"} *`}
+                  />
+                  {verr?.file && <p className="text-[11px] text-red-500 font-medium">Wajib upload bukti verifikasi untuk {line.name}</p>}
+
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-900 tracking-widest mb-3">TAHUN LULUS *</label>
+                    <div className="relative">
+                      <select
+                        value={v.graduationYear}
+                        onChange={(e) => setCartVerification(line.id, { graduationYear: e.target.value ? Number(e.target.value) : "" })}
+                        className={`w-full bg-white border rounded-2xl px-4 py-3 text-sm text-slate-900 appearance-none focus:outline-none focus:ring-1 transition ${
+                          verr?.year ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                        }`}
+                      >
+                        <option value="">Pilih Tahun Lulus</option>
+                        {Array.from({ length: GRADUATION_YEAR_MAX - GRADUATION_YEAR_MIN + 1 }, (_, i) => GRADUATION_YEAR_MAX - i).map((year) => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                    </div>
+                    {verr?.year && <p className="text-[11px] text-red-500 mt-1 font-medium">Wajib pilih tahun lulus ({GRADUATION_YEAR_MIN} - {GRADUATION_YEAR_MAX})</p>}
+                  </div>
+                </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 3. DETAIL PESANAN (mode keranjang: seluruh isi cart) */}
+          {isCartMode && (
+          <div className="space-y-4 pt-4 border-t border-outline-variant/30">
+            <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-primary">shopping_bag</span> Detail Pesanan ({cart.length} item)
+            </h4>
+
+            <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-5 space-y-3">
+              {cart.map((line) => {
+                const isBundleLine = line.kind === "bundle";
+                const isTicketLine = isBundleLine && line.isAlumniOnly !== false;
+                return (
+                <div key={line.id} className="border-b border-outline-variant/30 last:border-0 pb-3 last:pb-0">
+                  <div className="flex items-center gap-3">
+                    {line.imageUrl ? (
+                      <img src={line.imageUrl} alt={line.name} className="w-14 h-14 rounded-xl object-cover bg-white border border-outline-variant/30" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl bg-surface-container-high flex items-center justify-center text-outline">
+                        <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      {isBundleLine && (
+                        <span className={`inline-block text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full mb-1 ${isTicketLine ? "bg-amber-100 text-amber-800" : "bg-white text-on-surface-variant border border-outline-variant/30"}`}>
+                          {isTicketLine ? "Tiket Bundle" : "Bundle Non-Tiket"}
+                        </span>
+                      )}
+                      <p className="font-bold text-primary text-sm truncate">{line.name}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        {isBundleLine ? "1 tiket" : `${line.selectedSize} · ${line.selectedColor}`} × {line.quantity}
+                      </p>
+                    </div>
+                    <span className="font-bold text-primary text-sm shrink-0">
+                      Rp {(line.price * line.quantity).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  {isBundleLine && line.bundleItems && line.bundleItems.length > 0 && (
+                    <div className="ml-[68px] mt-2 space-y-1">
+                      {line.bundleItems.map((bItem, i) => (
+                        <p key={i} className="text-[11px] text-on-surface-variant">• {bItem.name} <span className="text-outline">x{bItem.quantity}</span></p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                );
+              })}
+
+              <div className="border-t border-outline-variant/30 pt-3 flex justify-between text-sm">
+                <span className="font-bold text-primary">Subtotal</span>
+                <span className="font-bold text-primary">Rp {cartSubtotal.toLocaleString("id-ID")}</span>
+              </div>
+            </div>
+          </div>
+          )}
+
+          {/* 3. DETAIL BUNDLE (mode tunggal) */}
+          {!isCartMode && checkoutData && (
           <div className="space-y-4 pt-4 border-t border-outline-variant/30">
             <h4 className="font-bold text-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">shopping_bag</span> Detail Bundle
@@ -472,6 +892,7 @@ export default function CheckoutAlumniPage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* 4. SISTEM PENGAMBILAN */}
           <div className="space-y-4 pt-4 border-t border-outline-variant/30">
@@ -660,7 +1081,7 @@ export default function CheckoutAlumniPage() {
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 flex-1 w-full max-w-sm">
               <span className="text-[11px] text-on-surface-variant font-bold uppercase tracking-widest block mb-1">TOTAL PEMBAYARAN:</span>
               <p className="text-3xl font-black text-amber-600 font-headline-md">
-                Rp {checkoutData.totalPrice.toLocaleString("id-ID")}
+                Rp {(isCartMode ? cartSubtotal : checkoutData?.totalPrice ?? 0).toLocaleString("id-ID")}
               </p>
             </div>
 

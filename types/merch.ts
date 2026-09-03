@@ -62,6 +62,19 @@ export interface CartItem {
   poReleaseDate?: string;
   /** Batas maksimal kuantitas (stok fisik untuk barang READY). */
   maxStock?: number;
+  /**
+   * Jenis isi keranjang: "product" (merch reguler) atau "bundle" (tiket & bundling).
+   * Opsional agar cache lama tanpa field ini tetap terbaca sebagai produk.
+   */
+  kind?: "product" | "bundle";
+  /** Id bundle asal (hanya untuk kind === "bundle"). */
+  bundleId?: string;
+  /** Harga tiket satuan dalam bundle (hanya untuk kind === "bundle"). */
+  ticketPrice?: number;
+  /** Rincian isi bundle (hanya untuk kind === "bundle"). */
+  bundleItems?: AlumniTicketBundleItem[];
+  /** true bila bundle ini tiket alumni yang wajib verifikasi (default true bila tak diisi). */
+  isAlumniOnly?: boolean;
 }
 
 export interface UserProfile {

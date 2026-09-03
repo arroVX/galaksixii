@@ -10,8 +10,24 @@ import Link from "next/link";
 
 export default function KeranjangPage() {
   const router = useRouter();
-  const { cart, removeFromCart, updateQuantity, subtotal, totalItemCount } = useCart();
+  const { cart, removeFromCart, updateQuantity, subtotal, totalItemCount, hasTicketBundle } = useCart();
   const { user, showAuthAlert } = useAuth();
+
+  const handleCheckout = () => {
+    if (!user) {
+      showAuthAlert("Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan checkout.");
+      return;
+    }
+    if (hasTicketBundle) {
+      // Mode keranjang: checkout-alumni memproses seluruh isi cart + verifikasi per bundle tiket.
+      sessionStorage.setItem("alumni_ticket_checkout_mode", "cart");
+      sessionStorage.removeItem("alumni_ticket_checkout");
+      router.push("/checkout-alumni");
+    } else {
+      sessionStorage.removeItem("alumni_ticket_checkout_mode");
+      router.push("/checkout");
+    }
+  };
 
   return (
     <>
@@ -46,29 +62,43 @@ export default function KeranjangPage() {
             <>
               {/* Cart Items */}
               <div className="space-y-3 mb-8">
-                {cart.map((item) => (
+                {cart.map((item) => {
+                  const isBundle = item.kind === "bundle";
+                  const isTicket = isBundle && item.isAlumniOnly !== false;
+                  return (
                   <div
                     key={item.id}
                     className="bg-white rounded-2xl p-4 border border-neutral-100 flex gap-4"
                   >
                     {/* Image */}
-                    <div className="w-[80px] h-[80px] rounded-xl bg-neutral-100 overflow-hidden shrink-0">
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-[80px] h-[80px] rounded-xl bg-neutral-100 overflow-hidden shrink-0 flex items-center justify-center">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined text-[28px] text-neutral-300">confirmation_number</span>
+                      )}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
+                          {isBundle && (
+                            <span className={`inline-block text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full mb-1 ${isTicket ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
+                              {isTicket ? "Tiket Bundle" : "Bundle Non-Tiket"}
+                            </span>
+                          )}
                           <h3 className="font-bold text-sm text-neutral-900 line-clamp-1">
                             {item.name}
                           </h3>
                           <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.selectedSize} · {item.stockType === "PRE_ORDER" ? "Pre-Order" : "Ready Stock"}
+                            {isBundle
+                              ? "1 tiket · verifikasi saat checkout"
+                              : `${item.selectedSize} · ${item.stockType === "PRE_ORDER" ? "Pre-Order" : "Ready Stock"}`}
                           </p>
                         </div>
                         <button
@@ -85,6 +115,11 @@ export default function KeranjangPage() {
                         <span className="font-bold text-sm text-neutral-900">
                           Rp {(item.price * item.quantity).toLocaleString("id-ID")}
                         </span>
+                        {isBundle ? (
+                          <span className="text-[11px] font-bold text-neutral-400 bg-neutral-100 px-3 py-1.5 rounded-full">
+                            1 tiket
+                          </span>
+                        ) : (
                         <div className="flex items-center border border-neutral-200 rounded-full">
                           <button
                             onClick={() => updateQuantity(item.id, -1)}
@@ -102,11 +137,21 @@ export default function KeranjangPage() {
                             <Plus size={14} />
                           </button>
                         </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
+
+              {/* Ticket verification notice */}
+              {hasTicketBundle && (
+                <div className="mb-4 bg-amber-50 border border-amber-200/60 rounded-2xl p-4 text-xs text-amber-700 flex items-start gap-2">
+                  <span className="material-symbols-outlined text-[16px] text-amber-500 shrink-0">verified_user</span>
+                  <span>Keranjang berisi tiket bundle — Anda akan diarahkan ke checkout verifikasi alumni (Kartu Pelajar/SKL).</span>
+                </div>
+              )}
 
               {/* Summary & Checkout */}
               <div className="bg-white rounded-2xl border border-neutral-100 p-5">
@@ -123,13 +168,7 @@ export default function KeranjangPage() {
                   <span className="text-lg font-bold text-neutral-900">Rp {subtotal.toLocaleString("id-ID")}</span>
                 </div>
                 <button
-                  onClick={() => {
-                    if (!user) {
-                      showAuthAlert("Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan checkout.");
-                      return;
-                    }
-                    router.push("/checkout");
-                  }}
+                  onClick={handleCheckout}
                   className="w-full py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
                 >
                   Lanjut ke Checkout

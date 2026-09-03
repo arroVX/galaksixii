@@ -13,7 +13,7 @@ import Link from "next/link";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, subtotal, clearCart, totalItemCount } = useCart();
+  const { cart, subtotal, clearCart, totalItemCount, hasTicketBundle } = useCart();
   const { user } = useAuth();
 
   const [customerName, setCustomerName] = useState("");
@@ -46,6 +46,14 @@ export default function CheckoutPage() {
       router.push("/keranjang");
     }
   }, [cart.length, isSubmitting, showInvoiceModal, router]);
+
+  // Bundle tiket alumni wajib lewat verifikasi Kartu Pelajar/SKL di /checkout-alumni.
+  React.useEffect(() => {
+    if (hasTicketBundle && !isSubmitting && !showInvoiceModal) {
+      sessionStorage.setItem("alumni_ticket_checkout_mode", "cart");
+      router.push("/checkout-alumni");
+    }
+  }, [hasTicketBundle, isSubmitting, showInvoiceModal, router]);
 
   const clearError = (field: keyof typeof errors) => {
     setErrors((prev) => ({ ...prev, [field]: false }));
@@ -249,6 +257,7 @@ export default function CheckoutPage() {
   };
 
   if (cart.length === 0 && !isSubmitting && !showInvoiceModal) return null;
+  if (hasTicketBundle && !isSubmitting && !showInvoiceModal) return null;
 
   const inputClass = (hasError: boolean) =>
     `w-full bg-surface border rounded-xl px-4 py-3 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 transition ${
