@@ -36,9 +36,10 @@ export default function RootLayout({
       lang="id"
       className={`${dmSans.variable} ${libreCaslon.variable} ${dotGothic.variable} h-full antialiased`}
     >
-      <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-      </head>
+      {/* <link> di-hoist otomatis ke <head> oleh Next (jangan bungkus <head> manual). */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       <body className="min-h-full flex flex-col bg-background text-on-background font-body-md selection:bg-primary selection:text-on-primary transition-colors duration-300 relative">
         <div className="relative z-10 flex flex-col min-h-screen pb-[110px] lg:pb-0">
           <Providers>{children}</Providers>

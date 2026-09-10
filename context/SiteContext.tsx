@@ -21,25 +21,31 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let cancelled = false;
     // 1. Load dari LocalStorage untuk instant render — gunakan queueMicrotask untuk hindari setState sync di effect
-    const saved = localStorage.getItem(SITE_SETTINGS_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as SiteSettings;
-        queueMicrotask(() => {
-          if (!cancelled) setSiteSettings(parsed);
-        });
-      } catch {}
-    }
+    try {
+      const saved = localStorage.getItem(SITE_SETTINGS_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as SiteSettings;
+          queueMicrotask(() => {
+            if (!cancelled) setSiteSettings(parsed);
+          });
+        } catch {}
+      }
+    } catch {}
 
-    // 2. Fetch sinkronisasi dari Firebase
+    // 2. Fetch sinkronisasi dari Firebase (dibatasi timeout di firebaseService
+    // agar loading tidak menggantung saat jaringan stall)
     fetchSiteSettings()
       .then((fbSettings) => {
         if (cancelled) return;
         setSiteSettings(fbSettings);
-        localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(fbSettings));
+        try {
+          localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(fbSettings));
+        } catch {}
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn("Gagal memuat pengaturan situs, memakai default:", err);
         if (!cancelled) setLoading(false);
       });
     return () => {
@@ -49,7 +55,9 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateLocalSettings = (settings: SiteSettings) => {
     setSiteSettings(settings);
-    localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(settings));
+    try {
+      localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(settings));
+    } catch {}
   };
 
   return (

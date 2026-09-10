@@ -1,4 +1,5 @@
 import { db, rtdb, storage } from "./firebase";
+import { withTimeout, FIREBASE_READ_TIMEOUT_MS } from "./asyncUtils";
 import { doc, setDoc, deleteDoc, collection, getDocs, query, where, writeBatch } from "firebase/firestore";
 import { ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { ref, set, remove, get, child, query as rtdbQuery, orderByChild, equalTo } from "firebase/database";
@@ -63,6 +64,7 @@ async function withRetry(operation: () => Promise<void>, attempts = 2): Promise<
  * dapat memberi tahu pengguna bila sinkronisasi tidak lengkap.
  */
 export async function syncOrderToFirebase(order: Order): Promise<SyncResult> {
+  if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
   const cleanOrder = stripUndefined(order);
 
   // Tulis ke RTDB dan Firestore secara PARALEL
@@ -190,6 +192,10 @@ export async function syncAllProductsToFirebase(products: Product[]): Promise<Sy
  * Mengambil seluruh data transaksi pesanan dari Cloud Firestore & Realtime Database
  */
 export async function fetchOrdersFromFirebase(): Promise<Order[]> {
+  return withTimeout(fetchOrdersFromFirebaseInner(), FIREBASE_READ_TIMEOUT_MS, "fetch orders");
+}
+
+async function fetchOrdersFromFirebaseInner(): Promise<Order[]> {
   const ordersMap = new Map<string, Order>();
 
   // 1. Ambil dari Firestore
@@ -240,6 +246,17 @@ export async function fetchOrdersFromFirebase(): Promise<Order[]> {
  * yang mengunduh seluruh koleksi (privasi data pelanggan lain).
  */
 export async function fetchOrdersForUser(
+  userId?: string | null,
+  userEmail?: string | null
+): Promise<Order[]> {
+  return withTimeout(
+    fetchOrdersForUserInner(userId, userEmail),
+    FIREBASE_READ_TIMEOUT_MS,
+    "fetch user orders"
+  );
+}
+
+async function fetchOrdersForUserInner(
   userId?: string | null,
   userEmail?: string | null
 ): Promise<Order[]> {
@@ -301,6 +318,10 @@ export async function fetchOrdersForUser(
  * Mengambil seluruh data produk dari Cloud Firestore & Realtime Database
  */
 export async function fetchProductsFromFirebase(): Promise<Product[]> {
+  return withTimeout(fetchProductsFromFirebaseInner(), FIREBASE_READ_TIMEOUT_MS, "fetch products");
+}
+
+async function fetchProductsFromFirebaseInner(): Promise<Product[]> {
   const productsMap = new Map<string, Product>();
 
   // Guard: skip jika Firebase tidak ter-configure
@@ -467,6 +488,14 @@ export async function syncAllAlumniTicketBundlesToFirebase(bundles: AlumniTicket
  * Mengambil seluruh data bundle tiket alumni dari Cloud Firestore & Realtime Database.
  */
 export async function fetchAlumniTicketBundlesFromFirebase(): Promise<AlumniTicketBundle[]> {
+  return withTimeout(
+    fetchAlumniTicketBundlesFromFirebaseInner(),
+    FIREBASE_READ_TIMEOUT_MS,
+    "fetch ticket bundles"
+  );
+}
+
+async function fetchAlumniTicketBundlesFromFirebaseInner(): Promise<AlumniTicketBundle[]> {
   const bundlesMap = new Map<string, AlumniTicketBundle>();
 
   if (!db && !rtdb) return [];
@@ -606,6 +635,10 @@ export async function deleteGalleryItemFromFirebase(id: string) {
  * Mengambil seluruh item galeri dokumentasi dari Cloud Firestore.
  */
 export async function fetchGalleryFromFirebase(): Promise<GalleryItem[]> {
+  return withTimeout(fetchGalleryFromFirebaseInner(), FIREBASE_READ_TIMEOUT_MS, "fetch gallery");
+}
+
+async function fetchGalleryFromFirebaseInner(): Promise<GalleryItem[]> {
   const galleryMap = new Map<string, GalleryItem>();
   try {
     const querySnapshot = await getDocs(collection(db, "gallery"));
@@ -626,6 +659,7 @@ export async function fetchGalleryFromFirebase(): Promise<GalleryItem[]> {
  * Menyimpan / Menyinkronkan tiket alumni ke Firebase.
  */
 export async function syncAlumniTicketToFirebase(ticket: AlumniTicket): Promise<SyncResult> {
+  if (!db && !rtdb) return { rtdbOk: false, firestoreOk: false };
   const cleanTicket = stripUndefined(ticket);
 
   // Tulis ke RTDB dan Firestore secara PARALEL
@@ -655,6 +689,17 @@ export async function syncAlumniTicketToFirebase(ticket: AlumniTicket): Promise<
  * Mengambil tiket alumni milik satu user tertentu.
  */
 export async function fetchAlumniTicketsForUser(
+  userId?: string | null,
+  userEmail?: string | null
+): Promise<AlumniTicket[]> {
+  return withTimeout(
+    fetchAlumniTicketsForUserInner(userId, userEmail),
+    FIREBASE_READ_TIMEOUT_MS,
+    "fetch user tickets"
+  );
+}
+
+async function fetchAlumniTicketsForUserInner(
   userId?: string | null,
   userEmail?: string | null
 ): Promise<AlumniTicket[]> {
@@ -714,6 +759,14 @@ export async function fetchAlumniTicketsForUser(
  * Mengambil SELURUH tiket alumni (untuk Admin).
  */
 export async function fetchAllAlumniTicketsFromFirebase(): Promise<AlumniTicket[]> {
+  return withTimeout(
+    fetchAllAlumniTicketsFromFirebaseInner(),
+    FIREBASE_READ_TIMEOUT_MS,
+    "fetch all tickets"
+  );
+}
+
+async function fetchAllAlumniTicketsFromFirebaseInner(): Promise<AlumniTicket[]> {
   const ticketsMap = new Map<string, AlumniTicket>();
 
   if (!db && !rtdb) return [];
@@ -791,6 +844,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 };
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
+  return withTimeout(fetchSiteSettingsInner(), FIREBASE_READ_TIMEOUT_MS, "fetch site settings");
+}
+
+async function fetchSiteSettingsInner(): Promise<SiteSettings> {
   if (!rtdb) return DEFAULT_SITE_SETTINGS;
   try {
     const snap = await get(ref(rtdb, "siteSettings"));

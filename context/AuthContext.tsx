@@ -132,6 +132,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(saved as UserProfile);
     }
 
+    // Firebase belum terkonfigurasi / diblokir: jangan crash seluruh aplikasi,
+    // perlakukan sebagai sesi tamu agar halaman tetap bisa dibuka.
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
       if (firebaseUser) {
         applyUser(buildUserProfile(firebaseUser, pickExtras(readSavedProfile(), firebaseUser.email)));
@@ -212,7 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updated);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
 
-    if (data.displayName && auth.currentUser) {
+    if (data.displayName && auth?.currentUser) {
       updateFirebaseProfile(auth.currentUser, { displayName: data.displayName }).catch((e) =>
         console.warn("Failed to sync display name to Firebase:", e)
       );
