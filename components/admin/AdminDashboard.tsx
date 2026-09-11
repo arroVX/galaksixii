@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Product, AlumniTicketBundle } from "@/types/merch";
 import { ALUMNI_TICKET_BUNDLES } from "@/data/alumniTicketBundles";
-import { AdminOverview } from "./AdminOverview";
 import { AdminProducts } from "./AdminProducts";
 import { AdminBundling } from "./AdminBundling";
 import { AdminOrders } from "./AdminOrders";
@@ -24,7 +23,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onExit
 }) => {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "bundling" | "orders" | "reports" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"products" | "bundling" | "orders" | "reports" | "settings">("products");
   const [bundles, setBundles] = useState<AlumniTicketBundle[]>([]);
 
   // Load bundles: localStorage -> Firebase -> fallback seed ALUMNI_TICKET_BUNDLES
@@ -76,7 +75,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }
 
   const tabs = [
-    { key: "overview" as const, label: "Ringkasan" },
     { key: "products" as const, label: "Produk" },
     { key: "bundling" as const, label: "Bundling" },
     { key: "orders" as const, label: "Pesanan" },
@@ -120,9 +118,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         {/* Tab Content */}
-        {activeTab === "overview" && (
-          <AdminOverview products={products} onSwitchTab={setActiveTab} />
-        )}
         {activeTab === "products" && (
           <AdminProducts products={products} setProducts={setProducts} />
         )}
