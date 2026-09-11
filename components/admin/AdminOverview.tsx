@@ -1,20 +1,59 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Product, Order } from "@/types/merch";
+import { Product, Order, OrderItem } from "@/types/merch";
 
 interface AdminOverviewProps {
   products: Product[];
   onSwitchTab: (tab: "overview" | "products" | "bundling" | "orders") => void;
 }
 
+/** Ambil items sebagai array aman (data cache/Firebase lama bisa tidak lengkap). */
+const orderItems = (o: Order): OrderItem[] =>
+  Array.isArray(o.items) ? o.items : [];
+
+/**
+ * Bersihkan data pesanan korup — sumber crash tab Ringkasan.
+ * Entri tanpa id dibuang; items non-array dinormalisasi jadi [];
+ * angka dikoersi agar reduce/toLocaleString tidak pernah throw/NaN.
+ */
+function sanitizeOrders(value: unknown): Order[] {
+  if (!Array.isArray(value)) return [];
+  const cleaned: Order[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object") continue;
+    const o = entry as Partial<Order>;
+    if (typeof o.id !== "string" || o.id.length === 0) continue;
+    cleaned.push({
+      ...(o as Order),
+      items: (Array.isArray(o.items) ? o.items : []).map((i) => ({
+        ...i,
+        quantity: Math.max(0, Number(i?.quantity) || 0),
+        price: Number(i?.price) || 0,
+      })),
+      totalPrice: Number(o.totalPrice) || 0,
+    });
+  }
+  return cleaned;
+}
+
 const loadInitialOrders = (): Order[] => {
   if (typeof window === "undefined") return [];
-  const saved = localStorage.getItem("gala_merch_orders");
-  if (saved) {
-    try { return JSON.parse(saved); } catch { return []; }
+  try {
+    const saved = localStorage.getItem("gala_merch_orders");
+    if (!saved) return [];
+    const cleaned = sanitizeOrders(JSON.parse(saved));
+    // Self-healing: tulis ulang cache yang sudah bersih agar crash
+    // akibat cache korup tidak terulang di kunjungan berikutnya.
+    try {
+      if (JSON.stringify(cleaned) !== saved) {
+        localStorage.setItem("gala_merch_orders", JSON.stringify(cleaned));
+      }
+    } catch {}
+    return cleaned;
+  } catch {
+    return [];
   }
-  return [];
 };
 
 export const AdminOverview: React.FC<AdminOverviewProps> = ({ products, onSwitchTab }) => {
@@ -24,7 +63,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ products, onSwitch
     const loadFirebase = async () => {
       try {
         const { fetchOrdersFromFirebase } = await import("@/lib/firebaseService");
-        const fbOrders = await fetchOrdersFromFirebase();
+        const fbOrders = sanitizeOrders(await fetchOrdersFromFirebase());
         if (fbOrders.length > 0) {
           setOrders((prev) => {
             const map = new Map<string, Order>();
@@ -42,8 +81,11 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ products, onSwitch
     loadFirebase();
   }, []);
 
-  const totalRevenue = orders.reduce((acc, o) => acc + o.totalPrice, 0);
-  const totalItemsSold = orders.reduce((acc, o) => acc + o.items.reduce((s, i) => s + i.quantity, 0), 0);
+  const totalRevenue = orders.reduce((acc, o) => acc + (Number(o.totalPrice) || 0), 0);
+  const totalItemsSold = orders.reduce(
+    (acc, o) => acc + orderItems(o).reduce((s, i) => s + (Math.max(0, Number(i.quantity) || 0)), 0),
+    0
+  );
 
   const stats = [
     { label: "Total Produk", value: products.length, suffix: "item" },
@@ -115,10 +157,10 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ products, onSwitch
                 <div key={ord.id} className="flex items-center justify-between py-2 border-b border-neutral-50 last:border-0">
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-neutral-900 truncate">{ord.customerName}</p>
-                    <p className="text-[11px] text-neutral-400">{ord.items.map((i) => i.name).join(", ")}</p>
+                    <p className="text-[11px] text-neutral-400">{orderItems(ord).map((i) => i.name).join(", ")}</p>
                   </div>
                   <span className="text-xs font-bold text-neutral-900 ml-3 shrink-0">
-                    Rp {ord.totalPrice.toLocaleString("id-ID")}
+                    Rp {(Number(ord.totalPrice) || 0).toLocaleString("id-ID")}
                   </span>
                 </div>
               ))
